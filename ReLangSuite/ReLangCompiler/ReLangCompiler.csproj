@@ -1,0 +1,77 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{A395A1C1-5CCE-4BF1-B889-D1C1B274F1F3}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Handmada.ReLang</RootNamespace>
+    <AssemblyName>ReLangCompiler</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Compilation\Parsing\BuiltinFunctionCallExpression.cs" />
+    <Compile Include="Compilation\Parsing\ConditionalStatement.cs" />
+    <Compile Include="Compilation\Parsing\ExpressionStatement.cs" />
+    <Compile Include="Compilation\Parsing\ScopeStack.cs" />
+    <Compile Include="Compilation\Parsing\IDeclarationStatement.cs" />
+    <Compile Include="Compilation\Parsing\IExpression.cs" />
+    <Compile Include="Compilation\Parsing\IFunctionCallExpression.cs" />
+    <Compile Include="Compilation\Parsing\FunctionDeclarationStatement.cs" />
+    <Compile Include="Compilation\Lexing\ILexeme.cs" />
+    <Compile Include="Compilation\Lexing\Lexer.cs" />
+    <Compile Include="Compilation\Lexing\LexerException.cs" />
+    <Compile Include="Compilation\Parsing\ITypeInfo.cs" />
+    <Compile Include="Compilation\Parsing\LiteralExpression.cs" />
+    <Compile Include="Compilation\Lexing\LiteralLexeme.cs" />
+    <Compile Include="Compilation\Lexing\OperatorLexeme.cs" />
+    <Compile Include="Compilation\Parsing\Parser.cs" />
+    <Compile Include="Compilation\Parsing\ParserException.cs" />
+    <Compile Include="Compilation\Parsing\PrimitiveTypeInfo.cs" />
+    <Compile Include="Compilation\Parsing\IStatement.cs" />
+    <Compile Include="Compilation\Lexing\SymbolLexeme.cs" />
+    <Compile Include="Compilation\Parsing\VariableDeclarationStatement.cs" />
+    <Compile Include="Compilation\Parsing\VariableExpression.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Runtime\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
