@@ -9,44 +9,169 @@ using Handmada.ReLang.Compilation.Lexing;
 
 
 namespace Handmada.ReLang.Compilation.Parsing {
-    struct FunctionSignature {
-        ITypeInfo ResultType { get; }
-        List<ITypeInfo> ArgumentTypes { get; }
-    }
-
-
     class Parser {
-        private Lexer lexer;
-        private ILexeme currentLexeme;
+        private List<Lexeme> lexemes;
+        private IEnumerator<Lexeme> lexemeEnumerator;
+        private Lexeme currentLexeme;
+        private List<FunctionData> functions;
+        private int? mainFunctionNumber;
+        private FunctionTree functionTree;
         private ScopeStack scopeStack;
 
 
         public Parser(IEnumerable<string> lines) {
-            lexer = new Lexer(lines);
+            lexemes = new List<Lexeme>();
+
+            var lexer = new Lexer(lines);
+            while (true) {
+                var lexeme = lexer.GetNextLexeme();
+                if (lexeme != null) {
+                    lexemes.Add(lexeme);
+                } else {
+                    break;
+                }
+            }
+
+            functions = new List<FunctionData>();
+            functionTree = new FunctionTree();
             scopeStack = new ScopeStack();
         }
 
 
-        public List<IStatement> Parse() {
-            var parsed = GetStatementList();
-            if (currentLexeme != null) {
-                RaiseError("Parsing is done but end of file wasn't reached");
+        public ParsedProgram ParseProgram() {
+            // Collect function definitions
+            ResetLexemes();
+            MoveNextLexeme();
+            BuildFunctionTree();
+            functionTree.PrintTree();
+
+            // Parse program
+            ResetLexemes();
+            MoveNextLexeme();
+            Parse();
+
+            if (mainFunctionNumber == null) {
+                RaiseError("End of file was reached but 'main' function wasn't found");
             }
-            return parsed;
+
+            return new ParsedProgram(functions, mainFunctionNumber.Value);
         }
 
 
-        public List<IStatement> GetStatementList() {
-            var statements = new List<IStatement>();
-            while (MoveNextLexeme()) {
+        private void BuildFunctionTree() {
+            var balance = 0;
+            do {
+                if (WhetherOperator(OperatorMeaning.Func)) {
+                    MoveNextLexeme();
+                    StepInFunction();
+                } else if (WhetherOperator(OperatorMeaning.OpenBrace)) {
+                    balance++;
+                } else if (WhetherOperator(OperatorMeaning.CloseBrace)) {
+                    balance--;
+                    if (balance < 0) {
+                        break;
+                    }
+                }
+            } while (MoveNextLexeme());
+        }
+
+
+        private void StepInFunction() {
+            var location = currentLexeme.StartLocation;
+            var name = GetSymbolText("Function name");
+            CheckOperator(OperatorMeaning.OpenParenthesis);
+            CheckOperator(OperatorMeaning.CloseParenthesis);
+            CheckOperator(OperatorMeaning.OpenBrace);
+
+            var resultType = new PrimitiveTypeInfo(PrimitiveTypeInfo.Option.Void);
+            var argumentTypes = new List<ITypeInfo>();
+            if (!functionTree.DeclareFunction(name, resultType, argumentTypes)) {
+                RaiseError($"Declaration of function '{name}' interferes with another declaration", location);
+            }
+            // Entered a function scope
+            BuildFunctionTree();
+            // Leave a function scope
+            functionTree.LeaveScope();
+
+            CheckOperator(OperatorMeaning.CloseBrace);
+        }
+
+
+        private void Parse() {
+            do {
                 if (WhetherOperator(OperatorMeaning.NewLine)) {
+                    MoveNextLexeme();
                     continue;
                 }
+
+                CheckOperator(OperatorMeaning.Func);
+                ParseFunction();
+            } while (currentLexeme != null);
+        }
+
+
+        private void ParseFunction() {
+            var name = GetSymbolText("Function name");
+            CheckOperator(OperatorMeaning.OpenParenthesis);
+            CheckOperator(OperatorMeaning.CloseParenthesis);
+            CheckOperator(OperatorMeaning.OpenBrace);
+
+            // Reserve place for function data
+            var number = functions.Count;
+            functions.Add(null);
+
+            Console.WriteLine($"parsing function '{name}'...");
+
+            // Parse body
+            functionTree.EnterScope(name);
+            scopeStack.EnterScope(isStrong: true);
+            var body = GetStatementList(true);
+            scopeStack.LeaveScope();
+            functionTree.LeaveScope();
+
+            CheckOperator(OperatorMeaning.CloseBrace);
+
+            Console.WriteLine($"stopped parsing function '{name}'");
+
+            // Add function to list
+            var maybe = functionTree.GetFunctionDefinition(name);
+            var definition = maybe.Value;
+            functions[number] = new FunctionData(name, definition.FullQualification, definition.ResultType,
+                                                 definition.ArgumentTypes, body);
+
+            // Check for main
+            if (definition.IsGlobal && name == "main") {
+                mainFunctionNumber = definition.Number;
+            }
+        }
+
+
+        private List<IStatement> GetStatementList(bool isScopeStrong) {
+            var statements = new List<IStatement>();
+            var isTop = true;
+
+            while (currentLexeme != null) { 
                 if (WhetherOperator(OperatorMeaning.CloseBrace)) {
                     break;
                 }
-                statements.Add(GetStatement());
+
+                if (WhetherOperator(OperatorMeaning.NewLine)) {
+                    MoveNextLexeme();
+                } else if (WhetherOperator(OperatorMeaning.Func)) {
+                    if (isScopeStrong && isTop) {
+                        MoveNextLexeme();
+                        ParseFunction();
+                    } else {
+                        RaiseError("Function must be declared at the top of either global or another function's block");
+                    }
+                } else {
+                    statements.Add(GetStatement());
+                    isTop = false;
+                }
             }
+
+            Console.WriteLine("stopped parsing block");
+            
             return statements;
         }
 
@@ -55,9 +180,9 @@ namespace Handmada.ReLang.Compilation.Parsing {
             switch (currentLexeme) {
                 case OperatorLexeme operatorLexeme:
                     switch (operatorLexeme.Meaning) {
-                        case OperatorMeaning.Func:
+                        /*case OperatorMeaning.Func:
                             MoveNextLexeme();
-                            return GetFunctionDeclaration();
+                            return GetFunctionDeclaration();*/
 
                         case OperatorMeaning.If:
                             MoveNextLexeme();
@@ -78,8 +203,9 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     break;
 
                 case SymbolLexeme symbolLexeme:
+                    var location = currentLexeme.StartLocation;
                     MoveNextLexeme();
-                    return new ExpressionStatement(GetFunctionCall(symbolLexeme.Text));
+                    return new ExpressionStatement(GetFunctionCall(symbolLexeme.Text, location));
 
                 default:
                     RaiseError("Statement was expected");
@@ -90,21 +216,27 @@ namespace Handmada.ReLang.Compilation.Parsing {
         }
 
 
-        private IFunctionCallExpression GetFunctionCall(string name) {
+        private IFunctionCallExpression GetFunctionCall(string name, Location location) {
             CheckOperator(OperatorMeaning.OpenParenthesis);
 
             // Pick all the arguments
             var arguments = new List<IExpression>();
-            while (true) {
-                arguments.Add(GetExpression());
-                if (WhetherOperator(OperatorMeaning.Comma)) {
-                    MoveNextLexeme();
-                } else {
-                    break;
+
+            if (WhetherOperator(OperatorMeaning.CloseParenthesis)) {
+                MoveNextLexeme();
+            } else {
+                while (currentLexeme != null) {
+                    arguments.Add(GetExpression());
+                    if (WhetherOperator(OperatorMeaning.Comma)) {
+                        MoveNextLexeme();
+                    } else {
+                        break;
+                    }
                 }
+                CheckOperator(OperatorMeaning.CloseParenthesis);
             }
-            
-            CheckOperator(OperatorMeaning.CloseParenthesis);
+
+            Console.WriteLine($"parsing call of '{name}'...");
 
             // Filter built-ins
             switch (name) {
@@ -115,8 +247,15 @@ namespace Handmada.ReLang.Compilation.Parsing {
                         BuiltinFunctionCallExpression.Option.Print);
 
                 default:
-                    RaiseError("Custom function call is not implemented");
-                    return null;
+                    // TODO: insert syntactic checks (for arguments)
+                    var maybe = functionTree.GetFunctionDefinition(name);
+                    if (maybe == null) {
+                        RaiseError($"Undeclared function '{name}'", location);
+                        return null;
+                    } else {
+                        var definition = maybe.Value;
+                        return new CustomFunctionCallExpression(definition.ResultType, arguments, definition.Number);
+                    }
             }
         }
 
@@ -136,7 +275,6 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                                   frameOffset, false, definition.TypeInfo);
 
                 case LiteralLexeme literal:
-                    MoveNextLexeme();
                     var typeOption = PrimitiveTypeInfo.Option.Void;
                     switch (literal.Value) {
                         case bool value:
@@ -155,6 +293,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                             RaiseError("Unknown literal");
                             break;
                     }
+                    MoveNextLexeme();
                     return new LiteralExpression(literal.Value, new PrimitiveTypeInfo(typeOption));
 
                 default:
@@ -195,7 +334,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             // if-clause
             CheckOperator(OperatorMeaning.OpenBrace);
             scopeStack.EnterScope(isStrong: false);
-            var ifStatements = GetStatementList();
+            var ifStatements = GetStatementList(false);
             scopeStack.LeaveScope();
             CheckOperator(OperatorMeaning.CloseBrace);
 
@@ -205,7 +344,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 MoveNextLexeme();
                 CheckOperator(OperatorMeaning.OpenBrace);
                 scopeStack.EnterScope(isStrong: false);
-                elseStatements = GetStatementList();
+                elseStatements = GetStatementList(false);
                 scopeStack.LeaveScope();
                 CheckOperator(OperatorMeaning.CloseBrace);
             }
@@ -218,19 +357,19 @@ namespace Handmada.ReLang.Compilation.Parsing {
         // func name() {
         //     statements
         // }
-        private FunctionDeclarationStatement GetFunctionDeclaration() {
+        /*private FunctionDeclarationStatement GetFunctionDeclaration() {
             var name = GetSymbolText("Function name");
             CheckOperator(OperatorMeaning.OpenParenthesis);
             CheckOperator(OperatorMeaning.CloseParenthesis);
             CheckOperator(OperatorMeaning.OpenBrace);
 
             scopeStack.EnterScope(isStrong: true);
-            var body = GetStatementList();
+            var body = GetStatementList(true);
             scopeStack.LeaveScope();
 
             CheckOperator(OperatorMeaning.CloseBrace);
             return new FunctionDeclarationStatement(name, body);
-        }
+        }*/
 
 
         private string GetSymbolText(string expected) {
@@ -311,14 +450,25 @@ namespace Handmada.ReLang.Compilation.Parsing {
         }
 
 
-        private void RaiseError(string message) {
-            throw new ParserException(message, lexer.CurrentLine, lexer.CurrentLineNumber, lexer.CurrentCharacterNumber);
+        private void RaiseError(string message, Location? location = null) {
+            var loc = location ?? currentLexeme.StartLocation;
+            throw new ParserException(message, loc.Line, loc.LineNumber, loc.ColumnNumber);
+        }
+
+
+        private void ResetLexemes() {
+            lexemeEnumerator = lexemes.GetEnumerator();
         }
 
 
         private bool MoveNextLexeme() {
-            currentLexeme = lexer.GetNextLexeme();
-            return currentLexeme != null;
+            if (lexemeEnumerator.MoveNext()) {
+                currentLexeme = lexemeEnumerator.Current;
+                return true;
+            } else {
+                currentLexeme = null;
+                return false;
+            }
         }
     }
 }

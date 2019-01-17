@@ -9,14 +9,13 @@ namespace Handmada.ReLang.Compilation.Lexing {
     /// <summary>
     /// Lexeme representing a symbol (identifier)
     /// </summary>
-    class SymbolLexeme : ILexeme {
+    class SymbolLexeme : Lexeme {
         /// <summary>
         /// Textual representation of this symbol (that can be identifier name)
         /// </summary>
         public string Text { get; }
 
-
-        public SymbolLexeme(string text) {
+        public SymbolLexeme(string text, Location location) : base(location) {
             Text = text;
         }
     }

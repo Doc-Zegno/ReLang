@@ -37,14 +37,14 @@ namespace Handmada.ReLang.Compilation.Lexing {
     /// <summary>
     /// Lexeme representing an operator of Re:Lang
     /// </summary>
-    class OperatorLexeme : ILexeme {
+    class OperatorLexeme : Lexeme {
         /// <summary>
         /// Semantic value of this operator
         /// </summary>
         public OperatorMeaning Meaning { get; } 
         
 
-        public OperatorLexeme(OperatorMeaning meaning) {
+        public OperatorLexeme(OperatorMeaning meaning, Location location) : base(location) {
             Meaning = meaning;
         }
     }

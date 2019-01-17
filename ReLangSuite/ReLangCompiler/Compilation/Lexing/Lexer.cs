@@ -20,6 +20,7 @@ namespace Handmada.ReLang.Compilation.Lexing {
         public string CurrentLine { get; private set; }
         public int CurrentLineNumber { get; private set; }
         public int CurrentCharacterNumber { get; private set; }
+        public Location CurrentLocation => new Location(CurrentLine, CurrentLineNumber, CurrentCharacterNumber);
 
 
         public Lexer(IEnumerable<string> lines) {
@@ -33,11 +34,13 @@ namespace Handmada.ReLang.Compilation.Lexing {
         }
 
 
-        public ILexeme GetNextLexeme() {
+        public Lexeme GetNextLexeme() {
             while (MoveNextCharacter()) {
+                var location = CurrentLocation;
+
                 // New line
                 if (currentCharacter == '\n') {
-                    return new OperatorLexeme(OperatorMeaning.NewLine);
+                    return new OperatorLexeme(OperatorMeaning.NewLine, location);
 
                     // White space
                 } else if (char.IsWhiteSpace(currentCharacter)) {
@@ -61,7 +64,7 @@ namespace Handmada.ReLang.Compilation.Lexing {
                         }
                     }
 
-                    return new LiteralLexeme(builder.ToString());
+                    return new LiteralLexeme(builder.ToString(), location);
 
                     // Numeric literal
                 } else if (char.IsNumber(currentCharacter)) {
@@ -81,7 +84,7 @@ namespace Handmada.ReLang.Compilation.Lexing {
                         }
                     }
 
-                    return new LiteralLexeme(value);
+                    return new LiteralLexeme(value, location);
 
                     // Symbol
                 } else if (char.IsLetter(currentCharacter)) {
@@ -104,28 +107,28 @@ namespace Handmada.ReLang.Compilation.Lexing {
                     var text = builder.ToString();
                     switch (text) {
                         case "true":
-                            return new LiteralLexeme(true);
+                            return new LiteralLexeme(true, location);
 
                         case "false":
-                            return new LiteralLexeme(false);
+                            return new LiteralLexeme(false, location);
 
                         case "var":
-                            return new OperatorLexeme(OperatorMeaning.Var);
+                            return new OperatorLexeme(OperatorMeaning.Var, location);
 
                         case "let":
-                            return new OperatorLexeme(OperatorMeaning.Let);
+                            return new OperatorLexeme(OperatorMeaning.Let, location);
 
                         case "func":
-                            return new OperatorLexeme(OperatorMeaning.Func);
+                            return new OperatorLexeme(OperatorMeaning.Func, location);
 
                         case "if":
-                            return new OperatorLexeme(OperatorMeaning.If);
+                            return new OperatorLexeme(OperatorMeaning.If, location);
 
                         case "else":
-                            return new OperatorLexeme(OperatorMeaning.Else);
+                            return new OperatorLexeme(OperatorMeaning.Else, location);
 
                         default:
-                            return new SymbolLexeme(text);
+                            return new SymbolLexeme(text, location);
                     }
 
                     // Character
@@ -175,7 +178,7 @@ namespace Handmada.ReLang.Compilation.Lexing {
                             RaiseError($"Unexpected character: {currentCharacter}");
                             break;
                     }
-                    return new OperatorLexeme(meaning);
+                    return new OperatorLexeme(meaning, location);
                 }
             }
 

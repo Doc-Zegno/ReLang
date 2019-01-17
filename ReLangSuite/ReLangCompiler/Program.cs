@@ -22,11 +22,20 @@ namespace Handmada.ReLang.Compilation {
 
             try {
                 var parser = new Parser(lines);
-                var statements = parser.Parse();
+                var program = parser.ParseProgram();
+
+                Console.WriteLine("\n=================\n");
+                Console.WriteLine($"Entry point: #{program.MainFunctionNumber}");
+                for (var i = 0; i < program.Functions.Count; i++) {
+                    PrintFunction(program.Functions[i], i);
+                    Console.WriteLine();
+                }
+
+                /*var statements = parser.Parse();
 
                 foreach (var statement in statements) {
                     PrintStatement(statement, 0);
-                }
+                }*/
             } catch (LexerException e) {
                 PrintError("Lexical", e.Message, e.Line, e.LineNumber, e.ColumnNumber);
             } catch (ParserException e) {
@@ -42,18 +51,27 @@ namespace Handmada.ReLang.Compilation {
         }
 
 
+        private static void PrintFunction(FunctionData function, int number) {
+            Console.WriteLine($"func {function.FullQualification}.{function.Name}<#{number}>() -> {function.ResultType.Name} {{");
+            foreach (var s in function.Body) {
+                PrintStatement(s, 1);
+            }
+            Console.WriteLine("}");
+        }
+
+
         private static void PrintStatement(IStatement statement, int shiftLevel) {
             var padding = new string(' ', 4 * shiftLevel);
             Console.Write(padding);
 
             switch (statement) {
-                case FunctionDeclarationStatement functionDeclaration:
+                /*case FunctionDeclarationStatement functionDeclaration:
                     Console.WriteLine($"func {functionDeclaration.Name}() {{");
                     foreach (var s in functionDeclaration.Body) {
                         PrintStatement(s, shiftLevel + 1);
                     }
                     Console.WriteLine($"{padding}}}\n");
-                    break;
+                    break;*/
 
                 case ConditionalStatement conditional:
                     Console.Write("if ");
@@ -103,16 +121,21 @@ namespace Handmada.ReLang.Compilation {
                     break;
 
                 case IFunctionCallExpression functionCall:
-                    var name = "";
+                    var fullName = "";
                     if (functionCall is BuiltinFunctionCallExpression builtin) {
+                        var name = "";
                         switch (builtin.BuiltinOption) {
                             case BuiltinFunctionCallExpression.Option.Print:
                                 name = "print";
                                 break;
                         }
+                        fullName = $"<built-in function: {name}>";
+                    } else {
+                        var custom = (CustomFunctionCallExpression)functionCall;
+                        fullName = $"<custom function #{custom.Number}>";
                     }
 
-                    Console.Write($"{name}(");
+                    Console.Write($"{fullName}(");
                     var isFirst = true;
                     foreach (var argument in functionCall.Arguments) {
                         if (!isFirst) {

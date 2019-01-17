@@ -34,6 +34,9 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.5.0\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -44,13 +47,16 @@
   <ItemGroup>
     <Compile Include="Compilation\Parsing\BuiltinFunctionCallExpression.cs" />
     <Compile Include="Compilation\Parsing\ConditionalStatement.cs" />
+    <Compile Include="Compilation\Parsing\CustomFunctionCallExpression.cs" />
     <Compile Include="Compilation\Parsing\ExpressionStatement.cs" />
+    <Compile Include="Compilation\Parsing\FunctionTree.cs" />
+    <Compile Include="Compilation\Parsing\ParsedProgram.cs" />
     <Compile Include="Compilation\Parsing\ScopeStack.cs" />
     <Compile Include="Compilation\Parsing\IDeclarationStatement.cs" />
     <Compile Include="Compilation\Parsing\IExpression.cs" />
     <Compile Include="Compilation\Parsing\IFunctionCallExpression.cs" />
     <Compile Include="Compilation\Parsing\FunctionDeclarationStatement.cs" />
-    <Compile Include="Compilation\Lexing\ILexeme.cs" />
+    <Compile Include="Compilation\Lexing\Lexeme.cs" />
     <Compile Include="Compilation\Lexing\Lexer.cs" />
     <Compile Include="Compilation\Lexing\LexerException.cs" />
     <Compile Include="Compilation\Parsing\ITypeInfo.cs" />
@@ -69,6 +75,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Runtime\" />
