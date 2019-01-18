@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 using Handmada.ReLang.Compilation.Lexing;
 using Handmada.ReLang.Compilation.Parsing;
+using Handmada.ReLang.Compilation.Runtime;
 
 
 namespace Handmada.ReLang.Compilation {
@@ -30,6 +31,10 @@ namespace Handmada.ReLang.Compilation {
                     PrintFunction(program.Functions[i], i);
                     Console.WriteLine();
                 }
+
+                Console.WriteLine("\n=================\n");
+                var machine = new VirtualMachine();
+                machine.Execute(program);
 
                 /*var statements = parser.Parse();
 
@@ -147,6 +152,34 @@ namespace Handmada.ReLang.Compilation {
                     Console.Write(")");
                     break;
 
+                case IOperatorExpression operatorExpression:
+                    switch (operatorExpression) {
+                        case BinaryOperatorExpression binary:
+                            PrintExpression(binary.LeftOperand);
+                            Console.Write(" ");
+                            PrintBinaryOperator(binary.OperatorOption);
+                            Console.Write(" ");
+                            PrintExpression(binary.RightOperang);
+                            break;
+
+                        default:
+                            throw new NotImplementedException();
+                    }
+                    break;
+
+                case ConversionExpression conversion:
+                    switch (conversion.ConversionOption) {
+                        case ConversionExpression.Option.Int2Float:
+                            Console.Write("Float(");
+                            PrintExpression(conversion.Operand);
+                            Console.Write(")");
+                            break;
+
+                        default:
+                            throw new NotImplementedException();
+                    }
+                    break;
+
                 case LiteralExpression literal:
                     var representation = "";
                     switch (literal.Value) {
@@ -155,6 +188,10 @@ namespace Handmada.ReLang.Compilation {
                             break;
 
                         case int value:
+                            representation = value.ToString();
+                            break;
+
+                        case double value:
                             representation = value.ToString();
                             break;
 
@@ -168,6 +205,46 @@ namespace Handmada.ReLang.Compilation {
                 default:
                     Console.Write("<!> Unknown expression <!>");
                     break;
+            }
+        }
+
+
+        private static void PrintBinaryOperator(BinaryOperatorExpression.Option option) {
+            switch (option) {
+                case BinaryOperatorExpression.Option.AddInteger:
+                case BinaryOperatorExpression.Option.AddFloating:
+                case BinaryOperatorExpression.Option.AddString:
+                    Console.Write("+");
+                    break;
+
+                case BinaryOperatorExpression.Option.SubtractInteger:
+                case BinaryOperatorExpression.Option.SubtractFloating:
+                    Console.Write("-");
+                    break;
+
+                case BinaryOperatorExpression.Option.MultiplyInteger:
+                case BinaryOperatorExpression.Option.MultiplyFloating:
+                    Console.Write("*");
+                    break;
+
+                case BinaryOperatorExpression.Option.DivideInteger:
+                    Console.Write("\\");
+                    break;
+
+                case BinaryOperatorExpression.Option.DivideFloating:
+                    Console.Write("/");
+                    break;
+
+                case BinaryOperatorExpression.Option.And:
+                    Console.Write("&&");
+                    break;
+
+                case BinaryOperatorExpression.Option.Or:
+                    Console.Write("||");
+                    break;
+
+                default:
+                    throw new NotImplementedException();
             }
         }
     }

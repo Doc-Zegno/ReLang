@@ -21,6 +21,6 @@ namespace Handmada.ReLang.Compilation.Parsing {
         /// </summary>
         /// <param name="targetTypeInfo">Target type</param>
         /// <returns>Converting expression if it exists and `null` otherwise</returns>
-        IExpression ConvertTo(ITypeInfo targetTypeInfo);
+        IExpression ConvertTo(IExpression expression, ITypeInfo targetTypeInfo);
     }
 }

@@ -9,4 +9,5 @@ Compiler and interpreter for Re:Lang
 - [ ] Type checks and conversions
 - [ ] Complex expressions
 - [ ] `do-while`, `while` and `for` loops
+- [ ] Collections (lists, sets and dictionaries)
 - [ ] Runtime! 

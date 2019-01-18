@@ -261,6 +261,11 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
         private IExpression GetExpression() {
+            return GetSumExpression();
+        }
+
+
+        private IExpression GetAtomicExpression() {
             switch (currentLexeme) {
                 case SymbolLexeme symbol:
                     var maybe = scopeStack.GetDefinition(symbol.Text);
@@ -285,6 +290,10 @@ namespace Handmada.ReLang.Compilation.Parsing {
                             typeOption = PrimitiveTypeInfo.Option.Int;
                             break;
 
+                        case double value:
+                            typeOption = PrimitiveTypeInfo.Option.Float;
+                            break;
+
                         case string value:
                             typeOption = PrimitiveTypeInfo.Option.String;
                             break;
@@ -303,6 +312,119 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
             // Sanity check
             return null;
+        }
+
+
+
+        // a + b, a - b, a || b
+        private IExpression GetSumExpression() {
+            var locationLeft = currentLexeme.StartLocation;
+            var left = GetProductExpression();
+            var locationMiddle = currentLexeme.StartLocation;
+
+            while (true) {
+                if (currentLexeme is OperatorLexeme operatorLexeme) {
+                    var meaning = operatorLexeme.Meaning;
+                    switch (meaning) {
+                        case OperatorMeaning.Or:
+                        case OperatorMeaning.Plus:
+                        case OperatorMeaning.Minus:
+                            break;
+
+                        default:
+                            return left;
+                    }
+
+                    // Get right operand
+                    MoveNextLexeme();
+                    var right = GetProductExpression();
+
+                    // Try to convert to each other
+                    var (x, y) = CrossConvert(left, right, locationLeft);
+
+                    if (x.TypeInfo is PrimitiveTypeInfo primitive) {
+                        switch (primitive.TypeOption) {
+                            case PrimitiveTypeInfo.Option.Bool:
+                                if (meaning == OperatorMeaning.Or) {
+                                    left = new BinaryOperatorExpression(BinaryOperatorExpression.Option.Or, x, y);
+                                } else {
+                                    RaiseError("Boolean operands don't support this operator", locationMiddle);
+                                }
+                                break;
+
+                            case PrimitiveTypeInfo.Option.Int: {
+                                    BinaryOperatorExpression.Option option;
+                                    if (meaning == OperatorMeaning.Plus) {
+                                        option = BinaryOperatorExpression.Option.AddInteger;
+                                    } else if (meaning == OperatorMeaning.Minus) {
+                                        option = BinaryOperatorExpression.Option.SubtractInteger;
+                                    } else {
+                                        RaiseError("Integer operands don't support this operator", locationMiddle);
+                                        return null;
+                                    }
+                                    left = new BinaryOperatorExpression(option, x, y);
+                                    break;
+                                }
+                                
+                            case PrimitiveTypeInfo.Option.Float: {
+                                    BinaryOperatorExpression.Option option;
+                                    if (meaning == OperatorMeaning.Plus) {
+                                        option = BinaryOperatorExpression.Option.AddFloating;
+                                    } else if (meaning == OperatorMeaning.Minus) {
+                                        option = BinaryOperatorExpression.Option.SubtractFloating;
+                                    } else {
+                                        RaiseError("Floating operands don't support this operator", locationMiddle);
+                                        return null;
+                                    }
+                                    left = new BinaryOperatorExpression(option, x, y);
+                                    break;
+                                }
+
+                            case PrimitiveTypeInfo.Option.String: {
+                                    BinaryOperatorExpression.Option option;
+                                    if (meaning == OperatorMeaning.Plus) {
+                                        option = BinaryOperatorExpression.Option.AddString;
+                                    } else {
+                                        RaiseError("String operands don't support this operator", locationMiddle);
+                                        return null;
+                                    }
+                                    left = new BinaryOperatorExpression(option, x, y);
+                                    break;
+                                }
+
+                            default:
+                                RaiseError($"Unsupported type '{primitive.Name}' for this operator", locationLeft);
+                                break;
+                        }
+                    } else {
+                        RaiseError($"Unsupported type '{x.TypeInfo.Name}' for this operator", locationLeft);
+                    }
+
+                } else {
+                    return left;
+                }
+            }
+        }
+
+
+        private (IExpression, IExpression) CrossConvert(IExpression left, IExpression right, Location location) {
+            var x = left.TypeInfo.ConvertTo(left, right.TypeInfo);
+            if (x != null) {
+                return (x, right);
+            } else {
+                var y = right.TypeInfo.ConvertTo(right, left.TypeInfo);
+                if (y != null) {
+                    return (left, y);
+                } else {
+                    RaiseError("Operands of binary operator are not convertible to each other", location);
+                    return (null, null);
+                }
+            }
+        }
+
+
+        private IExpression GetProductExpression() {
+            return GetAtomicExpression();
         }
 
 
@@ -401,6 +523,15 @@ namespace Handmada.ReLang.Compilation.Parsing {
         }
 
 
+        private bool WhetherPrimitiveType(IExpression expression, PrimitiveTypeInfo.Option option) {
+            if (expression.TypeInfo is PrimitiveTypeInfo primitiveType && primitiveType.TypeOption == option) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+
         private string GetOperatorName(OperatorMeaning meaning) {
             switch (meaning) {
                 case OperatorMeaning.Unknown:
@@ -426,6 +557,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                 case OperatorMeaning.NewLine:
                     return "New line";
+
                 case OperatorMeaning.Assignment:
                     return "Assignment operator";
 
@@ -439,10 +571,55 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     return "Constant declaration operator";
 
                 case OperatorMeaning.If:
-                    return "Conditional operator";
+                    return "Conditional If operator";
 
                 case OperatorMeaning.Func:
                     return "Function declaration operator";
+
+                case OperatorMeaning.Comma:
+                    return "Comma";
+
+                case OperatorMeaning.Dot:
+                    return "Dot operator";
+
+                case OperatorMeaning.Colon:
+                    return "Colon";
+
+                case OperatorMeaning.Minus:
+                    return "Minus operator";
+
+                case OperatorMeaning.Plus:
+                    return "Plus operator";
+
+                case OperatorMeaning.Asterisk:
+                    return "Asterisk operator";
+
+                case OperatorMeaning.ForwardSlash:
+                    return "Forward slash";
+
+                case OperatorMeaning.Commentary:
+                    return "One-line commentary operator";
+
+                case OperatorMeaning.BackSlash:
+                    return "Back slash";
+
+                case OperatorMeaning.BitwiseAnd:
+                    return "Bitwise And operator";
+
+                case OperatorMeaning.And:
+                    return "Logical And operator";
+
+                case OperatorMeaning.BitwiseOr:
+                    return "Bitwise Or operator";
+
+                case OperatorMeaning.Or:
+                    return "Logical Or operator";
+
+                case OperatorMeaning.Not:
+                    return "Logical Not operator";
+
+                case OperatorMeaning.Else:
+                    return "Conditional Else operator";
 
                 default:
                     throw new ArgumentException($"unknown option: {meaning}", nameof(meaning));

@@ -31,8 +31,35 @@ namespace Handmada.ReLang.Compilation.Parsing {
             TypeOption = typeOption;
         }
 
-        public IExpression ConvertTo(ITypeInfo targetTypeInfo) {
-            throw new NotImplementedException();
+
+        public IExpression ConvertTo(IExpression expression, ITypeInfo targetTypeInfo) {
+            if (targetTypeInfo is PrimitiveTypeInfo primitiveTarget) {
+                if (primitiveTarget.TypeOption == TypeOption || primitiveTarget.TypeOption == Option.Object) {
+                    // Identity conversion or trivial conversion
+                    return expression;
+
+                } else {
+                    switch (TypeOption) {
+                        case Option.Int:
+                            if (primitiveTarget.TypeOption == Option.Float) {
+                                /*if (expression.IsCompileTime) {
+                                    var integer = (int)expression.Value;
+                                    return new LiteralExpression((double)integer, new PrimitiveTypeInfo(Option.Float));
+                                } else {
+                                    return new ConversionExpression(ConversionExpression.Option.Int2Float, expression);
+                                }*/
+                                return new ConversionExpression(ConversionExpression.Option.Int2Float, expression);
+                            } else {
+                                return null;
+                            }
+
+                        default:
+                            return null;
+                    }
+                } 
+            } else {
+                return null;
+            }
         }
     }
 }

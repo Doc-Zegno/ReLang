@@ -5,10 +5,12 @@ using System.Runtime.Serialization;
 using System.Text;
 using System.Threading.Tasks;
 
+
 namespace Handmada.ReLang.Compilation.Parsing {
     /// <summary>
     /// Signalizes about syntactic errors
     /// </summary>
+    [Serializable]
     class ParserException : Exception {
         /// <summary>
         /// Code line containing error

@@ -45,11 +45,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Compilation\Parsing\BinaryOperatorExpression.cs" />
     <Compile Include="Compilation\Parsing\BuiltinFunctionCallExpression.cs" />
     <Compile Include="Compilation\Parsing\ConditionalStatement.cs" />
+    <Compile Include="Compilation\Parsing\ConversionExpression.cs" />
     <Compile Include="Compilation\Parsing\CustomFunctionCallExpression.cs" />
     <Compile Include="Compilation\Parsing\ExpressionStatement.cs" />
     <Compile Include="Compilation\Parsing\FunctionTree.cs" />
+    <Compile Include="Compilation\Parsing\IOperatorExpression.cs" />
     <Compile Include="Compilation\Parsing\ParsedProgram.cs" />
     <Compile Include="Compilation\Parsing\ScopeStack.cs" />
     <Compile Include="Compilation\Parsing\IDeclarationStatement.cs" />
@@ -68,8 +71,11 @@
     <Compile Include="Compilation\Parsing\PrimitiveTypeInfo.cs" />
     <Compile Include="Compilation\Parsing\IStatement.cs" />
     <Compile Include="Compilation\Lexing\SymbolLexeme.cs" />
+    <Compile Include="Compilation\Parsing\UnaryOperatorExpression.cs" />
     <Compile Include="Compilation\Parsing\VariableDeclarationStatement.cs" />
     <Compile Include="Compilation\Parsing\VariableExpression.cs" />
+    <Compile Include="Compilation\Runtime\VirtualMachine.cs" />
+    <Compile Include="Compilation\Runtime\VirtualMachineException.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

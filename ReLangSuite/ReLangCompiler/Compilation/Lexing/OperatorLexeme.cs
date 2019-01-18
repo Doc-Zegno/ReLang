@@ -13,16 +13,29 @@ namespace Handmada.ReLang.Compilation.Lexing {
         Unknown,
 
         // Symbolic
-        OpenParenthesis,
-        CloseParenthesis,
-        OpenBracket,
-        CloseBracket,
-        OpenBrace,
-        CloseBrace,
-        NewLine,
-        Assignment,
-        Equal,
-        Comma,
+        OpenParenthesis,      // (
+        CloseParenthesis,     // )
+        OpenBracket,          // [
+        CloseBracket,         // ]
+        OpenBrace,            // {
+        CloseBrace,           // }
+        NewLine,              // \n
+        Assignment,           // =
+        Equal,                // ==
+        Comma,                // ,
+        Dot,                  // .
+        Colon,                // :
+        Minus,                // -
+        Plus,                 // +
+        Asterisk,             // *
+        ForwardSlash,         // /
+        Commentary,           // //
+        BackSlash,            // \
+        BitwiseAnd,           // &
+        And,                  // &&
+        BitwiseOr,            // |
+        Or,                   // ||
+        Not,                  // !
 
         // Textual
         Var,
