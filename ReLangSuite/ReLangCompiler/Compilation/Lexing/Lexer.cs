@@ -210,6 +210,12 @@ namespace Handmada.ReLang.Compilation.Lexing {
                 case "else":
                     return new OperatorLexeme(OperatorMeaning.Else, location);
 
+                case "for":
+                    return new OperatorLexeme(OperatorMeaning.For, location);
+
+                case "in":
+                    return new OperatorLexeme(OperatorMeaning.In, location);
+
                 default:
                     return new SymbolLexeme(text, location);
             }

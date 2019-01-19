@@ -43,6 +43,8 @@ namespace Handmada.ReLang.Compilation.Lexing {
         If,
         Else,
         Func,
+        For,
+        In,
     }
 
 

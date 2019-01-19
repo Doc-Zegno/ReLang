@@ -196,6 +196,10 @@ namespace Handmada.ReLang.Compilation.Parsing {
                             MoveNextLexeme();
                             return GetVariableDeclaration(isMutable: false);
 
+                        case OperatorMeaning.For:
+                            MoveNextLexeme();
+                            return GetForLoop();
+
                         default:
                             RaiseError("Unknown operator lexeme found");
                             break;
@@ -216,7 +220,34 @@ namespace Handmada.ReLang.Compilation.Parsing {
         }
 
 
-        private IFunctionCallExpression GetFunctionCall(string name, Location location) {
+
+        // for item in iterable { ... }
+        private IStatement GetForLoop() {
+            var name = GetSymbolText("Iterable's item name");
+            CheckOperator(OperatorMeaning.In);
+            var location = currentLexeme.StartLocation;
+            var iterable = GetExpression();
+
+            if (iterable.TypeInfo is IIterableTypeInfo iterableType) {
+                var itemType = iterableType.ItemType;
+
+                // Enter scope and add item variable
+                CheckOperator(OperatorMeaning.OpenBrace);
+                scopeStack.EnterScope(isStrong: false);
+                scopeStack.DeclareVariable(name, itemType, false);
+                var statements = GetStatementList(false);
+                scopeStack.LeaveScope();
+                CheckOperator(OperatorMeaning.CloseBrace);
+
+                return new ForEachStatement(name, iterable, statements);
+            } else {
+                RaiseError($"Source of items must be iterable (got '{iterable.TypeInfo.Name}')", location);
+                return null;
+            }
+        }
+
+
+        private IExpression GetFunctionCall(string name, Location location) {
             CheckOperator(OperatorMeaning.OpenParenthesis);
 
             // Pick all the arguments
@@ -267,6 +298,27 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
         private IExpression GetAtomicExpression() {
             switch (currentLexeme) {
+                case OperatorLexeme operatorLexeme:
+                    switch (operatorLexeme.Meaning) {
+                        case OperatorMeaning.OpenParenthesis:
+                            MoveNextLexeme();
+                            var expression = GetExpression();
+                            CheckOperator(OperatorMeaning.CloseParenthesis);
+                            return expression;
+
+                        case OperatorMeaning.OpenBracket:
+                            MoveNextLexeme();
+                            return GetListLiteral();
+
+                        case OperatorMeaning.OpenBrace:
+                            MoveNextLexeme();
+                            return GetSetLiteral();
+
+                        default:
+                            RaiseError($"Unexpected operator: {GetOperatorName(operatorLexeme.Meaning)}");
+                            return null;
+                    }
+
                 case SymbolLexeme symbol:
                     var maybe = scopeStack.GetDefinition(symbol.Text);
                     if (!maybe.HasValue) {
@@ -312,6 +364,48 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
             // Sanity check
             return null;
+        }
+
+
+
+        // [a, b, c, d, e]
+        private IExpression GetListLiteral() {
+            var (items, itemType) = GetItemList(OperatorMeaning.CloseBracket);
+            return new ListLiteralExpression(items, itemType, false);
+        }
+
+
+
+        // {a, b, c, d, e}
+        private IExpression GetSetLiteral() {
+            var (items, itemType) = GetItemList(OperatorMeaning.CloseBrace);
+            return new SetLiteralExpression(items, itemType, false);
+        }
+
+
+
+        private (List<IExpression>, ITypeInfo) GetItemList(OperatorMeaning stopOperator) {
+            var items = new List<IExpression>();
+            ITypeInfo typeInfo = null;
+            while (true) {
+                var location = currentLexeme.StartLocation;
+                var item = GetExpression();
+                if (typeInfo != null) {
+                    if (!typeInfo.Equals(item.TypeInfo)) {
+                        RaiseError($"Item's type mismatch (expected '{typeInfo.Name}', got '{item.TypeInfo.Name}')", location);
+                    }
+                } else {
+                    typeInfo = item.TypeInfo;
+                }
+                items.Add(item);
+
+                if (WhetherOperator(stopOperator)) {
+                    MoveNextLexeme();
+                    return (items, typeInfo);
+                } else {
+                    CheckOperator(OperatorMeaning.Comma);
+                }
+            }
         }
 
 
@@ -424,7 +518,138 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
         private IExpression GetProductExpression() {
-            return GetAtomicExpression();
+            var locationLeft = currentLexeme.StartLocation;
+            var left = GetNegateExpression();
+            var locationMiddle = currentLexeme.StartLocation;
+
+            while (true) {
+                if (currentLexeme is OperatorLexeme operatorLexeme) {
+                    var meaning = operatorLexeme.Meaning;
+                    switch (meaning) {
+                        case OperatorMeaning.And:
+                        case OperatorMeaning.Asterisk:
+                        case OperatorMeaning.ForwardSlash:
+                        case OperatorMeaning.BackSlash:
+                            break;
+
+                        default:
+                            return left;
+                    }
+
+                    // Get right operand
+                    MoveNextLexeme();
+                    var right = GetNegateExpression();
+
+                    // Try to convert to each other
+                    var (x, y) = CrossConvert(left, right, locationLeft);
+
+                    if (x.TypeInfo is PrimitiveTypeInfo primitive) {
+                        BinaryOperatorExpression.Option option;
+                        switch (primitive.TypeOption) {
+                            case PrimitiveTypeInfo.Option.Bool:
+                                if (meaning != OperatorMeaning.And) {
+                                    RaiseError("Boolean operands don't support this operator", locationMiddle);
+                                }
+                                option = BinaryOperatorExpression.Option.And;
+                                break;
+
+                            case PrimitiveTypeInfo.Option.Int:
+                                switch (meaning) {
+                                    case OperatorMeaning.Asterisk:
+                                        option = BinaryOperatorExpression.Option.MultiplyInteger;
+                                        break;
+
+                                    case OperatorMeaning.BackSlash:
+                                        option = BinaryOperatorExpression.Option.DivideInteger;
+                                        break;
+
+                                    case OperatorMeaning.ForwardSlash:
+                                        option = BinaryOperatorExpression.Option.DivideFloating;
+                                        x = x.TypeInfo.ConvertTo(x, PrimitiveTypeInfo.Float);
+                                        y = y.TypeInfo.ConvertTo(y, PrimitiveTypeInfo.Float);
+                                        break;
+
+                                    default:
+                                        RaiseError("Integer operands don't support this operator", locationMiddle);
+                                        return null;
+                                }
+                                break;
+
+                            case PrimitiveTypeInfo.Option.Float:
+                                if (meaning == OperatorMeaning.Asterisk) {
+                                    option = BinaryOperatorExpression.Option.MultiplyFloating;
+                                } else if (meaning == OperatorMeaning.ForwardSlash) {
+                                    option = BinaryOperatorExpression.Option.DivideFloating;
+                                } else {
+                                    RaiseError("Floating operands don't support this operator", locationMiddle);
+                                    return null;
+                                }
+                                break;
+
+                            default:
+                                RaiseError($"Unsupported type '{primitive.Name}' for this operator", locationLeft);
+                                return null;
+                        }
+                        left = new BinaryOperatorExpression(option, x, y);
+                    } else {
+                        RaiseError($"Unsupported type '{x.TypeInfo.Name}' for this operator", locationLeft);
+                    }
+
+                } else {
+                    return left;
+                }
+            }
+        }
+
+
+        private IExpression GetNegateExpression() {
+            if (currentLexeme is OperatorLexeme operatorLexeme) {
+                var meaning = operatorLexeme.Meaning;
+                switch (meaning) {
+                    case OperatorMeaning.Not:
+                    case OperatorMeaning.Minus:
+                        break;
+
+                    default:
+                        return GetAtomicExpression();
+                }
+
+                MoveNextLexeme();
+                var location = currentLexeme.StartLocation;
+                var atomic = GetAtomicExpression();
+                var typeName = atomic.TypeInfo.Name;
+                IExpression converted;
+
+                switch (meaning) {
+                    case OperatorMeaning.Not:
+                        converted = atomic.TypeInfo.ConvertTo(atomic, PrimitiveTypeInfo.Bool);
+                        if (converted != null) {
+                            return new UnaryOperatorExpression(UnaryOperatorExpression.Option.Not, converted);
+                        } else {
+                            RaiseError($"Operand of logical Not must be a boolean expression (got '{typeName}')");
+                            return null;
+                        }
+
+                    case OperatorMeaning.Minus:
+                        converted = atomic.TypeInfo.ConvertTo(atomic, PrimitiveTypeInfo.Int);
+                        if (converted != null) {
+                            return new UnaryOperatorExpression(UnaryOperatorExpression.Option.NegateInteger, converted);
+                        } else {
+                            converted = atomic.TypeInfo.ConvertTo(atomic, PrimitiveTypeInfo.Float);
+                            if (converted != null) {
+                                return new UnaryOperatorExpression(UnaryOperatorExpression.Option.NegateFloating, converted);
+                            } else {
+                                RaiseError($"Operand of negation operator must be a numeric expression (got '{typeName}')");
+                                return null;
+                            }
+                        }
+
+                    default:
+                        throw new NotImplementedException();
+                }
+            } else {
+                return GetAtomicExpression();
+            }
         }
 
 

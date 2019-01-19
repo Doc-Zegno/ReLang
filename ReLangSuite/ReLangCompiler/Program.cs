@@ -97,6 +97,16 @@ namespace Handmada.ReLang.Compilation {
                     Console.WriteLine($"{padding}}}");
                     break;
 
+                case ForEachStatement forEach:
+                    Console.Write($"for {forEach.ItemName} in ");
+                    PrintExpression(forEach.Iterable);
+                    Console.WriteLine(" {");
+                    foreach (var s in forEach.Statements) {
+                        PrintStatement(s, shiftLevel + 1);
+                    }
+                    Console.WriteLine(padding + "}");
+                    break;
+
                 case VariableDeclarationStatement variableDeclaration:
                     var prefix = variableDeclaration.IsMutable ? "var" : "let";
                     var typeName = variableDeclaration.Value.TypeInfo.Name;
@@ -155,11 +165,18 @@ namespace Handmada.ReLang.Compilation {
                 case IOperatorExpression operatorExpression:
                     switch (operatorExpression) {
                         case BinaryOperatorExpression binary:
+                            Console.Write("(");
                             PrintExpression(binary.LeftOperand);
                             Console.Write(" ");
                             PrintBinaryOperator(binary.OperatorOption);
                             Console.Write(" ");
                             PrintExpression(binary.RightOperang);
+                            Console.Write(")");
+                            break;
+
+                        case UnaryOperatorExpression unary:
+                            PrintUnaryOperator(unary.OperatorOption);
+                            PrintExpression(unary.Expression);
                             break;
 
                         default:
@@ -202,9 +219,33 @@ namespace Handmada.ReLang.Compilation {
                     Console.Write(representation);
                     break;
 
+                case ListLiteralExpression listLiteral:
+                    Console.Write("[");
+                    PrintExpressionList(listLiteral.Items);
+                    Console.Write("]");
+                    break;
+
+                case SetLiteralExpression setLiteral:
+                    Console.Write("{");
+                    PrintExpressionList(setLiteral.Items);
+                    Console.Write("}");
+                    break;
+
                 default:
                     Console.Write("<!> Unknown expression <!>");
                     break;
+            }
+        }
+
+
+        private static void PrintExpressionList(List<IExpression> expressions) {
+            var isFirst = true;
+            foreach (var expression in expressions) {
+                if (!isFirst) {
+                    Console.Write(", ");
+                }
+                isFirst = false;
+                PrintExpression(expression);
             }
         }
 
@@ -241,6 +282,23 @@ namespace Handmada.ReLang.Compilation {
 
                 case BinaryOperatorExpression.Option.Or:
                     Console.Write("||");
+                    break;
+
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+
+        private static void PrintUnaryOperator(UnaryOperatorExpression.Option option) {
+            switch (option) {
+                case UnaryOperatorExpression.Option.Not:
+                    Console.Write("!");
+                    break;
+
+                case UnaryOperatorExpression.Option.NegateFloating:
+                case UnaryOperatorExpression.Option.NegateInteger:
+                    Console.Write("-");
                     break;
 
                 default:

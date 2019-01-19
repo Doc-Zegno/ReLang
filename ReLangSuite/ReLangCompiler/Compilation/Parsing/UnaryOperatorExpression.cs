@@ -14,7 +14,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
         /// Possible unary operators
         /// </summary>
         public enum Option {
-            Negate,
+            NegateInteger,
+            NegateFloating,
             Not,
         }
 

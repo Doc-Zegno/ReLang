@@ -61,5 +61,30 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 return null;
             }
         }
+
+
+        public override bool Equals(object obj) {
+            if (obj is PrimitiveTypeInfo primitiveType && TypeOption == primitiveType.TypeOption) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+
+        public override int GetHashCode() {
+            var hashCode = -543757662;
+            hashCode = hashCode * -1521134295 + TypeOption.GetHashCode();
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
+            return hashCode;
+        }
+
+
+        public static PrimitiveTypeInfo Void => new PrimitiveTypeInfo(Option.Void);
+        public static PrimitiveTypeInfo Bool => new PrimitiveTypeInfo(Option.Bool);
+        public static PrimitiveTypeInfo Int => new PrimitiveTypeInfo(Option.Int);
+        public static PrimitiveTypeInfo Float => new PrimitiveTypeInfo(Option.Float);
+        public static PrimitiveTypeInfo String => new PrimitiveTypeInfo(Option.String);
+        public static PrimitiveTypeInfo Object => new PrimitiveTypeInfo(Option.Object);
     }
 }

@@ -41,15 +41,29 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
 
         private void ExecuteStatement(IStatement statement) {
+            List<IStatement> statements;
             switch (statement) {
                 case ConditionalStatement conditional:
-                    var statements = conditional.IfStatements;
+                    statements = conditional.IfStatements;
                     if (!(bool)EvaluateExpression(conditional.Condition)) {
                         statements = conditional.ElseStatements;
                     }
 
                     EnterFrame();
                     ExecuteStatementList(statements);
+                    LeaveFrame();
+                    break;
+
+                case ForEachStatement forEach:
+                    //Log("Executing for-each...");
+                    statements = forEach.Statements;
+                    var iterable = (IEnumerable<object>)EvaluateExpression(forEach.Iterable);
+                    EnterFrame();
+                    foreach (var item in iterable) {
+                        ClearFrame();
+                        CreateVariable(item);
+                        ExecuteStatementList(statements);
+                    }
                     LeaveFrame();
                     break;
 
@@ -88,6 +102,9 @@ namespace Handmada.ReLang.Compilation.Runtime {
                         case BinaryOperatorExpression binary:
                             return EvaluateBinaryOperator(binary);
 
+                        case UnaryOperatorExpression unary:
+                            return EvaluateUnaryOperator(unary);
+
                         default:
                             throw new VirtualMachineException($"Unsupported operator expression: {operatorExpression}");
                     }
@@ -97,6 +114,20 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
                 case LiteralExpression literal:
                     return literal.Value;
+
+                case ListLiteralExpression listLiteral:
+                    var list = new List<object>();
+                    foreach (var item in listLiteral.Items) {
+                        list.Add(EvaluateExpression(item));
+                    }
+                    return list;
+
+                case SetLiteralExpression setLiteral:
+                    var set = new HashSet<object>();
+                    foreach (var item in setLiteral.Items) {
+                        set.Add(EvaluateExpression(item));
+                    }
+                    return set;
 
                 case VariableExpression variable:
                     return GetVariable(variable.Number, variable.FrameOffset);
@@ -146,18 +177,36 @@ namespace Handmada.ReLang.Compilation.Runtime {
                     return (double)left - (double)right;
 
                 case BinaryOperatorExpression.Option.MultiplyInteger:
-                    break;
+                    return (int)left * (int)right;
 
                 case BinaryOperatorExpression.Option.MultiplyFloating:
-                    break;
+                    return (double)left * (double)right;
 
                 case BinaryOperatorExpression.Option.DivideInteger:
-                    break;
+                    return (int)left / (int)right;
 
                 case BinaryOperatorExpression.Option.DivideFloating:
-                    break;
+                    return (double)left / (double)right;
             }
             return null;
+        }
+
+
+        private object EvaluateUnaryOperator(UnaryOperatorExpression unary) {
+            var value = EvaluateExpression(unary.Expression);
+            switch (unary.OperatorOption) {
+                case UnaryOperatorExpression.Option.Not:
+                    return !(bool)value;
+
+                case UnaryOperatorExpression.Option.NegateInteger:
+                    return -(int)value;
+
+                case UnaryOperatorExpression.Option.NegateFloating:
+                    return -(double)value;
+
+                default:
+                    throw new VirtualMachineException($"Unsupported unary operator: {unary.OperatorOption}");
+            }
         }
 
 
@@ -188,21 +237,60 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
 
         private void CallPrint(object argument) {
-            switch (argument) {
+            PrintObject(argument, false);
+            Console.WriteLine();
+        }
+
+
+        private void PrintObject(object obj, bool isEscaped) {
+            switch (obj) {
                 case bool b:
-                    Console.WriteLine(b ? "true" : "false");
+                    Console.Write(b ? "true" : "false");
+                    break;
+
+                case string s:
+                    if (isEscaped) {
+                        Console.Write($"\"{s}\"");
+                    } else {
+                        Console.Write(s);
+                    }
+                    break;
+
+                case List<object> list:
+                    Console.Write("[");
+                    PrintObjectList(list, true);
+                    Console.Write("]");
+                    break;
+
+                case ISet<object> set:
+                    Console.Write("{");
+                    PrintObjectList(set, true);
+                    Console.Write("}");
                     break;
 
                 default:
-                    Console.WriteLine(argument);
+                    Console.Write(obj);
                     break;
             }
         }
 
 
+        private void PrintObjectList(IEnumerable<object> objs, bool isEscaped) {
+            var isFirst = true;
+            foreach (var obj in objs) {
+                if (!isFirst) {
+                    Console.Write(", ");
+                }
+                isFirst = false;
+                PrintObject(obj, isEscaped);
+            }
+        }
+
+
         private void CreateVariable(object value) {
-            var index = frames.Count - 1;
-            frames[index].Add(value);
+            var frame = frames.Last();;
+            frame.Add(value);
+            //Log($"Added variable, total count: {frame.Count}");
         }
 
 
@@ -222,6 +310,13 @@ namespace Handmada.ReLang.Compilation.Runtime {
         private void SetVariable(int number, int frameOffset, object value) {
             var index = frames.Count + frameOffset - 1;
             frames[index][number] = value;
+        }
+
+
+        private void ClearFrame() {
+            var frame = frames.Last();
+            frame.Clear();
+            //Log("Frame was cleared");
         }
 
 
