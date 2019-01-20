@@ -24,8 +24,8 @@ namespace Handmada.ReLang.Compilation.Runtime {
             // Converting command line arguments to external representation
             var arguments = ConvertArguments(commandLineArguments);
 
-            EvaluateCustomFunction(program.MainFunctionNumber, arguments);
-            Log("Done");
+            var result = EvaluateCustomFunction(program.MainFunctionNumber, arguments);
+            Log($"Process finished with exit code: {result ?? 0}");
         }
 
 
@@ -62,7 +62,9 @@ namespace Handmada.ReLang.Compilation.Runtime {
             // Leave frame and return function value
             needReturn = false;
             LeaveFrame();
-            return functionValue;
+            var result = functionValue;
+            functionValue = null;  // No one will see this value outside evaluation anymore
+            return result;
         }
 
 
@@ -79,6 +81,8 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
         private void ExecuteStatement(IStatement statement) {
             List<IStatement> statements;
+            object value;
+
             switch (statement) {
                 case ConditionalStatement conditional:
                     statements = conditional.IfStatements;
@@ -109,8 +113,13 @@ namespace Handmada.ReLang.Compilation.Runtime {
                     break;
 
                 case VariableDeclarationStatement variableDeclaration:
-                    var value = EvaluateExpression(variableDeclaration.Value);
+                    value = EvaluateExpression(variableDeclaration.Value);
                     CreateVariable(value);
+                    break;
+
+                case AssignmentStatement assignment:
+                    value = EvaluateExpression(assignment.Value);
+                    SetVariable(assignment.Number, assignment.FrameOffset, value);
                     break;
 
                 case ReturnStatement returnStatement:

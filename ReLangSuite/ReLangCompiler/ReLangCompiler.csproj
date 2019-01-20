@@ -46,6 +46,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Compilation\Parsing\ArrayListTypeInfo.cs" />
+    <Compile Include="Compilation\Parsing\AssignmentStatement.cs" />
     <Compile Include="Compilation\Parsing\BinaryOperatorExpression.cs" />
     <Compile Include="Compilation\Parsing\BuiltinFunctionCallExpression.cs" />
     <Compile Include="Compilation\Parsing\Builtins.cs" />

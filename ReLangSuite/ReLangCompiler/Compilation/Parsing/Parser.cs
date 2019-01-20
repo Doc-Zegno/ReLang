@@ -314,7 +314,22 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     break;
 
                 case SymbolLexeme symbolLexeme:
-                    return new ExpressionStatement(GetFunctionCall(symbolLexeme.Text, location));
+                    if (currentLexeme is OperatorLexeme op) {
+                        switch (op.Meaning) {
+                            case OperatorMeaning.OpenParenthesis:
+                                return new ExpressionStatement(GetFunctionCall(symbolLexeme.Text, location));
+
+                            case OperatorMeaning.Assignment:
+                                return GetAssignment(symbolLexeme.Text, location);
+
+                            default:
+                                RaiseError("Unexpected operator");
+                                return null;
+                        }
+                    } else {
+                        RaiseError("Unexpected lexeme");
+                        return null;
+                    }
 
                 default:
                     RaiseError("Statement was expected", location);
@@ -322,6 +337,33 @@ namespace Handmada.ReLang.Compilation.Parsing {
             }
 
             return null;
+        }
+
+
+
+        // x = y + z
+        private IStatement GetAssignment(string name, Location location) {
+            CheckOperator(OperatorMeaning.Assignment);
+
+            // Check variable definition
+            var maybe = scopeStack.GetDefinition(name);
+            if (!maybe.HasValue) {
+                RaiseError($"Undeclared identifier '{name}'", location);
+            }
+
+            var definition = maybe.Value;
+            var frameOffset = definition.ScopeNumber - (scopeStack.Count - 1);
+
+            // Check if it's mutable
+            if (!definition.IsMutable) {
+                RaiseError($"Object '{name}' was declared as immutable, assignment is impossible", location);
+            }
+
+            var loc = currentLexeme.StartLocation;
+            var value = GetExpression();
+            var converted = ForceConvertExpression(value, definition.TypeInfo, loc);
+
+            return new AssignmentStatement(name, definition.Number, frameOffset, converted);
         }
 
 
@@ -480,7 +522,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                         return GetFunctionCall(symbol.Text, location);
                     } else {
                         var maybe = scopeStack.GetDefinition(symbol.Text);
-                        Console.WriteLine($"Parsing reference to variable '{symbol.Text}'...");
+                        //Console.WriteLine($"Parsing reference to variable '{symbol.Text}'...");
                         if (!maybe.HasValue) {
                             RaiseError($"Undeclared identifier '{symbol.Text}'");
                         }

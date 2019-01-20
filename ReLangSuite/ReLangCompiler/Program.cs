@@ -122,6 +122,12 @@ namespace Handmada.ReLang.Compilation {
                     Console.WriteLine("");
                     break;
 
+                case AssignmentStatement assignment:
+                    Console.Write($"{assignment.Name} = ");
+                    PrintExpression(assignment.Value);
+                    Console.WriteLine();
+                    break;
+
                 case ExpressionStatement expression:
                     PrintExpression(expression.Expression);
                     Console.WriteLine("");
