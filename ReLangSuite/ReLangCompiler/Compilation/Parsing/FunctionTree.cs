@@ -143,6 +143,11 @@ namespace Handmada.ReLang.Compilation.Parsing {
         }
 
 
+        public FunctionDefinition GetCurrentFunctionDefinition() {
+            return top.GetFunctionDefinition(top.Name).Value;
+        }
+
+
         public void PrintTree() {
             top.PrintScope(0);
         }

@@ -17,14 +17,42 @@ namespace Handmada.ReLang.Compilation.Parsing {
             AddInteger,
             AddFloating,
             AddString,
+
             SubtractInteger,
             SubtractFloating,
+
             MultiplyInteger,
             MultiplyFloating,
+
             DivideInteger,
             DivideFloating,
+
             And,
             Or,
+
+            EqualBoolean,
+            EqualInteger,
+            EqualFloating,
+            EqualString,
+            EqualObject,
+
+            NotEqualBoolean,
+            NotEqualInteger,
+            NotEqualFloating,
+            NotEqualString,
+            NotEqualObject,
+
+            LessInteger,
+            LessFloating,
+
+            LessOrEqualInteger,
+            LessOrEqualFloating,
+
+            MoreInteger,
+            MoreFloating,
+
+            MoreOrEqualInteger,
+            MoreOrEqualFloating,
         }
 
 
@@ -43,7 +71,11 @@ namespace Handmada.ReLang.Compilation.Parsing {
             LeftOperand = leftOperand;
             RightOperang = rightOperand;
 
-            TypeInfo = leftOperand.TypeInfo;
+            if ((int)operatorOption >= (int)Option.EqualBoolean && (int)operatorOption <= (int)Option.MoreOrEqualFloating) {
+                TypeInfo = PrimitiveTypeInfo.Bool;
+            } else {
+                TypeInfo = leftOperand.TypeInfo;
+            }
         }
     }
 }

@@ -12,22 +12,55 @@ namespace Handmada.ReLang.Compilation.Runtime {
         private List<List<object>> frames;
         private List<FunctionData> functions;
         private object functionValue;
+        private bool needReturn;
 
 
-        public void Execute(ParsedProgram program) {
+        public void Execute(ParsedProgram program, string[] commandLineArguments) {
             frames = new List<List<object>>();
             functions = program.Functions;
             functionValue = null;
             Log("Executing main()...");
-            EvaluateCustomFunction(program.MainFunctionNumber);
+
+            // Converting command line arguments to external representation
+            var arguments = ConvertArguments(commandLineArguments);
+
+            EvaluateCustomFunction(program.MainFunctionNumber, arguments);
             Log("Done");
         }
 
 
-        private object EvaluateCustomFunction(int number) {
+        private List<IExpression> ConvertArguments(string[] commandLineArguments) {
+            var itemType = PrimitiveTypeInfo.String;
+            var items = new List<IExpression>();
+            foreach (var arg in commandLineArguments) {
+                items.Add(new LiteralExpression(arg, itemType));
+            }
+            var list = new ListLiteralExpression(items, itemType, false);
+            return new List<IExpression> { list };
+        }
+
+
+        private object EvaluateCustomFunction(int number, List<IExpression> arguments) {
+            var values = new List<object>();
+            foreach (var argument in arguments) {
+                values.Add(EvaluateExpression(argument));
+            }
+
             EnterFrame();
+
+            // Push arguments
+            foreach (var value in values) {
+                CreateVariable(value);
+            }
+
+            // Execute body
+            functionValue = null;
+            needReturn = false;
             var function = functions[number];
             ExecuteStatementList(function.Body);
+
+            // Leave frame and return function value
+            needReturn = false;
             LeaveFrame();
             return functionValue;
         }
@@ -35,7 +68,11 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
         private void ExecuteStatementList(List<IStatement> statements) {
             foreach (var statement in statements) {
-                ExecuteStatement(statement);
+                if (!needReturn) {
+                    ExecuteStatement(statement);
+                } else {
+                    break;
+                }
             }
         }
 
@@ -76,6 +113,11 @@ namespace Handmada.ReLang.Compilation.Runtime {
                     CreateVariable(value);
                     break;
 
+                case ReturnStatement returnStatement:
+                    functionValue = EvaluateExpression(returnStatement.Operand);
+                    needReturn = true;
+                    break;
+
                 default:
                     throw new VirtualMachineException($"Unsupported statement: {statement}");
             }
@@ -91,7 +133,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
                             return EvaluateBuiltinFunction(builtin.BuiltinOption, arguments);
 
                         case CustomFunctionCallExpression custom:
-                            return EvaluateCustomFunction(custom.Number);
+                            return EvaluateCustomFunction(custom.Number, arguments);
 
                         default:
                             throw new VirtualMachineException("Unsupported function call expression");
@@ -187,6 +229,60 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
                 case BinaryOperatorExpression.Option.DivideFloating:
                     return (double)left / (double)right;
+                
+                case BinaryOperatorExpression.Option.EqualBoolean:
+                    return (bool)left == (bool)right;
+
+                case BinaryOperatorExpression.Option.EqualInteger:
+                    return (int)left == (int)right;
+
+                case BinaryOperatorExpression.Option.EqualFloating:
+                    return AboutEqual((double)left, (double)right);
+
+                case BinaryOperatorExpression.Option.EqualString:
+                    return ((string)left).Equals(right);
+
+                case BinaryOperatorExpression.Option.EqualObject:
+                    return left == right;
+
+                case BinaryOperatorExpression.Option.NotEqualBoolean:
+                    return (bool)left != (bool)right;
+
+                case BinaryOperatorExpression.Option.NotEqualInteger:
+                    return (int)left != (int)right;
+
+                case BinaryOperatorExpression.Option.NotEqualFloating:
+                    return !AboutEqual((double)left, (double)right);
+
+                case BinaryOperatorExpression.Option.NotEqualString:
+                    return !((string)left).Equals(right);
+
+                case BinaryOperatorExpression.Option.NotEqualObject:
+                    return left != right;
+
+                case BinaryOperatorExpression.Option.LessInteger:
+                    return (int)left < (int)right;
+
+                case BinaryOperatorExpression.Option.LessFloating:
+                    return (double)left < (double)right;
+
+                case BinaryOperatorExpression.Option.LessOrEqualInteger:
+                    return (int)left <= (int)right;
+
+                case BinaryOperatorExpression.Option.LessOrEqualFloating:
+                    return (double)left <= (double)right;
+
+                case BinaryOperatorExpression.Option.MoreInteger:
+                    return (int)left > (int)right;
+
+                case BinaryOperatorExpression.Option.MoreFloating:
+                    return (double)left > (double)right;
+
+                case BinaryOperatorExpression.Option.MoreOrEqualInteger:
+                    return (int)left >= (int)right;
+
+                case BinaryOperatorExpression.Option.MoreOrEqualFloating:
+                    return (double)left >= (double)right;
             }
             return null;
         }
@@ -341,6 +437,12 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
             Console.BackgroundColor = oldBackgroundColor;
             Console.ForegroundColor = oldForegroundColor;
+        }
+
+
+        public static bool AboutEqual(double x, double y) {
+            double epsilon = Math.Max(Math.Abs(x), Math.Abs(y)) * 1e-10;
+            return Math.Abs(x - y) <= epsilon;
         }
     }
 }

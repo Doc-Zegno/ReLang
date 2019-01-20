@@ -10,16 +10,18 @@ namespace Handmada.ReLang.Compilation.Parsing {
         public string Name { get; }
         public string FullQualification { get; }
         public ITypeInfo ResultType { get; }
+        public List<string> ArgumentNames { get; }
         public List<ITypeInfo> ArgumentTypes { get; }
         public List<IStatement> Body { get; }
 
 
         public FunctionData(string name, string fullQualification, ITypeInfo resultType, 
-                            List<ITypeInfo> argumentTypes, List<IStatement> body)
+                            List<string> argumentNames, List<ITypeInfo> argumentTypes, List<IStatement> body)
         {
             Name = name;
             FullQualification = fullQualification;
             ResultType = resultType;
+            ArgumentNames = argumentNames;
             ArgumentTypes = argumentTypes;
             Body = body;
         }

@@ -20,7 +20,9 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
         public IExpression ConvertTo(IExpression expression, ITypeInfo targetTypeInfo) {
-            if (Equals(targetTypeInfo)) {
+            if (Equals(targetTypeInfo)
+                || targetTypeInfo is PrimitiveTypeInfo primitive && primitive.TypeOption == PrimitiveTypeInfo.Option.Object)
+            {
                 return expression;
             } else {
                 return null;

@@ -114,7 +114,7 @@ namespace Handmada.ReLang.Compilation.Lexing {
                     break;
 
                 case '-':
-                    meaning = OperatorMeaning.Minus;
+                    meaning = ScanDoubleOperator(OperatorMeaning.Minus, OperatorMeaning.ThinRightArrow, '>');
                     break;
 
                 case '+':
@@ -142,7 +142,15 @@ namespace Handmada.ReLang.Compilation.Lexing {
                     break;
 
                 case '!':
-                    meaning = OperatorMeaning.Not;
+                    meaning = ScanDoubleOperator(OperatorMeaning.Not, OperatorMeaning.NotEqual, '=');
+                    break;
+
+                case '<':
+                    meaning = ScanDoubleOperator(OperatorMeaning.Less, OperatorMeaning.LessOrEqual, '=');
+                    break;
+
+                case '>':
+                    meaning = ScanDoubleOperator(OperatorMeaning.More, OperatorMeaning.MoreOrEqual, '=');
                     break;
 
                 default:
@@ -155,11 +163,12 @@ namespace Handmada.ReLang.Compilation.Lexing {
 
         private OperatorMeaning ScanDoubleOperator(
             OperatorMeaning singleMeaning,
-            OperatorMeaning doubleMeaning)
+            OperatorMeaning doubleMeaning,
+            char? targetCharacter = null)
         {
-            var targetCharacter = currentCharacter;
+            var target = targetCharacter ?? currentCharacter;
             if (MoveNextCharacter()) {
-                if (currentCharacter == targetCharacter) {
+                if (currentCharacter == target) {
                     return doubleMeaning;
                 } else {
                     PutBack();
@@ -215,6 +224,9 @@ namespace Handmada.ReLang.Compilation.Lexing {
 
                 case "in":
                     return new OperatorLexeme(OperatorMeaning.In, location);
+
+                case "return":
+                    return new OperatorLexeme(OperatorMeaning.Return, location);
 
                 default:
                     return new SymbolLexeme(text, location);

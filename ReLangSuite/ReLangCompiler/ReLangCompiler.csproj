@@ -48,6 +48,7 @@
     <Compile Include="Compilation\Parsing\ArrayListTypeInfo.cs" />
     <Compile Include="Compilation\Parsing\BinaryOperatorExpression.cs" />
     <Compile Include="Compilation\Parsing\BuiltinFunctionCallExpression.cs" />
+    <Compile Include="Compilation\Parsing\Builtins.cs" />
     <Compile Include="Compilation\Parsing\ConditionalStatement.cs" />
     <Compile Include="Compilation\Parsing\ConversionExpression.cs" />
     <Compile Include="Compilation\Parsing\CustomFunctionCallExpression.cs" />
@@ -58,6 +59,7 @@
     <Compile Include="Compilation\Parsing\IOperatorExpression.cs" />
     <Compile Include="Compilation\Parsing\ListLiteralExpression.cs" />
     <Compile Include="Compilation\Parsing\ParsedProgram.cs" />
+    <Compile Include="Compilation\Parsing\ReturnStatement.cs" />
     <Compile Include="Compilation\Parsing\ScopeStack.cs" />
     <Compile Include="Compilation\Parsing\IDeclarationStatement.cs" />
     <Compile Include="Compilation\Parsing\IExpression.cs" />
@@ -77,6 +79,7 @@
     <Compile Include="Compilation\Lexing\SymbolLexeme.cs" />
     <Compile Include="Compilation\Parsing\HashSetTypeInfo.cs" />
     <Compile Include="Compilation\Parsing\SetLiteralExpression.cs" />
+    <Compile Include="Compilation\Parsing\TypeLiteralExpression.cs" />
     <Compile Include="Compilation\Parsing\UnaryOperatorExpression.cs" />
     <Compile Include="Compilation\Parsing\VariableDeclarationStatement.cs" />
     <Compile Include="Compilation\Parsing\VariableExpression.cs" />

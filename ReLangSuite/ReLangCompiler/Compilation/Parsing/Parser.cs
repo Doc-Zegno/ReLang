@@ -78,22 +78,110 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
         private void StepInFunction() {
             var location = currentLexeme.StartLocation;
-            var name = GetSymbolText("Function name");
-            CheckOperator(OperatorMeaning.OpenParenthesis);
-            CheckOperator(OperatorMeaning.CloseParenthesis);
+            var (name, _, argumentTypes, resultType) = GetFunctionSignature();
             CheckOperator(OperatorMeaning.OpenBrace);
 
-            var resultType = new PrimitiveTypeInfo(PrimitiveTypeInfo.Option.Void);
-            var argumentTypes = new List<ITypeInfo>();
+            // Register function
             if (!functionTree.DeclareFunction(name, resultType, argumentTypes)) {
                 RaiseError($"Declaration of function '{name}' interferes with another declaration", location);
             }
+
             // Entered a function scope
             BuildFunctionTree();
             // Leave a function scope
             functionTree.LeaveScope();
 
             CheckOperator(OperatorMeaning.CloseBrace);
+        }
+
+
+        private (string, List<string>, List<ITypeInfo>, ITypeInfo) GetFunctionSignature() {
+            var name = GetSymbolText("Function name");
+            CheckOperator(OperatorMeaning.OpenParenthesis);
+
+            // Parse parameter list
+            var argumentNames = new List<string>();
+            var argumentTypes = new List<ITypeInfo>();
+            if (!WhetherOperator(OperatorMeaning.CloseParenthesis)) {
+                while (true) {
+                    argumentNames.Add(GetSymbolText("Argument name"));
+                    CheckOperator(OperatorMeaning.Colon);
+                    argumentTypes.Add(GetTypeInfo());
+
+                    if (WhetherOperator(OperatorMeaning.Comma)) {
+                        MoveNextLexeme();
+                    } else {
+                        break;
+                    }
+                }
+            }
+            CheckOperator(OperatorMeaning.CloseParenthesis);
+
+            // Parse return type
+            var resultType = (ITypeInfo)PrimitiveTypeInfo.Void;
+            if (WhetherOperator(OperatorMeaning.ThinRightArrow)) {
+                MoveNextLexeme();
+                resultType = GetTypeInfo();
+            }
+
+            return (name, argumentNames, argumentTypes, resultType);
+        }
+
+
+
+        // Int, [Int], {Int}, [{Int}]
+        private ITypeInfo GetTypeInfo() {
+            var location = currentLexeme.StartLocation;
+            switch (currentLexeme) {
+                case SymbolLexeme symbol:
+                    MoveNextLexeme();
+                    switch (symbol.Text) {
+                        case "Void":
+                            return PrimitiveTypeInfo.Void;
+
+                        case "Bool":
+                            return PrimitiveTypeInfo.Bool;
+
+                        case "Int":
+                            return PrimitiveTypeInfo.Int;
+
+                        case "Float":
+                            return PrimitiveTypeInfo.Float;
+
+                        case "String":
+                            return PrimitiveTypeInfo.String;
+
+                        case "Object":
+                            return PrimitiveTypeInfo.Object;
+
+                        default:
+                            RaiseError($"Unknown type: '{symbol.Text}'", location);
+                            return null;
+                    }
+
+                case OperatorLexeme operatorLexeme:
+                    MoveNextLexeme();
+                    ITypeInfo itemType;
+                    switch (operatorLexeme.Meaning) {
+                        case OperatorMeaning.OpenBracket:
+                            itemType = GetTypeInfo();
+                            CheckOperator(OperatorMeaning.CloseBracket);
+                            return new ArrayListTypeInfo(itemType);
+
+                        case OperatorMeaning.OpenBrace:
+                            itemType = GetTypeInfo();
+                            CheckOperator(OperatorMeaning.CloseBrace);
+                            return new HashSetTypeInfo(itemType);
+
+                        default:
+                            RaiseError("Unexpected operator lexeme", location);
+                            return null;
+                    }
+
+                default:
+                    RaiseError("Expected type literal", location);
+                    return null;
+            }
         }
 
 
@@ -111,9 +199,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
         private void ParseFunction() {
-            var name = GetSymbolText("Function name");
-            CheckOperator(OperatorMeaning.OpenParenthesis);
-            CheckOperator(OperatorMeaning.CloseParenthesis);
+            var location = currentLexeme.StartLocation;
+            var (name, argumentNames, argumentTypes, resultType) = GetFunctionSignature();
             CheckOperator(OperatorMeaning.OpenBrace);
 
             // Reserve place for function data
@@ -125,6 +212,12 @@ namespace Handmada.ReLang.Compilation.Parsing {
             // Parse body
             functionTree.EnterScope(name);
             scopeStack.EnterScope(isStrong: true);
+
+            // Place all arguments inside frame
+            for (var i = 0; i < argumentNames.Count; i++) {
+                scopeStack.DeclareVariable(argumentNames[i], argumentTypes[i], true);
+            }
+
             var body = GetStatementList(true);
             scopeStack.LeaveScope();
             functionTree.LeaveScope();
@@ -136,12 +229,27 @@ namespace Handmada.ReLang.Compilation.Parsing {
             // Add function to list
             var maybe = functionTree.GetFunctionDefinition(name);
             var definition = maybe.Value;
-            functions[number] = new FunctionData(name, definition.FullQualification, definition.ResultType,
-                                                 definition.ArgumentTypes, body);
+            functions[number] = new FunctionData(name, definition.FullQualification, resultType,
+                                                 argumentNames, argumentTypes, body);
 
             // Check for main
             if (definition.IsGlobal && name == "main") {
-                mainFunctionNumber = definition.Number;
+                if (argumentTypes.Count == 1
+                    && argumentTypes[0] is ArrayListTypeInfo arrayListType
+                    && arrayListType.ItemType is PrimitiveTypeInfo primitiveType
+                    && primitiveType.TypeOption == PrimitiveTypeInfo.Option.String)
+                {
+                    if (resultType is PrimitiveTypeInfo primitive
+                        && (primitive.TypeOption == PrimitiveTypeInfo.Option.Int
+                            || primitive.TypeOption == PrimitiveTypeInfo.Option.Void)) 
+                    {
+                        mainFunctionNumber = definition.Number;
+                    } else {
+                        RaiseError($"Result type of main function must be either 'Int' or 'Void' (got '{resultType.Name}')", location);
+                    }
+                } else {
+                    RaiseError("Main function must have one argument of type '[String]'", location);
+                }
             }
         }
 
@@ -177,46 +285,55 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
         private IStatement GetStatement() {
-            switch (currentLexeme) {
+            var location = currentLexeme.StartLocation;
+            var lexeme = currentLexeme;
+            MoveNextLexeme();
+
+            switch (lexeme) {
                 case OperatorLexeme operatorLexeme:
                     switch (operatorLexeme.Meaning) {
-                        /*case OperatorMeaning.Func:
-                            MoveNextLexeme();
-                            return GetFunctionDeclaration();*/
-
                         case OperatorMeaning.If:
-                            MoveNextLexeme();
                             return GetConditional();
 
                         case OperatorMeaning.Var:
-                            MoveNextLexeme();
                             return GetVariableDeclaration(isMutable: true);
 
                         case OperatorMeaning.Let:
-                            MoveNextLexeme();
                             return GetVariableDeclaration(isMutable: false);
 
                         case OperatorMeaning.For:
-                            MoveNextLexeme();
                             return GetForLoop();
 
+                        case OperatorMeaning.Return:
+                            return GetReturn();
+
                         default:
-                            RaiseError("Unknown operator lexeme found");
+                            RaiseError("Unknown operator lexeme found", location);
                             break;
                     }
                     break;
 
                 case SymbolLexeme symbolLexeme:
-                    var location = currentLexeme.StartLocation;
-                    MoveNextLexeme();
                     return new ExpressionStatement(GetFunctionCall(symbolLexeme.Text, location));
 
                 default:
-                    RaiseError("Statement was expected");
+                    RaiseError("Statement was expected", location);
                     break;
             }
 
             return null;
+        }
+
+
+
+        // return expr
+        private IStatement GetReturn() {
+            var location = currentLexeme.StartLocation;
+            var operand = GetExpression();
+            var definition = functionTree.GetCurrentFunctionDefinition();
+
+            var converted = ForceConvertExpression(operand, definition.ResultType, location);
+            return new ReturnStatement(converted);
         }
 
 
@@ -250,53 +367,91 @@ namespace Handmada.ReLang.Compilation.Parsing {
         private IExpression GetFunctionCall(string name, Location location) {
             CheckOperator(OperatorMeaning.OpenParenthesis);
 
+            Console.WriteLine($"parsing call of '{name}'...");
+            FunctionDefinition definition;
+            BuiltinFunctionCallExpression.Option? builtinOption = null;
+
+            // Filter built-ins
+            switch (name) {
+                case "print":
+                    definition = Builtins.PrintDefinition;
+                    builtinOption = BuiltinFunctionCallExpression.Option.Print;
+                    break;
+
+                default:
+                    var maybe = functionTree.GetFunctionDefinition(name);
+                    if (maybe == null) {
+                        RaiseError($"Undeclared function '{name}'", location);
+                        return null;
+                    } else {
+                        definition = maybe.Value;
+                    }
+                    break;
+            }
+
             // Pick all the arguments
             var arguments = new List<IExpression>();
+            var expectedTypes = definition.ArgumentTypes;
 
             if (WhetherOperator(OperatorMeaning.CloseParenthesis)) {
                 MoveNextLexeme();
             } else {
-                while (currentLexeme != null) {
-                    arguments.Add(GetExpression());
+                for (var index = 0; currentLexeme != null; index++) {
+                    var loc = currentLexeme.StartLocation;
+                    var argument = GetExpression();
+
+                    // Type checks (and conversions if necessary)
+                    if (index + 1 > expectedTypes.Count) {
+                        RaiseError($"Too many arguments for this function call (expected {expectedTypes.Count})", loc);
+                        return null;
+                    } else {
+                        var expectedType = expectedTypes[index];
+                        var converted = TryConvertExpression(argument, expectedType);
+                        if (converted == null) {
+                            RaiseError($"Cannot convert given argument to target type (expected '{expectedType.Name}'"
+                                       + $" but got '{argument.TypeInfo.Name}')", loc);
+                            return null;
+                        } else {
+                            argument = converted;
+                        }
+                    }
+
+                    arguments.Add(argument);
                     if (WhetherOperator(OperatorMeaning.Comma)) {
                         MoveNextLexeme();
                     } else {
                         break;
                     }
                 }
+
                 CheckOperator(OperatorMeaning.CloseParenthesis);
             }
 
-            Console.WriteLine($"parsing call of '{name}'...");
+            // Final count check
+            if (arguments.Count != expectedTypes.Count) {
+                RaiseError($"Wrong number of arguments for this function call (expected {expectedTypes.Count}"
+                           + $" but got {arguments.Count})", location);
+                return null;
+            }
 
-            // Filter built-ins
-            switch (name) {
-                case "print":
-                    return new BuiltinFunctionCallExpression(
-                        new PrimitiveTypeInfo(PrimitiveTypeInfo.Option.Void),
-                        arguments,
-                        BuiltinFunctionCallExpression.Option.Print);
-
-                default:
-                    // TODO: insert syntactic checks (for arguments)
-                    var maybe = functionTree.GetFunctionDefinition(name);
-                    if (maybe == null) {
-                        RaiseError($"Undeclared function '{name}'", location);
-                        return null;
-                    } else {
-                        var definition = maybe.Value;
-                        return new CustomFunctionCallExpression(definition.ResultType, arguments, definition.Number);
-                    }
+            // return appropriate function call expression
+            if (builtinOption != null) {
+                return new BuiltinFunctionCallExpression(definition.ResultType, arguments, builtinOption.Value);
+            } else {
+                return new CustomFunctionCallExpression(definition.ResultType, arguments, definition.Number);
             }
         }
 
 
         private IExpression GetExpression() {
-            return GetSumExpression();
+            return GetOrExpression();
         }
 
 
+
+        // variable, f(x, y, z), (a + b), [a, b, c], {a, b, c}, literal
         private IExpression GetAtomicExpression() {
+            var location = currentLexeme.StartLocation;
             switch (currentLexeme) {
                 case OperatorLexeme operatorLexeme:
                     switch (operatorLexeme.Meaning) {
@@ -320,16 +475,21 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     }
 
                 case SymbolLexeme symbol:
-                    var maybe = scopeStack.GetDefinition(symbol.Text);
-                    if (!maybe.HasValue) {
-                        RaiseError($"Undeclared identifier '{symbol.Text}'");
-                    }
-
                     MoveNextLexeme();
-                    var definition = maybe.Value;
-                    var frameOffset = definition.ScopeNumber - (scopeStack.Count - 1);
-                    return new VariableExpression(symbol.Text, definition.Number,
-                                                  frameOffset, false, definition.TypeInfo);
+                    if (WhetherOperator(OperatorMeaning.OpenParenthesis)) {
+                        return GetFunctionCall(symbol.Text, location);
+                    } else {
+                        var maybe = scopeStack.GetDefinition(symbol.Text);
+                        Console.WriteLine($"Parsing reference to variable '{symbol.Text}'...");
+                        if (!maybe.HasValue) {
+                            RaiseError($"Undeclared identifier '{symbol.Text}'");
+                        }
+                        
+                        var definition = maybe.Value;
+                        var frameOffset = definition.ScopeNumber - (scopeStack.Count - 1);
+                        return new VariableExpression(symbol.Text, definition.Number,
+                                                      frameOffset, false, definition.TypeInfo);
+                    }
 
                 case LiteralLexeme literal:
                     var typeOption = PrimitiveTypeInfo.Option.Void;
@@ -410,17 +570,234 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
 
-        // a + b, a - b, a || b
+        // a || b
+        private IExpression GetOrExpression() {
+            var locationLeft = currentLexeme.StartLocation;
+            var left = GetAndExpression();
+
+            while (true) {
+                var locationMiddle = currentLexeme.StartLocation;
+                if (currentLexeme is OperatorLexeme operatorLexeme) {
+                    var meaning = operatorLexeme.Meaning;
+                    if (meaning != OperatorMeaning.Or) {
+                        return left;
+                    }
+
+                    // Get right operand
+                    MoveNextLexeme();
+                    var locationRight = currentLexeme.StartLocation;
+                    var right = GetAndExpression();
+
+                    // Try to convert to boolean
+                    var x = ForceConvertExpression(left, PrimitiveTypeInfo.Bool, locationLeft);
+                    var y = ForceConvertExpression(right, PrimitiveTypeInfo.Bool, locationRight);
+
+                    left = new BinaryOperatorExpression(BinaryOperatorExpression.Option.Or, x, y);
+                    //Console.WriteLine("Composed OR");
+                } else {
+                    return left;
+                }
+            }
+        }
+
+
+
+        // a && b
+        private IExpression GetAndExpression() {
+            var locationLeft = currentLexeme.StartLocation;
+            var left = GetRelationalExpression();
+
+            while (true) {
+                var locationMiddle = currentLexeme.StartLocation;
+                if (currentLexeme is OperatorLexeme operatorLexeme) {
+                    var meaning = operatorLexeme.Meaning;
+                    if (meaning != OperatorMeaning.And) {
+                        return left;
+                    }
+
+                    // Get right operand
+                    MoveNextLexeme();
+                    var locationRight = currentLexeme.StartLocation;
+                    var right = GetRelationalExpression();
+
+                    // Try to convert to boolean
+                    var x = ForceConvertExpression(left, PrimitiveTypeInfo.Bool, locationLeft);
+                    var y = ForceConvertExpression(right, PrimitiveTypeInfo.Bool, locationRight);
+
+                    left = new BinaryOperatorExpression(BinaryOperatorExpression.Option.And, x, y);
+                    //Console.WriteLine("Composed AND");
+                } else {
+                    return left;
+                }
+            }
+        }
+
+
+
+        // a > b, a != b
+        private IExpression GetRelationalExpression() {
+            var locationLeft = currentLexeme.StartLocation;
+            var left = GetSumExpression();
+
+            //Console.WriteLine($"Inside relational, left is '{left.TypeInfo.Name}'");
+
+            var locationMiddle = currentLexeme.StartLocation;
+
+            if (currentLexeme is OperatorLexeme operatorLexeme) {
+                var meaning = operatorLexeme.Meaning;
+                //Console.WriteLine($"Inside relational, operator lexeme is {meaning}");
+                switch (meaning) {
+                    case OperatorMeaning.Equal:
+                    case OperatorMeaning.NotEqual:
+                    case OperatorMeaning.Less:
+                    case OperatorMeaning.LessOrEqual:
+                    case OperatorMeaning.More:
+                    case OperatorMeaning.MoreOrEqual:
+                        break;
+
+                    default:
+                        return left;
+                }
+                //Console.WriteLine("Fallen through");
+
+                // Get right operand
+                MoveNextLexeme();
+                var right = GetSumExpression();
+
+                //Console.WriteLine($"Inside relational, right is '{right.TypeInfo.Name}'");
+
+                // Try to convert to each other
+                var (x, y) = CrossConvert(left, right, locationLeft);
+                
+                if (x.TypeInfo is PrimitiveTypeInfo primitive) {
+                    BinaryOperatorExpression.Option option;
+                    switch (primitive.TypeOption) {
+                        case PrimitiveTypeInfo.Option.Bool:
+                            if (meaning == OperatorMeaning.Equal) {
+                                option = BinaryOperatorExpression.Option.EqualBoolean;
+                            } else if (meaning == OperatorMeaning.NotEqual) {
+                                option = BinaryOperatorExpression.Option.NotEqualBoolean;
+                            } else { 
+                                RaiseError("Boolean operands don't support this operator", locationMiddle);
+                                return null;
+                            }
+                            break;
+
+                        case PrimitiveTypeInfo.Option.Int:
+                            switch (meaning) {
+                                case OperatorMeaning.Equal:
+                                    option = BinaryOperatorExpression.Option.EqualInteger;
+                                    break;
+
+                                case OperatorMeaning.NotEqual:
+                                    option = BinaryOperatorExpression.Option.NotEqualInteger;
+                                    break;
+
+                                case OperatorMeaning.Less:
+                                    option = BinaryOperatorExpression.Option.LessInteger;
+                                    break;
+
+                                case OperatorMeaning.LessOrEqual:
+                                    option = BinaryOperatorExpression.Option.LessOrEqualInteger;
+                                    break;
+
+                                case OperatorMeaning.More:
+                                    option = BinaryOperatorExpression.Option.MoreInteger;
+                                    break;
+
+                                case OperatorMeaning.MoreOrEqual:
+                                    option = BinaryOperatorExpression.Option.MoreOrEqualInteger;
+                                    break;
+
+                                default:
+                                    RaiseError("Integer operands don't support this operator", locationMiddle);
+                                    return null;
+                            }
+                            break;
+
+                        case PrimitiveTypeInfo.Option.Float:
+                            switch (meaning) {
+                                case OperatorMeaning.Equal:
+                                    option = BinaryOperatorExpression.Option.EqualFloating;
+                                    break;
+
+                                case OperatorMeaning.NotEqual:
+                                    option = BinaryOperatorExpression.Option.NotEqualFloating;
+                                    break;
+
+                                case OperatorMeaning.Less:
+                                    option = BinaryOperatorExpression.Option.LessFloating;
+                                    break;
+
+                                case OperatorMeaning.LessOrEqual:
+                                    option = BinaryOperatorExpression.Option.LessOrEqualFloating;
+                                    break;
+
+                                case OperatorMeaning.More:
+                                    option = BinaryOperatorExpression.Option.MoreFloating;
+                                    break;
+
+                                case OperatorMeaning.MoreOrEqual:
+                                    option = BinaryOperatorExpression.Option.MoreOrEqualFloating;
+                                    break;
+
+                                default:
+                                    RaiseError("Floating operands don't support this operator", locationMiddle);
+                                    return null;
+                            }
+                            break;
+
+                        case PrimitiveTypeInfo.Option.String:
+                            if (meaning == OperatorMeaning.Equal) {
+                                option = BinaryOperatorExpression.Option.EqualString;
+                            } else if (meaning == OperatorMeaning.NotEqual) {
+                                option = BinaryOperatorExpression.Option.NotEqualString;
+                            } else {
+                                RaiseError("String operands don't support this operator", locationMiddle);
+                                return null;
+                            }
+                            break;
+
+                        case PrimitiveTypeInfo.Option.Object:
+                            if (meaning == OperatorMeaning.Equal) {
+                                option = BinaryOperatorExpression.Option.EqualObject;
+                            } else if (meaning == OperatorMeaning.NotEqual) {
+                                option = BinaryOperatorExpression.Option.NotEqualObject;
+                            } else {
+                                RaiseError("Object operands don't support this operator", locationMiddle);
+                                return null;
+                            }
+                            break;
+
+                        default:
+                            RaiseError($"Unsupported type '{primitive.Name}' for this operator", locationLeft);
+                            return null;
+                    }
+
+                    left = new BinaryOperatorExpression(option, x, y);
+                    Console.WriteLine($"Composed relational for {option} of type '{left.TypeInfo.Name}'");
+                } else {
+                    RaiseError($"Unsupported type '{x.TypeInfo.Name}' for this operator", locationLeft);
+                }
+            } else {
+                Console.WriteLine($"Skipped relational of type '{left.TypeInfo.Name}'");
+            }
+
+            return left;
+        }
+
+
+
+        // a + b, a - b
         private IExpression GetSumExpression() {
             var locationLeft = currentLexeme.StartLocation;
             var left = GetProductExpression();
-            var locationMiddle = currentLexeme.StartLocation;
 
             while (true) {
+                var locationMiddle = currentLexeme.StartLocation;
                 if (currentLexeme is OperatorLexeme operatorLexeme) {
                     var meaning = operatorLexeme.Meaning;
                     switch (meaning) {
-                        case OperatorMeaning.Or:
                         case OperatorMeaning.Plus:
                         case OperatorMeaning.Minus:
                             break;
@@ -438,14 +815,6 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                     if (x.TypeInfo is PrimitiveTypeInfo primitive) {
                         switch (primitive.TypeOption) {
-                            case PrimitiveTypeInfo.Option.Bool:
-                                if (meaning == OperatorMeaning.Or) {
-                                    left = new BinaryOperatorExpression(BinaryOperatorExpression.Option.Or, x, y);
-                                } else {
-                                    RaiseError("Boolean operands don't support this operator", locationMiddle);
-                                }
-                                break;
-
                             case PrimitiveTypeInfo.Option.Int: {
                                     BinaryOperatorExpression.Option option;
                                     if (meaning == OperatorMeaning.Plus) {
@@ -510,23 +879,25 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 if (y != null) {
                     return (left, y);
                 } else {
-                    RaiseError("Operands of binary operator are not convertible to each other", location);
+                    var hint = $"('{left.TypeInfo.Name}' and '{right.TypeInfo.Name}')";
+                    RaiseError($"Operands of binary operator {hint} are not convertible to each other", location);
                     return (null, null);
                 }
             }
         }
 
 
+
+        // a * b, a / b, a \ b
         private IExpression GetProductExpression() {
             var locationLeft = currentLexeme.StartLocation;
             var left = GetNegateExpression();
-            var locationMiddle = currentLexeme.StartLocation;
 
             while (true) {
+                var locationMiddle = currentLexeme.StartLocation;
                 if (currentLexeme is OperatorLexeme operatorLexeme) {
                     var meaning = operatorLexeme.Meaning;
                     switch (meaning) {
-                        case OperatorMeaning.And:
                         case OperatorMeaning.Asterisk:
                         case OperatorMeaning.ForwardSlash:
                         case OperatorMeaning.BackSlash:
@@ -546,13 +917,6 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     if (x.TypeInfo is PrimitiveTypeInfo primitive) {
                         BinaryOperatorExpression.Option option;
                         switch (primitive.TypeOption) {
-                            case PrimitiveTypeInfo.Option.Bool:
-                                if (meaning != OperatorMeaning.And) {
-                                    RaiseError("Boolean operands don't support this operator", locationMiddle);
-                                }
-                                option = BinaryOperatorExpression.Option.And;
-                                break;
-
                             case PrimitiveTypeInfo.Option.Int:
                                 switch (meaning) {
                                     case OperatorMeaning.Asterisk:
@@ -744,6 +1108,22 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 return true;
             } else {
                 return false;
+            }
+        }
+
+
+        private IExpression TryConvertExpression(IExpression expression, ITypeInfo targetType) {
+            return expression.TypeInfo.ConvertTo(expression, targetType);
+        }
+
+
+        private IExpression ForceConvertExpression(IExpression expression, ITypeInfo targetType, Location location) {
+            var converted = TryConvertExpression(expression, targetType);
+            if (converted != null) {
+                return converted;
+            } else {
+                RaiseError($"Cannot convert expression of type '{expression.TypeInfo.Name}' to '{targetType.Name}'", location);
+                return null;
             }
         }
 

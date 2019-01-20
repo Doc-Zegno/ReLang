@@ -34,7 +34,7 @@ namespace Handmada.ReLang.Compilation {
 
                 Console.WriteLine("\n=================\n");
                 var machine = new VirtualMachine();
-                machine.Execute(program);
+                machine.Execute(program, args);
 
                 /*var statements = parser.Parse();
 
@@ -57,7 +57,14 @@ namespace Handmada.ReLang.Compilation {
 
 
         private static void PrintFunction(FunctionData function, int number) {
-            Console.WriteLine($"func {function.FullQualification}.{function.Name}<#{number}>() -> {function.ResultType.Name} {{");
+            var argumentStrings = new List<string>();
+            for (var i = 0; i < function.ArgumentTypes.Count; i++) {
+                argumentStrings.Add($"{function.ArgumentNames[i]}: {function.ArgumentTypes[i].Name}");
+            }
+            var arguments = string.Join(", ", argumentStrings);
+
+            Console.WriteLine($"func {function.FullQualification}.{function.Name}<#{number}>"
+                              + $"({arguments}) -> {function.ResultType.Name} {{");
             foreach (var s in function.Body) {
                 PrintStatement(s, 1);
             }
@@ -118,6 +125,12 @@ namespace Handmada.ReLang.Compilation {
                 case ExpressionStatement expression:
                     PrintExpression(expression.Expression);
                     Console.WriteLine("");
+                    break;
+
+                case ReturnStatement returnStatement:
+                    Console.Write("return ");
+                    PrintExpression(returnStatement.Operand);
+                    Console.WriteLine();
                     break;
 
                 default:
@@ -235,6 +248,7 @@ namespace Handmada.ReLang.Compilation {
                     Console.Write("<!> Unknown expression <!>");
                     break;
             }
+            //Console.Write($"<{expression.TypeInfo.Name}>");
         }
 
 
@@ -282,6 +296,42 @@ namespace Handmada.ReLang.Compilation {
 
                 case BinaryOperatorExpression.Option.Or:
                     Console.Write("||");
+                    break;
+
+                case BinaryOperatorExpression.Option.EqualBoolean:
+                case BinaryOperatorExpression.Option.EqualInteger:
+                case BinaryOperatorExpression.Option.EqualFloating:
+                case BinaryOperatorExpression.Option.EqualString:
+                case BinaryOperatorExpression.Option.EqualObject:
+                    Console.Write("==");
+                    break;
+
+                case BinaryOperatorExpression.Option.NotEqualBoolean:
+                case BinaryOperatorExpression.Option.NotEqualInteger:
+                case BinaryOperatorExpression.Option.NotEqualFloating:
+                case BinaryOperatorExpression.Option.NotEqualString:
+                case BinaryOperatorExpression.Option.NotEqualObject:
+                    Console.Write("!=");
+                    break;
+
+                case BinaryOperatorExpression.Option.LessInteger:
+                case BinaryOperatorExpression.Option.LessFloating:
+                    Console.Write("<");
+                    break;
+
+                case BinaryOperatorExpression.Option.LessOrEqualInteger:
+                case BinaryOperatorExpression.Option.LessOrEqualFloating:
+                    Console.Write("<=");
+                    break;
+
+                case BinaryOperatorExpression.Option.MoreInteger:
+                case BinaryOperatorExpression.Option.MoreFloating:
+                    Console.Write(">");
+                    break;
+
+                case BinaryOperatorExpression.Option.MoreOrEqualInteger:
+                case BinaryOperatorExpression.Option.MoreOrEqualFloating:
+                    Console.Write(">=");
                     break;
 
                 default:
