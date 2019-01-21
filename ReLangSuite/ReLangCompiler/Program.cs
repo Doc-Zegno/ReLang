@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Handmada.ReLang.Compilation.Lexing;
 using Handmada.ReLang.Compilation.Parsing;
 using Handmada.ReLang.Compilation.Runtime;
+using Handmada.ReLang.Compilation.Yet;
 
 
 namespace Handmada.ReLang.Compilation {

@@ -45,48 +45,48 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Compilation\Parsing\ArrayListTypeInfo.cs" />
-    <Compile Include="Compilation\Parsing\AssignmentStatement.cs" />
-    <Compile Include="Compilation\Parsing\BinaryOperatorExpression.cs" />
-    <Compile Include="Compilation\Parsing\BuiltinFunctionCallExpression.cs" />
+    <Compile Include="Compilation\Yet\MetaTypes\ArrayListTypeInfo.cs" />
+    <Compile Include="Compilation\Yet\Statements\AssignmentStatement.cs" />
+    <Compile Include="Compilation\Yet\Expressions\BinaryOperatorExpression.cs" />
+    <Compile Include="Compilation\Yet\Expressions\BuiltinFunctionCallExpression.cs" />
     <Compile Include="Compilation\Parsing\Builtins.cs" />
-    <Compile Include="Compilation\Parsing\ConditionalStatement.cs" />
-    <Compile Include="Compilation\Parsing\ConversionExpression.cs" />
-    <Compile Include="Compilation\Parsing\CustomFunctionCallExpression.cs" />
-    <Compile Include="Compilation\Parsing\ExpressionStatement.cs" />
-    <Compile Include="Compilation\Parsing\ForEachStatement.cs" />
+    <Compile Include="Compilation\Yet\Statements\ConditionalStatement.cs" />
+    <Compile Include="Compilation\Yet\Expressions\ConversionExpression.cs" />
+    <Compile Include="Compilation\Yet\Expressions\CustomFunctionCallExpression.cs" />
+    <Compile Include="Compilation\Yet\Statements\ExpressionStatement.cs" />
+    <Compile Include="Compilation\Yet\Statements\ForEachStatement.cs" />
     <Compile Include="Compilation\Parsing\FunctionTree.cs" />
-    <Compile Include="Compilation\Parsing\IIterableTypeInfo.cs" />
-    <Compile Include="Compilation\Parsing\ILiteralExpression.cs" />
-    <Compile Include="Compilation\Parsing\IOperatorExpression.cs" />
-    <Compile Include="Compilation\Parsing\ListLiteralExpression.cs" />
+    <Compile Include="Compilation\Yet\MetaTypes\IIterableTypeInfo.cs" />
+    <Compile Include="Compilation\Yet\Expressions\ILiteralExpression.cs" />
+    <Compile Include="Compilation\Yet\Expressions\IOperatorExpression.cs" />
+    <Compile Include="Compilation\Yet\Expressions\ListLiteralExpression.cs" />
     <Compile Include="Compilation\Parsing\ParsedProgram.cs" />
-    <Compile Include="Compilation\Parsing\RangeLiteralExpression.cs" />
-    <Compile Include="Compilation\Parsing\RangeTypeInfo.cs" />
-    <Compile Include="Compilation\Parsing\ReturnStatement.cs" />
+    <Compile Include="Compilation\Yet\Expressions\RangeLiteralExpression.cs" />
+    <Compile Include="Compilation\Yet\MetaTypes\RangeTypeInfo.cs" />
+    <Compile Include="Compilation\Yet\Statements\ReturnStatement.cs" />
     <Compile Include="Compilation\Parsing\ScopeStack.cs" />
-    <Compile Include="Compilation\Parsing\IDeclarationStatement.cs" />
-    <Compile Include="Compilation\Parsing\IExpression.cs" />
-    <Compile Include="Compilation\Parsing\IFunctionCallExpression.cs" />
-    <Compile Include="Compilation\Parsing\FunctionDeclarationStatement.cs" />
+    <Compile Include="Compilation\Yet\Statements\IDeclarationStatement.cs" />
+    <Compile Include="Compilation\Yet\Expressions\IExpression.cs" />
+    <Compile Include="Compilation\Yet\Expressions\IFunctionCallExpression.cs" />
+    <Compile Include="Compilation\Yet\Statements\FunctionDeclarationStatement.cs" />
     <Compile Include="Compilation\Lexing\Lexeme.cs" />
     <Compile Include="Compilation\Lexing\Lexer.cs" />
     <Compile Include="Compilation\Lexing\LexerException.cs" />
-    <Compile Include="Compilation\Parsing\ITypeInfo.cs" />
-    <Compile Include="Compilation\Parsing\PrimitiveLiteralExpression.cs" />
+    <Compile Include="Compilation\Yet\MetaTypes\ITypeInfo.cs" />
+    <Compile Include="Compilation\Yet\Expressions\PrimitiveLiteralExpression.cs" />
     <Compile Include="Compilation\Lexing\LiteralLexeme.cs" />
     <Compile Include="Compilation\Lexing\OperatorLexeme.cs" />
     <Compile Include="Compilation\Parsing\Parser.cs" />
     <Compile Include="Compilation\Parsing\ParserException.cs" />
-    <Compile Include="Compilation\Parsing\PrimitiveTypeInfo.cs" />
-    <Compile Include="Compilation\Parsing\IStatement.cs" />
+    <Compile Include="Compilation\Yet\MetaTypes\PrimitiveTypeInfo.cs" />
+    <Compile Include="Compilation\Yet\Statements\IStatement.cs" />
     <Compile Include="Compilation\Lexing\SymbolLexeme.cs" />
-    <Compile Include="Compilation\Parsing\HashSetTypeInfo.cs" />
-    <Compile Include="Compilation\Parsing\SetLiteralExpression.cs" />
-    <Compile Include="Compilation\Parsing\TypeLiteralExpression.cs" />
-    <Compile Include="Compilation\Parsing\UnaryOperatorExpression.cs" />
-    <Compile Include="Compilation\Parsing\VariableDeclarationStatement.cs" />
-    <Compile Include="Compilation\Parsing\VariableExpression.cs" />
+    <Compile Include="Compilation\Yet\MetaTypes\HashSetTypeInfo.cs" />
+    <Compile Include="Compilation\Yet\Expressions\SetLiteralExpression.cs" />
+    <Compile Include="Compilation\Yet\Expressions\TypeLiteralExpression.cs" />
+    <Compile Include="Compilation\Yet\Expressions\UnaryOperatorExpression.cs" />
+    <Compile Include="Compilation\Yet\Statements\VariableDeclarationStatement.cs" />
+    <Compile Include="Compilation\Yet\Expressions\VariableExpression.cs" />
     <Compile Include="Compilation\Runtime\RangeAdapter.cs" />
     <Compile Include="Compilation\Runtime\VirtualMachine.cs" />
     <Compile Include="Compilation\Runtime\VirtualMachineException.cs" />
@@ -97,8 +97,6 @@
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Runtime\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

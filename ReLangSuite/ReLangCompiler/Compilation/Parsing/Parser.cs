@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 using Handmada.ReLang.Compilation.Lexing;
+using Handmada.ReLang.Compilation.Yet;
 
 
 namespace Handmada.ReLang.Compilation.Parsing {
