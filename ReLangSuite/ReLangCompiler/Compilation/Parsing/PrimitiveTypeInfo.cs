@@ -42,13 +42,13 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     switch (TypeOption) {
                         case Option.Int:
                             if (primitiveTarget.TypeOption == Option.Float) {
-                                /*if (expression.IsCompileTime) {
+                                if (expression.IsCompileTime) {
                                     var integer = (int)expression.Value;
-                                    return new LiteralExpression((double)integer, new PrimitiveTypeInfo(Option.Float));
+                                    return new PrimitiveLiteralExpression((double)integer, new PrimitiveTypeInfo(Option.Float));
                                 } else {
                                     return new ConversionExpression(ConversionExpression.Option.Int2Float, expression);
-                                }*/
-                                return new ConversionExpression(ConversionExpression.Option.Int2Float, expression);
+                                }
+                                //return new ConversionExpression(ConversionExpression.Option.Int2Float, expression);
                             } else {
                                 return null;
                             }

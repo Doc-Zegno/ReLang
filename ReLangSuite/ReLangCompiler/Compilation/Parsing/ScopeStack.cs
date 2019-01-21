@@ -11,13 +11,15 @@ namespace Handmada.ReLang.Compilation.Parsing {
         public bool IsMutable { get; }
         public int Number { get; }
         public int ScopeNumber { get; }
+        public IExpression Value { get; }
 
 
-        public VariableDefinition(ITypeInfo typeInfo, bool isMutable, int number, int scopeNumber) {
+        public VariableDefinition(ITypeInfo typeInfo, bool isMutable, int number, int scopeNumber, IExpression value) {
             TypeInfo = typeInfo;
             IsMutable = isMutable;
             Number = number;
             ScopeNumber = scopeNumber;
+            Value = value;
         }
     }
 
@@ -39,7 +41,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             }
 
 
-            public bool DeclareVariable(string name, ITypeInfo typeInfo, bool isMutable) {
+            public bool DeclareVariable(string name, ITypeInfo typeInfo, bool isMutable, IExpression value) {
                 var scope = this;
                 while (scope != null) {
                     if (scope.table.ContainsKey(name)) {
@@ -55,7 +57,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                 // OK! No collisions
                 var number = table.Count;
-                table[name] = new VariableDefinition(typeInfo, isMutable, number, Number);
+                table[name] = new VariableDefinition(typeInfo, isMutable, number, Number, value);
                 return true;
             }
 
@@ -102,8 +104,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
         }
 
 
-        public bool DeclareVariable(string name, ITypeInfo typeInfo, bool isMutable) {
-            return top.DeclareVariable(name, typeInfo, isMutable);
+        public bool DeclareVariable(string name, ITypeInfo typeInfo, bool isMutable, IExpression value) {
+            return top.DeclareVariable(name, typeInfo, isMutable, value);
         }
 
 
