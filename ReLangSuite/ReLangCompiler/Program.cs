@@ -258,6 +258,12 @@ namespace Handmada.ReLang.Compilation {
                             Console.Write("..");
                             PrintExpression(rangeLiteral.End);
                             break;
+
+                        case TupleLiteralExpression tupleLiteral:
+                            Console.Write("(");
+                            PrintExpressionList(tupleLiteral.Items);
+                            Console.Write(")");
+                            break;
                     }
                     break;
 

@@ -190,6 +190,13 @@ namespace Handmada.ReLang.Compilation.Runtime {
                             var end = (int)EvaluateExpression(rangeLiteral.End);
                             return new RangeAdapter(start, end);
 
+                        case TupleLiteralExpression tupleLiteral:
+                            var tuple = new object[tupleLiteral.Items.Count];
+                            for (var i = 0; i < tuple.Length; i++) {
+                                tuple[i] = EvaluateExpression(tupleLiteral.Items[i]);
+                            }
+                            return tuple;
+
                         default:
                             throw new VirtualMachineException($"Unknown literal expression: {literal}");
                     } 
@@ -392,6 +399,12 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
                 case RangeAdapter range:
                     Console.Write($"{range.Start}..{range.End}");
+                    break;
+
+                case object[] tuple:
+                    Console.Write("(");
+                    PrintObjectList(tuple, true);
+                    Console.Write(")");
                     break;
 
                 default:

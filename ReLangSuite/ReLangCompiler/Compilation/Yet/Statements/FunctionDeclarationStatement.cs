@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 
 namespace Handmada.ReLang.Compilation.Yet {
+    // TODO: remove this
     /// <summary>
     /// Statement declaring a new function
     /// </summary>
