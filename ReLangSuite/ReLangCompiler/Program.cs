@@ -216,38 +216,48 @@ namespace Handmada.ReLang.Compilation {
                     }
                     break;
 
-                case LiteralExpression literal:
-                    var representation = "";
-                    switch (literal.Value) {
-                        case bool value:
-                            representation = value ? "true" : "false";
+                case ILiteralExpression literal:
+                    switch (literal) {
+                        case PrimitiveLiteralExpression primitiveLiteral:
+                            var representation = "";
+                            switch (primitiveLiteral.Value) {
+                                case bool value:
+                                    representation = value ? "true" : "false";
+                                    break;
+
+                                case int value:
+                                    representation = value.ToString();
+                                    break;
+
+                                case double value:
+                                    representation = value.ToString();
+                                    break;
+
+                                case string value:
+                                    representation = $"\"{value}\"";
+                                    break;
+                            }
+                            Console.Write(representation);
                             break;
 
-                        case int value:
-                            representation = value.ToString();
+                        case ListLiteralExpression listLiteral:
+                            Console.Write("[");
+                            PrintExpressionList(listLiteral.Items);
+                            Console.Write("]");
                             break;
 
-                        case double value:
-                            representation = value.ToString();
+                        case SetLiteralExpression setLiteral:
+                            Console.Write("{");
+                            PrintExpressionList(setLiteral.Items);
+                            Console.Write("}");
                             break;
 
-                        case string value:
-                            representation = $"\"{value}\"";
+                        case RangeLiteralExpression rangeLiteral:
+                            PrintExpression(rangeLiteral.Start);
+                            Console.Write("..");
+                            PrintExpression(rangeLiteral.End);
                             break;
                     }
-                    Console.Write(representation);
-                    break;
-
-                case ListLiteralExpression listLiteral:
-                    Console.Write("[");
-                    PrintExpressionList(listLiteral.Items);
-                    Console.Write("]");
-                    break;
-
-                case SetLiteralExpression setLiteral:
-                    Console.Write("{");
-                    PrintExpressionList(setLiteral.Items);
-                    Console.Write("}");
                     break;
 
                 default:
@@ -294,6 +304,10 @@ namespace Handmada.ReLang.Compilation {
 
                 case BinaryOperatorExpression.Option.DivideFloating:
                     Console.Write("/");
+                    break;
+
+                case BinaryOperatorExpression.Option.Modulo:
+                    Console.Write("%");
                     break;
 
                 case BinaryOperatorExpression.Option.And:

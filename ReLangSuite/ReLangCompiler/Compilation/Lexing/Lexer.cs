@@ -14,8 +14,9 @@ namespace Handmada.ReLang.Compilation.Lexing {
         private IEnumerable<string> lines;
         private IEnumerator<string> lineEnumerator;
         private IEnumerator<char> charEnumerator;
-        private char? bufferedCharacter;
+        private Stack<char> bufferedCharacters;
         private char currentCharacter;
+        private bool isEofReached;
 
         public string CurrentLine { get; private set; }
         public int CurrentLineNumber { get; private set; }
@@ -26,46 +27,56 @@ namespace Handmada.ReLang.Compilation.Lexing {
         public Lexer(IEnumerable<string> lines) {
             this.lines = lines;
             lineEnumerator = lines.GetEnumerator();
+            bufferedCharacters = new Stack<char>();
+            isEofReached = false;
             CurrentLineNumber = -1;
 
             if (!MoveNextLine()) { 
                 throw new ArgumentException("no lines to parse", nameof(lines));
             }
+            MoveNextCharacter();
         }
 
 
         public Lexeme GetNextLexeme() {
-            while (MoveNextCharacter()) {
+            if (!isEofReached) {
                 var location = CurrentLocation;
 
                 if (currentCharacter == '\n') {
                     // New line
+                    MoveNextCharacter();
                     return new OperatorLexeme(OperatorMeaning.NewLine, location);
-                    
-                } else if (char.IsWhiteSpace(currentCharacter)) {
-                    // White space
-                    continue;
-                    
-                } else if (currentCharacter == '\"') {
+                }
+
+                // Swallow white spaces
+                while (char.IsWhiteSpace(currentCharacter)) {
+                    if (!MoveNextCharacter()) {
+                        return null;
+                    }
+                }
+                location = CurrentLocation;
+
+                if (currentCharacter == '\"') {
                     // String literal
                     return ScanString();
-                    
-                } else if (char.IsNumber(currentCharacter)) {
+
+                } else if (char.IsDigit(currentCharacter)) {
                     // Numeric literal
                     return ScanNumeric();
-                    
+
                 } else if (char.IsLetter(currentCharacter)) {
                     // Symbol
                     return ScanSymbol();
-                    
+
                 } else {
                     // Character
                     return ScanOperator();
                 }
-            }
 
-            // No more lexemes
-            return null;
+            } else {
+                // No more lexemes
+                return null;
+            }
         }
 
 
@@ -106,7 +117,7 @@ namespace Handmada.ReLang.Compilation.Lexing {
                     break;
 
                 case '.':
-                    meaning = OperatorMeaning.Dot;
+                    meaning = ScanDoubleOperator(OperatorMeaning.Dot, OperatorMeaning.Range);
                     break;
 
                 case ':':
@@ -153,10 +164,15 @@ namespace Handmada.ReLang.Compilation.Lexing {
                     meaning = ScanDoubleOperator(OperatorMeaning.More, OperatorMeaning.MoreOrEqual, '=');
                     break;
 
+                case '%':
+                    meaning = OperatorMeaning.Modulo;
+                    break;
+
                 default:
                     RaiseError($"Unexpected character: {currentCharacter}");
                     break;
             }
+            MoveNextCharacter();
             return new OperatorLexeme(meaning, location);
         }
 
@@ -188,7 +204,6 @@ namespace Handmada.ReLang.Compilation.Lexing {
                     if (char.IsLetterOrDigit(currentCharacter)) {
                         builder.Append(currentCharacter);
                     } else {
-                        PutBack();
                         break;
                     }
                 } else {
@@ -252,6 +267,7 @@ namespace Handmada.ReLang.Compilation.Lexing {
                 }
             }
 
+            MoveNextCharacter();
             return new LiteralLexeme(builder.ToString(), location);
         }
 
@@ -260,20 +276,27 @@ namespace Handmada.ReLang.Compilation.Lexing {
             var location = CurrentLocation;
             var integer = ScanInteger();
 
-            if (!MoveNextCharacter()) {
+            if (isEofReached) {
                 return new LiteralLexeme(integer, location);
             }
             
             if (currentCharacter == '.') {
-                if (!MoveNextCharacter() || !char.IsNumber(currentCharacter)) {
-                    RaiseError("Digit was expected after dot");
+                if (!MoveNextCharacter()) {
+                    RaiseError("Digit or dot was expected");
+                }
+
+                if (currentCharacter == '.') {
+                    // Range
+                    PutBack();
+                    return new LiteralLexeme(integer, location);
+                } else if (!char.IsDigit(currentCharacter)) {
+                    RaiseError("Digit or dot was expected");
                 }
 
                 var value = ScanInteger();
                 var fraction = MakeFraction(value);
                 return new LiteralLexeme(integer + fraction, location);
             } else {
-                PutBack();
                 return new LiteralLexeme(integer, location);
             }
         }
@@ -293,11 +316,10 @@ namespace Handmada.ReLang.Compilation.Lexing {
 
             while (true) {
                 if (MoveNextCharacter()) {
-                    if (char.IsNumber(currentCharacter)) {
+                    if (char.IsDigit(currentCharacter)) {
                         value *= 10;
                         value += currentCharacter - '0';
                     } else {
-                        PutBack();
                         break;
                     }
                 } else {
@@ -317,15 +339,16 @@ namespace Handmada.ReLang.Compilation.Lexing {
                 CurrentCharacterNumber = -1;
                 return true;
             } else {
+                isEofReached = true;
                 return false;
             }
         }
 
 
         private bool MoveNextCharacter() {
-            if (bufferedCharacter.HasValue) {
-                currentCharacter = bufferedCharacter.Value;
-                bufferedCharacter = null;
+            if (bufferedCharacters.Count > 0) {
+                CurrentCharacterNumber++;
+                currentCharacter = bufferedCharacters.Pop();
                 return true;
             } else if (charEnumerator.MoveNext()) {
                 CurrentCharacterNumber++;
@@ -341,8 +364,9 @@ namespace Handmada.ReLang.Compilation.Lexing {
         }
 
 
-        private void PutBack() {
-            bufferedCharacter = currentCharacter;
+        private void PutBack(char? ch = null) {
+            CurrentCharacterNumber--;
+            bufferedCharacters.Push(ch ?? currentCharacter);
         }
 
 

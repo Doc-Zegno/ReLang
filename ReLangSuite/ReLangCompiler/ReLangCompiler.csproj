@@ -57,9 +57,12 @@
     <Compile Include="Compilation\Parsing\ForEachStatement.cs" />
     <Compile Include="Compilation\Parsing\FunctionTree.cs" />
     <Compile Include="Compilation\Parsing\IIterableTypeInfo.cs" />
+    <Compile Include="Compilation\Parsing\ILiteralExpression.cs" />
     <Compile Include="Compilation\Parsing\IOperatorExpression.cs" />
     <Compile Include="Compilation\Parsing\ListLiteralExpression.cs" />
     <Compile Include="Compilation\Parsing\ParsedProgram.cs" />
+    <Compile Include="Compilation\Parsing\RangeLiteralExpression.cs" />
+    <Compile Include="Compilation\Parsing\RangeTypeInfo.cs" />
     <Compile Include="Compilation\Parsing\ReturnStatement.cs" />
     <Compile Include="Compilation\Parsing\ScopeStack.cs" />
     <Compile Include="Compilation\Parsing\IDeclarationStatement.cs" />
@@ -70,7 +73,7 @@
     <Compile Include="Compilation\Lexing\Lexer.cs" />
     <Compile Include="Compilation\Lexing\LexerException.cs" />
     <Compile Include="Compilation\Parsing\ITypeInfo.cs" />
-    <Compile Include="Compilation\Parsing\LiteralExpression.cs" />
+    <Compile Include="Compilation\Parsing\PrimitiveLiteralExpression.cs" />
     <Compile Include="Compilation\Lexing\LiteralLexeme.cs" />
     <Compile Include="Compilation\Lexing\OperatorLexeme.cs" />
     <Compile Include="Compilation\Parsing\Parser.cs" />
@@ -84,6 +87,7 @@
     <Compile Include="Compilation\Parsing\UnaryOperatorExpression.cs" />
     <Compile Include="Compilation\Parsing\VariableDeclarationStatement.cs" />
     <Compile Include="Compilation\Parsing\VariableExpression.cs" />
+    <Compile Include="Compilation\Runtime\RangeAdapter.cs" />
     <Compile Include="Compilation\Runtime\VirtualMachine.cs" />
     <Compile Include="Compilation\Runtime\VirtualMachineException.cs" />
     <Compile Include="Program.cs" />

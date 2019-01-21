@@ -557,7 +557,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                             break;
                     }
                     MoveNextLexeme();
-                    return new LiteralExpression(literal.Value, new PrimitiveTypeInfo(typeOption));
+                    return new PrimitiveLiteralExpression(literal.Value, new PrimitiveTypeInfo(typeOption));
 
                 default:
                     RaiseError("Expression was expected");
@@ -573,7 +573,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
         // [a, b, c, d, e]
         private IExpression GetListLiteral() {
             var (items, itemType) = GetItemList(OperatorMeaning.CloseBracket);
-            return new ListLiteralExpression(items, itemType, false);
+            return new ListLiteralExpression(items, itemType);
         }
 
 
@@ -581,7 +581,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
         // {a, b, c, d, e}
         private IExpression GetSetLiteral() {
             var (items, itemType) = GetItemList(OperatorMeaning.CloseBrace);
-            return new SetLiteralExpression(items, itemType, false);
+            return new SetLiteralExpression(items, itemType);
         }
 
 
@@ -619,12 +619,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
             while (true) {
                 var locationMiddle = currentLexeme.StartLocation;
-                if (currentLexeme is OperatorLexeme operatorLexeme) {
-                    var meaning = operatorLexeme.Meaning;
-                    if (meaning != OperatorMeaning.Or) {
-                        return left;
-                    }
-
+                if (WhetherOperator(OperatorMeaning.Or)) {
                     // Get right operand
                     MoveNextLexeme();
                     var locationRight = currentLexeme.StartLocation;
@@ -651,12 +646,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
             while (true) {
                 var locationMiddle = currentLexeme.StartLocation;
-                if (currentLexeme is OperatorLexeme operatorLexeme) {
-                    var meaning = operatorLexeme.Meaning;
-                    if (meaning != OperatorMeaning.And) {
-                        return left;
-                    }
-
+                if (WhetherOperator(OperatorMeaning.And)) { 
                     // Get right operand
                     MoveNextLexeme();
                     var locationRight = currentLexeme.StartLocation;
@@ -679,7 +669,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
         // a > b, a != b
         private IExpression GetRelationalExpression() {
             var locationLeft = currentLexeme.StartLocation;
-            var left = GetSumExpression();
+            var left = GetRangeExpression();
 
             //Console.WriteLine($"Inside relational, left is '{left.TypeInfo.Name}'");
 
@@ -704,7 +694,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                 // Get right operand
                 MoveNextLexeme();
-                var right = GetSumExpression();
+                var right = GetRangeExpression();
 
                 //Console.WriteLine($"Inside relational, right is '{right.TypeInfo.Name}'");
 
@@ -830,6 +820,29 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
 
+        // a..b
+        private IExpression GetRangeExpression() {
+            var locationLeft = currentLexeme.StartLocation;
+            var left = GetSumExpression();
+
+            if (WhetherOperator(OperatorMeaning.Range)) {
+                MoveNextLexeme();
+
+                var locationRight = currentLexeme.StartLocation;
+                var right = GetSumExpression();
+
+                var intType = PrimitiveTypeInfo.Int;
+                var x = ForceConvertExpression(left, intType, locationLeft);
+                var y = ForceConvertExpression(right, intType, locationRight);
+
+                return new RangeLiteralExpression(x, y);
+            } else {
+                return left;
+            }
+        }
+
+
+
         // a + b, a - b
         private IExpression GetSumExpression() {
             var locationLeft = currentLexeme.StartLocation;
@@ -930,7 +943,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
 
-        // a * b, a / b, a \ b
+        // a * b, a / b, a \ b, a % b
         private IExpression GetProductExpression() {
             var locationLeft = currentLexeme.StartLocation;
             var left = GetNegateExpression();
@@ -943,6 +956,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                         case OperatorMeaning.Asterisk:
                         case OperatorMeaning.ForwardSlash:
                         case OperatorMeaning.BackSlash:
+                        case OperatorMeaning.Modulo:
                             break;
 
                         default:
@@ -973,6 +987,10 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                         option = BinaryOperatorExpression.Option.DivideFloating;
                                         x = x.TypeInfo.ConvertTo(x, PrimitiveTypeInfo.Float);
                                         y = y.TypeInfo.ConvertTo(y, PrimitiveTypeInfo.Float);
+                                        break;
+
+                                    case OperatorMeaning.Modulo:
+                                        option = BinaryOperatorExpression.Option.Modulo;
                                         break;
 
                                     default:

@@ -9,14 +9,14 @@ namespace Handmada.ReLang.Compilation.Parsing {
     /// <summary>
     /// Literal used as an expression
     /// </summary>
-    class LiteralExpression : IExpression {
+    class PrimitiveLiteralExpression : ILiteralExpression {
         public bool HasSideEffect => false;
         public bool IsCompileTime => true;
         public object Value { get; }
         public ITypeInfo TypeInfo { get; }
 
 
-        public LiteralExpression(object value, ITypeInfo typeInfo) {
+        public PrimitiveLiteralExpression(object value, ITypeInfo typeInfo) {
             Value = value;
             TypeInfo = typeInfo;
         }

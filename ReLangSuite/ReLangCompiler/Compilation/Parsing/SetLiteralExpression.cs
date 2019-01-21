@@ -9,7 +9,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
     /// <summary>
     /// Literal representing a has set of values ({1, 2, 3, 4, 5})
     /// </summary>
-    class SetLiteralExpression : IExpression {
+    class SetLiteralExpression : ILiteralExpression {
         public bool HasSideEffect { get; }
         public bool IsCompileTime => false;
         public object Value => throw new NotImplementedException();
@@ -18,10 +18,17 @@ namespace Handmada.ReLang.Compilation.Parsing {
         public List<IExpression> Items { get; }
 
 
-        public SetLiteralExpression(List<IExpression> items, ITypeInfo itemType, bool hasSideEffect) {
+        public SetLiteralExpression(List<IExpression> items, ITypeInfo itemType) {
             Items = items;
             TypeInfo = new HashSetTypeInfo(itemType);
-            HasSideEffect = hasSideEffect;
+
+            HasSideEffect = false;
+            foreach (var item in items) {
+                if (item.HasSideEffect) {
+                    HasSideEffect = true;
+                    break;
+                }
+            }
         }
     }
 }

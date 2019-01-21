@@ -9,7 +9,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
     /// <summary>
     /// Expression representing a type literal (Int, [Bool])
     /// </summary>
-    class TypeLiteralExpression : IExpression {
+    class TypeLiteralExpression : ILiteralExpression {
         public bool HasSideEffect => false;
         public bool IsCompileTime => true;
         public object Value => throw new NotImplementedException();

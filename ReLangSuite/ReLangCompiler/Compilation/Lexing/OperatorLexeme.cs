@@ -42,6 +42,8 @@ namespace Handmada.ReLang.Compilation.Lexing {
         LessOrEqual,          // <=
         More,                 // >
         MoreOrEqual,          // >=
+        Range,                // ..
+        Modulo,               // %
 
         // Textual
         Var,

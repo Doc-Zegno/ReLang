@@ -33,9 +33,9 @@ namespace Handmada.ReLang.Compilation.Runtime {
             var itemType = PrimitiveTypeInfo.String;
             var items = new List<IExpression>();
             foreach (var arg in commandLineArguments) {
-                items.Add(new LiteralExpression(arg, itemType));
+                items.Add(new PrimitiveLiteralExpression(arg, itemType));
             }
-            var list = new ListLiteralExpression(items, itemType, false);
+            var list = new ListLiteralExpression(items, itemType);
             return new List<IExpression> { list };
         }
 
@@ -90,9 +90,11 @@ namespace Handmada.ReLang.Compilation.Runtime {
                         statements = conditional.ElseStatements;
                     }
 
-                    EnterFrame();
-                    ExecuteStatementList(statements);
-                    LeaveFrame();
+                    if (statements != null) {
+                        EnterFrame();
+                        ExecuteStatementList(statements);
+                        LeaveFrame();
+                    }
                     break;
 
                 case ForEachStatement forEach:
@@ -163,22 +165,33 @@ namespace Handmada.ReLang.Compilation.Runtime {
                 case ConversionExpression conversion:
                     return EvaluateConversion(conversion);
 
-                case LiteralExpression literal:
-                    return literal.Value;
+                case ILiteralExpression literal:
+                    switch (literal) {
+                        case PrimitiveLiteralExpression primitiveLiteral:
+                            return primitiveLiteral.Value;
 
-                case ListLiteralExpression listLiteral:
-                    var list = new List<object>();
-                    foreach (var item in listLiteral.Items) {
-                        list.Add(EvaluateExpression(item));
-                    }
-                    return list;
+                        case ListLiteralExpression listLiteral:
+                            var list = new List<object>();
+                            foreach (var item in listLiteral.Items) {
+                                list.Add(EvaluateExpression(item));
+                            }
+                            return list;
 
-                case SetLiteralExpression setLiteral:
-                    var set = new HashSet<object>();
-                    foreach (var item in setLiteral.Items) {
-                        set.Add(EvaluateExpression(item));
-                    }
-                    return set;
+                        case SetLiteralExpression setLiteral:
+                            var set = new HashSet<object>();
+                            foreach (var item in setLiteral.Items) {
+                                set.Add(EvaluateExpression(item));
+                            }
+                            return set;
+
+                        case RangeLiteralExpression rangeLiteral:
+                            var start = (int)EvaluateExpression(rangeLiteral.Start);
+                            var end = (int)EvaluateExpression(rangeLiteral.End);
+                            return new RangeAdapter(start, end);
+
+                        default:
+                            throw new VirtualMachineException($"Unknown literal expression: {literal}");
+                    } 
 
                 case VariableExpression variable:
                     return GetVariable(variable.Number, variable.FrameOffset);
@@ -238,6 +251,9 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
                 case BinaryOperatorExpression.Option.DivideFloating:
                     return (double)left / (double)right;
+
+                case BinaryOperatorExpression.Option.Modulo:
+                    return (int)left % (int)right;
                 
                 case BinaryOperatorExpression.Option.EqualBoolean:
                     return (bool)left == (bool)right;
@@ -371,6 +387,10 @@ namespace Handmada.ReLang.Compilation.Runtime {
                     Console.Write("{");
                     PrintObjectList(set, true);
                     Console.Write("}");
+                    break;
+
+                case RangeAdapter range:
+                    Console.Write($"{range.Start}..{range.End}");
                     break;
 
                 default:

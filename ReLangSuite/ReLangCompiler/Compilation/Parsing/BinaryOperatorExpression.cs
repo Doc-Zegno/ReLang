@@ -27,6 +27,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
             DivideInteger,
             DivideFloating,
 
+            Modulo,
+
             And,
             Or,
 
