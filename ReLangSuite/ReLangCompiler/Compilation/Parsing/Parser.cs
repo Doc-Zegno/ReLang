@@ -18,6 +18,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
         private int? mainFunctionNumber;
         private FunctionTree functionTree;
         private ScopeStack scopeStack;
+        private int numOfTemporaries;
 
 
         public Parser(IEnumerable<string> lines) {
@@ -420,6 +421,13 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 default:
                     throw new ArgumentException($"unknown option: {meaning}", nameof(meaning));
             }
+        }
+
+
+        private string GetNextTmpName() {
+            var name = $"_tmp{numOfTemporaries}";
+            numOfTemporaries++;
+            return name;
         }
 
 

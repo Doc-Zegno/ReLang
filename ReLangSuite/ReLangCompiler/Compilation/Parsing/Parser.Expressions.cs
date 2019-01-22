@@ -156,8 +156,10 @@ namespace Handmada.ReLang.Compilation.Parsing {
                         var definition = maybe.Value;
                         if (!definition.IsMutable && definition.Value != null && definition.Value.IsCompileTime) {
                             // Can be evaluated at compile-time
-                            var value = definition.Value;
-                            return new PrimitiveLiteralExpression(value.Value, value.TypeInfo);
+                            return definition.Value;
+
+                            //var value = definition.Value;
+                            //return new PrimitiveLiteralExpression(value.Value, value.TypeInfo);
                         } else {
                             // Should be resolved at run-time
                             var frameOffset = definition.ScopeNumber - (scopeStack.Count - 1);

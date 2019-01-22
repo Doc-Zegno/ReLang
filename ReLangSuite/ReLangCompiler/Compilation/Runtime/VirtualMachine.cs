@@ -144,6 +144,10 @@ namespace Handmada.ReLang.Compilation.Runtime {
                     needReturn = true;
                     break;
 
+                case CompoundStatement compound:
+                    ExecuteStatementList(compound.Statements);
+                    break;
+
                 default:
                     throw new VirtualMachineException($"Unsupported statement: {statement}");
             }
@@ -373,9 +377,20 @@ namespace Handmada.ReLang.Compilation.Runtime {
                     CallPrint(EvaluateExpression(arguments[0]));
                     return null;
 
+                case BuiltinFunctionCallExpression.Option.TupleGet:
+                    return CallTupleGet(
+                        (object[])EvaluateExpression(arguments[0]),
+                        (int)EvaluateExpression(arguments[1])
+                    );
+
                 default:
                     throw new VirtualMachineException($"Unsupported built-in function call: {option}");
             }
+        }
+
+
+        private object CallTupleGet(object[] tuple, int index) {
+            return tuple[index];
         }
 
 

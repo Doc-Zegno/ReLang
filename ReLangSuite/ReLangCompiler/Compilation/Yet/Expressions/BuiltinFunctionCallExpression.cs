@@ -15,6 +15,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         /// </summary>
         public enum Option {
             Print,
+            TupleGet,
         }
 
 

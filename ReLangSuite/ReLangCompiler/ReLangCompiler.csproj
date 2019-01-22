@@ -70,8 +70,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Compilation\Parsing\IdentifierList.cs" />
+    <Compile Include="Compilation\Parsing\IIdentifier.cs" />
     <Compile Include="Compilation\Parsing\Parser.Expressions.cs" />
     <Compile Include="Compilation\Parsing\Parser.Statements.cs" />
+    <Compile Include="Compilation\Parsing\SingleIdentifier.cs" />
     <Compile Include="Compilation\Runtime\TupleAdapter.cs" />
     <Compile Include="Compilation\Yet\Expressions\TupleLiteralExpression.cs" />
     <Compile Include="Compilation\Yet\MetaTypes\ArrayListTypeInfo.cs" />
@@ -80,6 +83,7 @@
     <Compile Include="Compilation\Yet\Expressions\BinaryOperatorExpression.cs" />
     <Compile Include="Compilation\Yet\Expressions\BuiltinFunctionCallExpression.cs" />
     <Compile Include="Compilation\Parsing\Builtins.cs" />
+    <Compile Include="Compilation\Yet\Statements\CompoundStatement.cs" />
     <Compile Include="Compilation\Yet\Statements\ConditionalStatement.cs" />
     <Compile Include="Compilation\Yet\Expressions\ConversionExpression.cs" />
     <Compile Include="Compilation\Yet\Expressions\CustomFunctionCallExpression.cs" />

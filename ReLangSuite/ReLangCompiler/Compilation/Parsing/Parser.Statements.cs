@@ -166,22 +166,190 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
         // [let | var] name = expression
         private IStatement GetVariableDeclaration(bool isMutable, Location locationVar) {
-            var locationName = currentLexeme.StartLocation;
-            var name = GetSymbolText("Variable name");
+            var identifiers = GetIdentifierList();
             CheckOperator(OperatorMeaning.Assignment);
+
+            var locationValue = currentLexeme.StartLocation;
             var value = GetMultipleExpression();
 
-            // Check scope
+            return ForceDeclareVariableList(identifiers, value, isMutable, locationValue);
+        }
+
+
+
+        private IStatement ForceDeclareVariableList(IIdentifier identifiers, IExpression value,
+                                                    bool isMutable, Location right)
+        {
+            switch (identifiers) {
+                case SingleIdentifier singleIdentifier:
+                    return ForceDeclareVariable(singleIdentifier.Name, value, isMutable, singleIdentifier.StartLocation);
+
+                case IdentifierList identifierList:
+                    if (value.TypeInfo is TupleTypeInfo tupleType) {
+                        // Need unpacking
+                        var expectedCount = identifierList.Identifiers.Count;
+                        var actualCount = tupleType.ItemTypes.Count;
+                        if (expectedCount != actualCount) {
+                            var hint = $"left: {expectedCount}, right: {actualCount}";
+                            RaiseError($"Mismatching number of values to be unpacked ({hint})", identifierList.StartLocation);
+                        }
+
+                        // This bloody tuple can be one of these options:
+                        //  1) a tuple literal => can be destructured at compile-time (HOLY SHIT!):
+                        //        let point = (3.0, 4.0)
+                        //        var x, y = point
+                        //           <=>
+                        //        var x = 3.0
+                        //        var y = 4.0
+                        //
+                        //  2) a random variable => should use indexing
+                        //     (it's safe since evaluation of variable produces no side effect):
+                        //        let point = getRandomPoint()
+                        //        var x, y = point
+                        //           <=>
+                        //        var x = point[0]
+                        //        var y = point[1]
+                        //
+                        //  3) a random expression => should pre-evaluate this shit into temporary variable
+                        //     since it might (and fucking actually will) have a side effect:
+                        //        var x, y = getRandomPointAndPrintHelloWorldToTextFile(fileName)
+                        //           <=>
+                        //        let _tmp = get...
+                        //        var x = _tmp[0]
+                        //        var y = _tmp[1]
+                        //
+                        // (Yeah, I'm talking to myself but that's okay)
+                        var subStatements = new List<IStatement>();
+
+                        switch (value) {
+                            case TupleLiteralExpression tuple:
+                                for (var i = 0; i < actualCount; i++) {
+                                    var expression = tuple.Items[i];
+                                    var identifier = identifierList.Identifiers[i];
+                                    subStatements.Add(ForceDeclareVariableList(identifier, expression, isMutable, right));
+                                }
+                                break;
+
+                            case VariableExpression variable:
+                                GenerateTupleDestruction(subStatements, variable, tupleType, identifierList, isMutable, right);
+                                break;
+
+                            default:
+                                // Declare a tmp 
+                                var tmpName = GetNextTmpName();
+                                if (!scopeStack.DeclareVariable(tmpName, tupleType, false, value)) {
+                                    RaiseError($"I wasn't able to declare a temporary '{tmpName}'. WTF???");
+                                }
+                                subStatements.Add(new VariableDeclarationStatement(tmpName, value, false));
+
+                                // Get a variable expression
+                                var maybe = scopeStack.GetDefinition(tmpName);
+                                var definition = maybe.Value;
+                                var frameOffset = definition.ScopeNumber - (scopeStack.Count - 1);
+                                var tupleVariable = new VariableExpression(
+                                    tmpName,
+                                    definition.Number,
+                                    frameOffset,
+                                    false,
+                                    tupleType
+                                );
+
+                                // Now it's safe to use code for VariableExpression case
+                                GenerateTupleDestruction(subStatements, tupleVariable, tupleType, identifierList, isMutable, right);
+                                break;
+                        }
+
+                        return new CompoundStatement(subStatements);
+
+                    } else {
+                        RaiseError("Expression is not a tuple. Nothing to unpack", right);
+                        return null;
+                    }
+
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+
+
+        private void GenerateTupleDestruction(
+            List<IStatement> subStatements, 
+            VariableExpression tupleVariable,
+            TupleTypeInfo tupleType,
+            IdentifierList identifierList,
+            bool isMutable,
+            Location right)
+        {
+            var actualCount = tupleType.ItemTypes.Count;
+            for (var i = 0; i < actualCount; i++) {
+                // Generate a call of built-in function `tupleGet(tuple, index)`
+                var arguments = new List<IExpression> {
+                                        tupleVariable,
+                                        new PrimitiveLiteralExpression(i, PrimitiveTypeInfo.Int),
+                                    };
+
+                var expression = new BuiltinFunctionCallExpression(
+                    tupleType.ItemTypes[i],
+                    arguments,
+                    BuiltinFunctionCallExpression.Option.TupleGet
+                );
+
+                var identifier = identifierList.Identifiers[i];
+                subStatements.Add(ForceDeclareVariableList(identifier, expression, isMutable, right));
+            }
+        }
+
+
+
+        private IStatement ForceDeclareVariable(string name, IExpression value, bool isMutable, Location locationName) {
+            if (value.TypeInfo is TupleTypeInfo && isMutable) {
+                RaiseError($"Tuple object '{name}' must be declared as immutable", locationName);
+            }
+
             if (!scopeStack.DeclareVariable(name, value.TypeInfo, isMutable, value)) {
                 RaiseError($"Variable '{name}' has already been declared", locationName);
             }
 
-            // Check if it's tuple
-            if (value.TypeInfo is TupleTypeInfo && isMutable) {
-                RaiseError("Tuple objects must be declared as immutable", locationVar);
-            }
-
             return new VariableDeclarationStatement(name, value, isMutable);
+        }
+
+
+
+        // [let] x, y, z
+        private IIdentifier GetIdentifierList() {
+            var identifiers = new List<IIdentifier>();
+
+            while (true) {
+                identifiers.Add(GetSingleIdentifier());
+                if (WhetherOperator(OperatorMeaning.Comma)) {
+                    MoveNextLexeme();
+                } else {
+                    break;
+                }
+            }
+            
+            if (identifiers.Count > 1) {
+                return new IdentifierList(identifiers);
+            } else {
+                return identifiers[0];
+            }
+        }
+
+
+
+        // [let] x
+        private IIdentifier GetSingleIdentifier() {
+            if (WhetherOperator(OperatorMeaning.OpenParenthesis)) {
+                MoveNextLexeme();
+                var list = GetIdentifierList();
+                CheckOperator(OperatorMeaning.CloseParenthesis);
+                return list;
+            } else {
+                var location = currentLexeme.StartLocation;
+                var name = GetSymbolText("Variable name");
+                return new SingleIdentifier(name, location);
+            }
         }
 
 

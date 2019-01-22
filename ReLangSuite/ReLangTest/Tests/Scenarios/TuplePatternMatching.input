@@ -1,0 +1,10 @@
+func main(args: [String]) {
+	let point = 3.0, 4.0
+	let labeledPoint = (point, "Sample Text")
+	let labeledPointWithChecksum = (labeledPoint, 137)
+    let ((x, y), label), checksum = labeledPointWithChecksum
+    print(x)
+    print(y)
+    print(label)
+    print(checksum)
+}

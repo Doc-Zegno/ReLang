@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-
 using Handmada.ReLang.Compilation.Lexing;
 using Handmada.ReLang.Compilation.Parsing;
 using Handmada.ReLang.Compilation.Runtime;
@@ -74,6 +73,13 @@ namespace Handmada.ReLang.Compilation {
 
 
         private static void PrintStatement(IStatement statement, int shiftLevel) {
+            if (statement is CompoundStatement compound) {
+                foreach (var s in compound.Statements) {
+                    PrintStatement(s, shiftLevel);
+                }
+                return;
+            }
+
             var padding = new string(' ', 4 * shiftLevel);
             Console.Write(padding);
 
@@ -163,11 +169,18 @@ namespace Handmada.ReLang.Compilation {
                             case BuiltinFunctionCallExpression.Option.Print:
                                 name = "print";
                                 break;
+
+                            case BuiltinFunctionCallExpression.Option.TupleGet:
+                                name = "tupleGet";
+                                break;
+
+                            default:
+                                throw new NotImplementedException();
                         }
-                        fullName = $"<built-in function: {name}>";
+                        fullName = $"_{name}";
                     } else {
                         var custom = (CustomFunctionCallExpression)functionCall;
-                        fullName = $"<custom function #{custom.Number}>";
+                        fullName = $"_customFunction{custom.Number}";
                     }
 
                     Console.Write($"{fullName}(");

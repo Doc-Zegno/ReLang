@@ -11,7 +11,7 @@ namespace Handmada.ReLang.Compilation.Yet {
     /// </summary>
     class TupleLiteralExpression : ILiteralExpression {
         public bool HasSideEffect { get; }
-        public bool IsCompileTime => false;
+        public bool IsCompileTime { get; }
         public object Value => throw new NotImplementedException();
         public ITypeInfo TypeInfo { get; }
 
@@ -26,14 +26,19 @@ namespace Handmada.ReLang.Compilation.Yet {
 
             var itemTypes = new List<ITypeInfo>();
             var hasSideEffect = false;
+            var isCompileTime = true;
             foreach (var item in items) {
                 itemTypes.Add(item.TypeInfo);
                 if (item.HasSideEffect) {
                     hasSideEffect = true;
                 }
+                if (!item.IsCompileTime) {
+                    isCompileTime = false;
+                }
             }
 
             HasSideEffect = hasSideEffect;
+            IsCompileTime = isCompileTime;
             TypeInfo = new TupleTypeInfo(itemTypes);
         }
     }
