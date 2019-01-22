@@ -8,7 +8,7 @@ using Handmada.ReLang.Compilation.Yet;
 
 
 namespace Handmada.ReLang.Compilation.Parsing {
-    class FunctionData {
+    public class FunctionData {
         public string Name { get; }
         public string FullQualification { get; }
         public ITypeInfo ResultType { get; }
@@ -30,7 +30,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
     }
 
 
-    class ParsedProgram {
+    public class ParsedProgram {
         public List<FunctionData> Functions { get; }
         public int MainFunctionNumber { get; }
 

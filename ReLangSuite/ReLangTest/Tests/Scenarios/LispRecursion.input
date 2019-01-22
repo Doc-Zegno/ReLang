@@ -1,0 +1,19 @@
+func main(args: [String]) {
+	let n = 3
+	for arg in args {
+		print(repeat(arg, n))
+	}
+}
+
+
+func repeat(str: String, times: Int) -> String {
+	func iter(str: String, result: String, times: Int) -> String {
+		if times == 0 {
+			return result
+		} else {
+			return iter(str, result + str, times - 1)
+		}
+	}
+
+	return iter(str, "", times)
+}

@@ -10,7 +10,7 @@ using Handmada.ReLang.Compilation.Yet;
 
 
 namespace Handmada.ReLang.Compilation.Parsing {
-    partial class Parser {
+    public partial class Parser {
         private List<Lexeme> lexemes;
         private IEnumerator<Lexeme> lexemeEnumerator;
         private Lexeme currentLexeme;

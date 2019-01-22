@@ -9,7 +9,7 @@ using Handmada.ReLang.Compilation.Yet;
 
 
 namespace Handmada.ReLang.Compilation.Parsing {
-    partial class Parser {
+    public partial class Parser {
         private IExpression GetFunctionCall(string name, Location location) {
             CheckOperator(OperatorMeaning.OpenParenthesis);
 

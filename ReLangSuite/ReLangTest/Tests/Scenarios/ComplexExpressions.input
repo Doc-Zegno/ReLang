@@ -1,0 +1,27 @@
+func main(args: [String]) {
+    let n = 10
+    let x = n * -(2 + 2 * 2)
+    let y = (n - x) % 9
+
+    print(n)
+    print(x)
+    print(y)
+
+    let a = 3 > 2
+    let b = 7 % 2 == 0
+    let c = a && b
+    let d = a || b
+    let e = !a || b
+    let f = !a && b || a && !b
+    let g = !(a && b) == (!a || !b)
+    let h = (a || (b && c)) == ((a || b) && (a || c))
+
+    print(a)
+    print(b)
+    print(c)
+    print(d)
+    print(e)
+    print(f)
+    print(g)
+    print(h)
+}

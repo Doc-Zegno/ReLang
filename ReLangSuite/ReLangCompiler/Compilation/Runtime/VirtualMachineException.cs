@@ -11,7 +11,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
     /// Signalizes about internal errors caused by virtual machine
     /// </summary>
     [Serializable]
-    class VirtualMachineException : Exception {
+    public class VirtualMachineException : Exception {
         public VirtualMachineException() {
         }
 

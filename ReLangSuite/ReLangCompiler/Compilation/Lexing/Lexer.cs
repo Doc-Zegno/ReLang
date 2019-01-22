@@ -10,7 +10,7 @@ namespace Handmada.ReLang.Compilation.Lexing {
     /// <summary>
     /// Lexical analyser
     /// </summary>
-    class Lexer {
+    public class Lexer {
         private IEnumerable<string> lines;
         private IEnumerator<string> lineEnumerator;
         private IEnumerator<char> charEnumerator;
@@ -274,7 +274,7 @@ namespace Handmada.ReLang.Compilation.Lexing {
 
         private Lexeme ScanNumeric() {
             var location = CurrentLocation;
-            var integer = ScanInteger();
+            var (integer, _) = ScanInteger();
 
             if (isEofReached) {
                 return new LiteralLexeme(integer, location);
@@ -293,8 +293,8 @@ namespace Handmada.ReLang.Compilation.Lexing {
                     RaiseError("Digit or dot was expected");
                 }
 
-                var value = ScanInteger();
-                var fraction = MakeFraction(value);
+                var (value, power) = ScanInteger();
+                var fraction = (double)value / power;
                 return new LiteralLexeme(integer + fraction, location);
             } else {
                 return new LiteralLexeme(integer, location);
@@ -302,22 +302,24 @@ namespace Handmada.ReLang.Compilation.Lexing {
         }
 
 
-        private double MakeFraction(int value) {
+        /*private double MakeFraction(int value) {
             var power = 10;
             while (value / power != 0) {
                 power *= 10;
             }
             return (double)value / power;
-        }
+        }*/
 
 
-        private int ScanInteger() {
+        private (int, int) ScanInteger() {
             var value = currentCharacter - '0';
+            var power = 10;
 
             while (true) {
                 if (MoveNextCharacter()) {
                     if (char.IsDigit(currentCharacter)) {
                         value *= 10;
+                        power *= 10;
                         value += currentCharacter - '0';
                     } else {
                         break;
@@ -327,7 +329,7 @@ namespace Handmada.ReLang.Compilation.Lexing {
                 }
             }
 
-            return value;
+            return (value, power);
         }
 
 

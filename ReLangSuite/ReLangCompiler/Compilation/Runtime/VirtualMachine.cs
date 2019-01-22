@@ -9,14 +9,23 @@ using Handmada.ReLang.Compilation.Yet;
 
 
 namespace Handmada.ReLang.Compilation.Runtime {
-    class VirtualMachine {
+    public class VirtualMachine {
         private List<List<object>> frames;
         private List<FunctionData> functions;
         private object functionValue;
         private bool needReturn;
 
+        //public System.IO.TextWriter VmOut { get; }
+        public System.IO.TextWriter ProgramOut { get; }
 
-        public void Execute(ParsedProgram program, string[] commandLineArguments) {
+
+        public VirtualMachine(System.IO.TextWriter programOut) {
+            //VmOut = vmOut;
+            ProgramOut = programOut;
+        }
+
+
+        public int Execute(ParsedProgram program, string[] commandLineArguments) {
             frames = new List<List<object>>();
             functions = program.Functions;
             functionValue = null;
@@ -25,8 +34,13 @@ namespace Handmada.ReLang.Compilation.Runtime {
             // Converting command line arguments to external representation
             var arguments = ConvertArguments(commandLineArguments);
 
-            var result = EvaluateCustomFunction(program.MainFunctionNumber, arguments);
-            Log($"Process finished with exit code: {result ?? 0}");
+            var maybe = EvaluateCustomFunction(program.MainFunctionNumber, arguments);
+            var result = 0;
+            if (maybe != null) {
+                result = (int)maybe;
+            }
+            Log($"Process finished with exit code: {result}");
+            return result;
         }
 
 
@@ -367,48 +381,48 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
         private void CallPrint(object argument) {
             PrintObject(argument, false);
-            Console.WriteLine();
+            ProgramOut.WriteLine();
         }
 
 
         private void PrintObject(object obj, bool isEscaped) {
             switch (obj) {
                 case bool b:
-                    Console.Write(b ? "true" : "false");
+                    ProgramOut.Write(b ? "true" : "false");
                     break;
 
                 case string s:
                     if (isEscaped) {
-                        Console.Write($"\"{s}\"");
+                        ProgramOut.Write($"\"{s}\"");
                     } else {
-                        Console.Write(s);
+                        ProgramOut.Write(s);
                     }
                     break;
 
                 case List<object> list:
-                    Console.Write("[");
+                    ProgramOut.Write("[");
                     PrintObjectList(list, true);
-                    Console.Write("]");
+                    ProgramOut.Write("]");
                     break;
 
                 case ISet<object> set:
-                    Console.Write("{");
+                    ProgramOut.Write("{");
                     PrintObjectList(set, true);
-                    Console.Write("}");
+                    ProgramOut.Write("}");
                     break;
 
                 case RangeAdapter range:
-                    Console.Write($"{range.Start}..{range.End}");
+                    ProgramOut.Write($"{range.Start}..{range.End}");
                     break;
 
                 case object[] tuple:
-                    Console.Write("(");
+                    ProgramOut.Write("(");
                     PrintObjectList(tuple, true);
-                    Console.Write(")");
+                    ProgramOut.Write(")");
                     break;
 
                 default:
-                    Console.Write(obj);
+                    ProgramOut.Write(obj);
                     break;
             }
         }
@@ -418,7 +432,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
             var isFirst = true;
             foreach (var obj in objs) {
                 if (!isFirst) {
-                    Console.Write(", ");
+                    ProgramOut.Write(", ");
                 }
                 isFirst = false;
                 PrintObject(obj, isEscaped);

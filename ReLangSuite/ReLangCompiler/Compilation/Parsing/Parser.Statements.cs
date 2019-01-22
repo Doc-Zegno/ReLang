@@ -9,7 +9,7 @@ using Handmada.ReLang.Compilation.Yet;
 
 
 namespace Handmada.ReLang.Compilation.Parsing {
-    partial class Parser {
+    public partial class Parser {
         private List<IStatement> GetStatementList(bool isScopeStrong) {
             var statements = new List<IStatement>();
             var isTop = true;

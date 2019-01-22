@@ -9,7 +9,7 @@ namespace Handmada.ReLang.Compilation.Yet {
     /// <summary>
     /// Meta information about type of some expression
     /// </summary>
-    interface ITypeInfo {
+    public interface ITypeInfo {
         /// <summary>
         /// Name of this type
         /// </summary>

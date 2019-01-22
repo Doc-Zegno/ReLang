@@ -9,7 +9,7 @@ namespace Handmada.ReLang.Compilation.Yet {
     /// <summary>
     /// Strongly typed expression (a code chunk that can be evaluated)
     /// </summary>
-    interface IExpression {
+    public interface IExpression {
         /// <summary>
         /// Equals to `true` if evaluation of this expression **can** have a side effect 
         /// </summary>

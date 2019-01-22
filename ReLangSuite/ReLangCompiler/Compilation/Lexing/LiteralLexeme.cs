@@ -9,7 +9,7 @@ namespace Handmada.ReLang.Compilation.Lexing {
     /// <summary>
     /// Lexeme representing literal value
     /// </summary>
-    class LiteralLexeme : Lexeme {
+    public class LiteralLexeme : Lexeme {
         public object Value { get; }
 
         public LiteralLexeme(object value, Location location) : base(location) {

@@ -9,6 +9,6 @@ namespace Handmada.ReLang.Compilation.Yet {
     /// <summary>
     /// Represents a code statement
     /// </summary>
-    interface IStatement {
+    public interface IStatement {
     }
 }

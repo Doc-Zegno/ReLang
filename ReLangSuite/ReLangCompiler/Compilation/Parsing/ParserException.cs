@@ -13,7 +13,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
     /// Signalizes about syntactic errors
     /// </summary>
     [Serializable]
-    class ParserException : Exception {
+    public class ParserException : Exception {
         /// <summary>
         /// Code line containing error
         /// </summary>

@@ -34,7 +34,7 @@ namespace Handmada.ReLang.Compilation {
                 }
 
                 Console.WriteLine("\n=================\n");
-                var machine = new VirtualMachine();
+                var machine = new VirtualMachine(Console.Out);
                 machine.Execute(program, args);
 
                 /*var statements = parser.Parse();

@@ -9,7 +9,7 @@ namespace Handmada.ReLang.Compilation.Lexing {
     /// <summary>
     /// Possible semantic values of operators
     /// </summary>
-    enum OperatorMeaning {
+    public enum OperatorMeaning {
         Unknown,
 
         // Symbolic
@@ -61,7 +61,7 @@ namespace Handmada.ReLang.Compilation.Lexing {
     /// <summary>
     /// Lexeme representing an operator of Re:Lang
     /// </summary>
-    class OperatorLexeme : Lexeme {
+    public class OperatorLexeme : Lexeme {
         /// <summary>
         /// Semantic value of this operator
         /// </summary>

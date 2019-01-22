@@ -11,7 +11,7 @@ namespace Handmada.ReLang.Compilation.Lexing {
     /// Signalizes about lexical errors
     /// </summary>
     [Serializable]
-    class LexerException : Exception {
+    public class LexerException : Exception {
         /// <summary>
         /// Line of code containing error
         /// </summary>

@@ -9,7 +9,7 @@ namespace Handmada.ReLang.Compilation.Lexing {
     /// <summary>
     /// Lexeme representing a symbol (identifier)
     /// </summary>
-    class SymbolLexeme : Lexeme {
+    public class SymbolLexeme : Lexeme {
         /// <summary>
         /// Textual representation of this symbol (that can be identifier name)
         /// </summary>
