@@ -124,12 +124,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 case IdentifierList identifierList:
                     if (value.TypeInfo is TupleTypeInfo tupleType) {
                         // Need unpacking
-                        var expectedCount = identifierList.Identifiers.Count;
-                        var actualCount = tupleType.ItemTypes.Count;
-                        if (expectedCount != actualCount) {
-                            var hint = $"left: {expectedCount}, right: {actualCount}";
-                            RaiseError($"Mismatching number of values to be unpacked ({hint})", identifierList.StartLocation);
-                        }
+                        CheckNumberOfUnpackedValues(identifierList, tupleType);
 
                         // Three options:
                         //  1) it's compile-time tuple literal
@@ -154,7 +149,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                         switch (value) {
                             case TupleLiteralExpression tupleLiteral when tupleLiteral.IsCompileTime:
-                                for (var i = 0; i < actualCount; i++) {
+                                for (var i = 0; i < identifierList.Identifiers.Count; i++) {
                                     var identifier = identifierList.Identifiers[i];
                                     var expression = tupleLiteral.Items[i];
                                     subStatements.Add(ForceAssignVariableList(identifier, expression, right));
@@ -182,6 +177,17 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                 default:
                     throw new NotImplementedException();
+            }
+        }
+
+
+
+        private void CheckNumberOfUnpackedValues(IdentifierList identifierList, TupleTypeInfo tupleType) {
+            var expectedCount = identifierList.Identifiers.Count;
+            var actualCount = tupleType.ItemTypes.Count;
+            if (expectedCount != actualCount) {
+                var hint = $"left: {expectedCount}, right: {actualCount}";
+                RaiseError($"Mismatching number of values to be unpacked ({hint})", identifierList.StartLocation);
             }
         }
 
@@ -223,7 +229,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
         // for item in iterable { ... }
         private IStatement GetForLoop() {
-            var name = GetSymbolText("Iterable's item name");
+            var identifiers = GetIdentifierList();
             CheckOperator(OperatorMeaning.In);
             var location = currentLexeme.StartLocation;
             var iterable = GetExpression();
@@ -234,8 +240,39 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 // Enter scope and add item variable
                 CheckOperator(OperatorMeaning.OpenBrace);
                 scopeStack.EnterScope(isStrong: false);
-                scopeStack.DeclareVariable(name, itemType, true, null);
-                var statements = GetStatementList(false);
+
+                // Either declare an item variable or create a temporary and deconstruct it
+                var statements = new List<IStatement>();
+                var name = "";
+                switch (identifiers) {
+                    case SingleIdentifier single:
+                        scopeStack.DeclareVariable(single.Name, itemType, true, null);
+                        name = single.Name;
+                        break;
+
+                    case IdentifierList identifierList:
+                        if (itemType is TupleTypeInfo tupleType) {
+                            // Need to unpack tuple
+                            CheckNumberOfUnpackedValues(identifierList, tupleType);
+
+                            // Declare a temporary to store iterable's item
+                            var tupleVariable = DeclareTemporaryVariable(tupleType, null);
+                            name = tupleVariable.Name;
+
+                            // Unpack tuple
+                            GenerateTupleDestruction(statements, tupleVariable, tupleType, identifierList,
+                                                     true, location, ForceDeclareVariableList);
+
+                        } else {
+                            RaiseError($"Type of iterable's item is not tuple (got '{itemType.Name}')", location);
+                        }
+                        break;
+
+                    default:
+                        throw new NotImplementedException();
+                }
+                
+                statements.AddRange(GetStatementList(false));
                 scopeStack.LeaveScope();
                 CheckOperator(OperatorMeaning.CloseBrace);
 
@@ -271,12 +308,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 case IdentifierList identifierList:
                     if (value.TypeInfo is TupleTypeInfo tupleType) {
                         // Need unpacking
-                        var expectedCount = identifierList.Identifiers.Count;
-                        var actualCount = tupleType.ItemTypes.Count;
-                        if (expectedCount != actualCount) {
-                            var hint = $"left: {expectedCount}, right: {actualCount}";
-                            RaiseError($"Mismatching number of values to be unpacked ({hint})", identifierList.StartLocation);
-                        }
+                        CheckNumberOfUnpackedValues(identifierList, tupleType);
 
                         // This bloody tuple can be one of these options:
                         //  1) a tuple literal => can be destructured at compile-time (HOLY SHIT!):
@@ -307,7 +339,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                         switch (value) {
                             case TupleLiteralExpression tuple:
-                                for (var i = 0; i < actualCount; i++) {
+                                for (var i = 0; i < identifierList.Identifiers.Count; i++) {
                                     var expression = tuple.Items[i];
                                     var identifier = identifierList.Identifiers[i];
                                     subStatements.Add(ForceDeclareVariableList(identifier, expression, isMutable, right));
@@ -349,27 +381,34 @@ namespace Handmada.ReLang.Compilation.Parsing {
             Func<IIdentifier, IExpression, bool, Location, IStatement> func)
         {
             // Declare a tmp 
+            var tupleVariable = DeclareTemporaryVariable(tupleType, value);
+            subStatements.Add(new VariableDeclarationStatement(tupleVariable.Name, value, false));
+
+            // Now it's safe to use code for VariableExpression case
+            GenerateTupleDestruction(subStatements, tupleVariable, tupleType, identifierList,
+                                     isMutable, right, func);
+        }
+
+
+
+        private VariableExpression DeclareTemporaryVariable(ITypeInfo typeInfo, IExpression value) {
+            // Declare a tmp 
             var tmpName = GetNextTmpName();
-            if (!scopeStack.DeclareVariable(tmpName, tupleType, false, value)) {
+            if (!scopeStack.DeclareVariable(tmpName, typeInfo, false, value)) {
                 RaiseError($"I wasn't able to declare a temporary '{tmpName}'. WTF???");
             }
-            subStatements.Add(new VariableDeclarationStatement(tmpName, value, false));
 
             // Get a variable expression
             var maybe = scopeStack.GetDefinition(tmpName);
             var definition = maybe.Value;
             var frameOffset = definition.ScopeNumber - (scopeStack.Count - 1);
-            var tupleVariable = new VariableExpression(
+            return new VariableExpression(
                 tmpName,
                 definition.Number,
                 frameOffset,
                 false,
-                tupleType
+                typeInfo
             );
-
-            // Now it's safe to use code for VariableExpression case
-            GenerateTupleDestruction(subStatements, tupleVariable, tupleType, identifierList,
-                                     isMutable, right, func);
         }
 
 
@@ -449,7 +488,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 return list;
             } else {
                 var location = currentLexeme.StartLocation;
-                var name = GetSymbolText("Variable name");
+                var name = GetSymbolText("Identifier");
                 return new SingleIdentifier(name, location);
             }
         }

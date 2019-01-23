@@ -5,9 +5,17 @@ Compiler and interpreter for Re:Lang
 ## TODO List
 - [x] Variable resolution
 - [x] Function resolution
-- [ ] Custom functions with arguments
-- [ ] Type checks and conversions
-- [ ] Complex expressions
-- [ ] `do-while`, `while` and `for` loops
+- [x] Custom functions with arguments
+- [x] Type checks and implicit conversions
+- [x] Complex expressions
+- [ ] Explicit conversions (`Int("5")`, `String(5)`)
+- [ ] Shorthand operators (`+=`, `++`)
+- [x] `for-each`-style loop
+- [ ] `do-while`, `while` and C-style `for` loops
+- [x] Tuples and tuple unpacking
 - [ ] Collections (lists, sets and dictionaries)
-- [ ] Runtime! 
+- [ ] Built-in high-order functions (`filter`, `map`, `reduce`, `zip`)
+- [ ] Built-in methods for collections (including indexing)
+- [ ] Files and managable disposables (`use f = open("input.txt")`)
+- [ ] Namespaces with util functions
+- [x] Runtime! 

@@ -373,8 +373,12 @@ namespace Handmada.ReLang.Compilation.Lexing {
 
 
         private void PutBack(char? ch = null) {
-            CurrentCharacterNumber--;
-            bufferedCharacter = ch ?? currentCharacter;
+            if (bufferedCharacter == null) {
+                CurrentCharacterNumber--;
+                bufferedCharacter = ch ?? currentCharacter;
+            } else {
+                throw new NotImplementedException("Lexer buffer cannot handle more than one character");
+            }
         }
 
 
