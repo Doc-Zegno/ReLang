@@ -14,7 +14,8 @@ namespace Handmada.ReLang.Compilation.Lexing {
         private IEnumerable<string> lines;
         private IEnumerator<string> lineEnumerator;
         private IEnumerator<char> charEnumerator;
-        private Stack<char> bufferedCharacters;
+        private char? bufferedCharacter;
+        private char? previousCharacter;
         private char currentCharacter;
         private bool isEofReached;
 
@@ -27,7 +28,7 @@ namespace Handmada.ReLang.Compilation.Lexing {
         public Lexer(IEnumerable<string> lines) {
             this.lines = lines;
             lineEnumerator = lines.GetEnumerator();
-            bufferedCharacters = new Stack<char>();
+            //bufferedCharacters = new Stack<char>();
             isEofReached = false;
             CurrentLineNumber = -1;
 
@@ -348,14 +349,19 @@ namespace Handmada.ReLang.Compilation.Lexing {
 
 
         private bool MoveNextCharacter() {
-            if (bufferedCharacters.Count > 0) {
+            if (bufferedCharacter != null) {
                 CurrentCharacterNumber++;
-                currentCharacter = bufferedCharacters.Pop();
+                previousCharacter = currentCharacter;
+                currentCharacter = bufferedCharacter.Value;
+                bufferedCharacter = null;
                 return true;
+
             } else if (charEnumerator.MoveNext()) {
                 CurrentCharacterNumber++;
+                previousCharacter = currentCharacter;
                 currentCharacter = charEnumerator.Current;
                 return true;
+
             } else {
                 if (MoveNextLine()) {
                     return MoveNextCharacter();
@@ -368,7 +374,7 @@ namespace Handmada.ReLang.Compilation.Lexing {
 
         private void PutBack(char? ch = null) {
             CurrentCharacterNumber--;
-            bufferedCharacters.Push(ch ?? currentCharacter);
+            bufferedCharacter = ch ?? currentCharacter;
         }
 
 

@@ -76,12 +76,16 @@ namespace Handmada.ReLang.Compilation.Parsing {
                             case OperatorMeaning.OpenParenthesis:
                                 return new ExpressionStatement(GetFunctionCall(symbolLexeme.Text, location));
 
-                            case OperatorMeaning.Assignment:
-                                return GetAssignment(symbolLexeme.Text, location);
+                            /*case OperatorMeaning.Assignment:
+                                PutBack();
+                                return GetAssignment(symbolLexeme.Text, location);*/
 
                             default:
-                                RaiseError("Unexpected operator");
-                                return null;
+                                // Assignment
+                                PutBack();
+                                return GetAssignment();
+                                //RaiseError($"Unexpected operator: {GetOperatorName(op.Meaning)}");
+                                //return null;
                         }
                     } else {
                         RaiseError("Unexpected lexeme");
@@ -99,13 +103,96 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
         // x = y + z
-        private IStatement GetAssignment(string name, Location location) {
+        private IStatement GetAssignment() {
+            var identifiers = GetIdentifierList();
             CheckOperator(OperatorMeaning.Assignment);
 
+            var right = currentLexeme.StartLocation;
+            var value = GetMultipleExpression();
+
+            return ForceAssignVariableList(identifiers, value, right);
+        }
+
+
+
+        private IStatement ForceAssignVariableList(IIdentifier identifiers, IExpression value, Location right) {
+            switch (identifiers) {
+                case SingleIdentifier single:
+                    return ForceAssignVariable(single, value, right);
+
+
+                case IdentifierList identifierList:
+                    if (value.TypeInfo is TupleTypeInfo tupleType) {
+                        // Need unpacking
+                        var expectedCount = identifierList.Identifiers.Count;
+                        var actualCount = tupleType.ItemTypes.Count;
+                        if (expectedCount != actualCount) {
+                            var hint = $"left: {expectedCount}, right: {actualCount}";
+                            RaiseError($"Mismatching number of values to be unpacked ({hint})", identifierList.StartLocation);
+                        }
+
+                        // Three options:
+                        //  1) it's compile-time tuple literal
+                        //        x, y = 3, 4
+                        //           <=>
+                        //        x = 3
+                        //        y = 4
+                        //
+                        //  2) it's a variable
+                        //        x, y = point
+                        //           <=>
+                        //        x = point[0]
+                        //        y = point[1]
+                        //
+                        //  3) it's an arbitrary expression (including a non compile-time literal)
+                        //        x, y = f()
+                        //           <=>
+                        //        let _tmp = f()
+                        //        x = _tmp[0]
+                        //        y = _tmp[1]
+                        var subStatements = new List<IStatement>();
+
+                        switch (value) {
+                            case TupleLiteralExpression tupleLiteral when tupleLiteral.IsCompileTime:
+                                for (var i = 0; i < actualCount; i++) {
+                                    var identifier = identifierList.Identifiers[i];
+                                    var expression = tupleLiteral.Items[i];
+                                    subStatements.Add(ForceAssignVariableList(identifier, expression, right));
+                                }
+                                break;
+
+                            case VariableExpression variable:
+                                GenerateTupleDestruction(subStatements, variable, tupleType, identifierList, true, right,
+                                                         (ids, expr, dummy, loc) => ForceAssignVariableList(ids, expr, loc));
+                                break;
+
+                            default:
+                                GenerateTupleDestructionWithTmp(subStatements, value, tupleType, identifierList, true, right,
+                                                                (ids, expr, dummy, loc) => ForceAssignVariableList(ids, expr, loc));
+                                break;
+                        }
+
+                        return new CompoundStatement(subStatements);
+
+                    } else {
+                        RaiseError("Right-side expression is not a tuple. Nothing to unpack", right);
+                        return null;
+                    }
+
+
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+
+
+        private IStatement ForceAssignVariable(SingleIdentifier identifier, IExpression value, Location right) {
             // Check variable definition
+            var name = identifier.Name;
             var maybe = scopeStack.GetDefinition(name);
             if (!maybe.HasValue) {
-                RaiseError($"Undeclared identifier '{name}'", location);
+                RaiseError($"Undeclared identifier '{name}'", identifier.StartLocation);
             }
 
             var definition = maybe.Value;
@@ -113,13 +200,10 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
             // Check if it's mutable
             if (!definition.IsMutable) {
-                RaiseError($"Object '{name}' was declared as immutable, assignment is impossible", location);
+                RaiseError($"Object '{name}' was declared as immutable, assignment is impossible", identifier.StartLocation);
             }
-
-            var loc = currentLexeme.StartLocation;
-            var value = GetExpression();
-            var converted = ForceConvertExpression(value, definition.TypeInfo, loc);
-
+            
+            var converted = ForceConvertExpression(value, definition.TypeInfo, right);
             return new AssignmentStatement(name, definition.Number, frameOffset, converted);
         }
 
@@ -128,7 +212,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
         // return expr
         private IStatement GetReturn() {
             var location = currentLexeme.StartLocation;
-            var operand = GetExpression();
+            var operand = GetMultipleExpression();
             var definition = functionTree.GetCurrentFunctionDefinition();
 
             var converted = ForceConvertExpression(operand, definition.ResultType, location);
@@ -231,31 +315,13 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                 break;
 
                             case VariableExpression variable:
-                                GenerateTupleDestruction(subStatements, variable, tupleType, identifierList, isMutable, right);
+                                GenerateTupleDestruction(subStatements, variable, tupleType, identifierList,
+                                                         isMutable, right, ForceDeclareVariableList);
                                 break;
 
                             default:
-                                // Declare a tmp 
-                                var tmpName = GetNextTmpName();
-                                if (!scopeStack.DeclareVariable(tmpName, tupleType, false, value)) {
-                                    RaiseError($"I wasn't able to declare a temporary '{tmpName}'. WTF???");
-                                }
-                                subStatements.Add(new VariableDeclarationStatement(tmpName, value, false));
-
-                                // Get a variable expression
-                                var maybe = scopeStack.GetDefinition(tmpName);
-                                var definition = maybe.Value;
-                                var frameOffset = definition.ScopeNumber - (scopeStack.Count - 1);
-                                var tupleVariable = new VariableExpression(
-                                    tmpName,
-                                    definition.Number,
-                                    frameOffset,
-                                    false,
-                                    tupleType
-                                );
-
-                                // Now it's safe to use code for VariableExpression case
-                                GenerateTupleDestruction(subStatements, tupleVariable, tupleType, identifierList, isMutable, right);
+                                GenerateTupleDestructionWithTmp(subStatements, value, tupleType, identifierList,
+                                                                isMutable, right, ForceDeclareVariableList);
                                 break;
                         }
 
@@ -273,13 +339,49 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
 
+        private void GenerateTupleDestructionWithTmp(
+            List<IStatement> subStatements,
+            IExpression value,
+            TupleTypeInfo tupleType,
+            IdentifierList identifierList,
+            bool isMutable,
+            Location right,
+            Func<IIdentifier, IExpression, bool, Location, IStatement> func)
+        {
+            // Declare a tmp 
+            var tmpName = GetNextTmpName();
+            if (!scopeStack.DeclareVariable(tmpName, tupleType, false, value)) {
+                RaiseError($"I wasn't able to declare a temporary '{tmpName}'. WTF???");
+            }
+            subStatements.Add(new VariableDeclarationStatement(tmpName, value, false));
+
+            // Get a variable expression
+            var maybe = scopeStack.GetDefinition(tmpName);
+            var definition = maybe.Value;
+            var frameOffset = definition.ScopeNumber - (scopeStack.Count - 1);
+            var tupleVariable = new VariableExpression(
+                tmpName,
+                definition.Number,
+                frameOffset,
+                false,
+                tupleType
+            );
+
+            // Now it's safe to use code for VariableExpression case
+            GenerateTupleDestruction(subStatements, tupleVariable, tupleType, identifierList,
+                                     isMutable, right, func);
+        }
+
+
+
         private void GenerateTupleDestruction(
             List<IStatement> subStatements, 
             VariableExpression tupleVariable,
             TupleTypeInfo tupleType,
             IdentifierList identifierList,
             bool isMutable,
-            Location right)
+            Location right,
+            Func<IIdentifier, IExpression, bool, Location, IStatement> func)
         {
             var actualCount = tupleType.ItemTypes.Count;
             for (var i = 0; i < actualCount; i++) {
@@ -296,7 +398,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 );
 
                 var identifier = identifierList.Identifiers[i];
-                subStatements.Add(ForceDeclareVariableList(identifier, expression, isMutable, right));
+                subStatements.Add(func(identifier, expression, isMutable, right));
             }
         }
 

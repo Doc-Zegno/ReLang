@@ -213,7 +213,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
                             for (var i = 0; i < tuple.Length; i++) {
                                 tuple[i] = EvaluateExpression(tupleLiteral.Items[i]);
                             }
-                            return tuple;
+                            return new TupleAdapter(tuple);
 
                         default:
                             throw new VirtualMachineException($"Unknown literal expression: {literal}");
@@ -379,7 +379,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
                 case BuiltinFunctionCallExpression.Option.TupleGet:
                     return CallTupleGet(
-                        (object[])EvaluateExpression(arguments[0]),
+                        (TupleAdapter)EvaluateExpression(arguments[0]),
                         (int)EvaluateExpression(arguments[1])
                     );
 
@@ -389,8 +389,8 @@ namespace Handmada.ReLang.Compilation.Runtime {
         }
 
 
-        private object CallTupleGet(object[] tuple, int index) {
-            return tuple[index];
+        private object CallTupleGet(TupleAdapter tuple, int index) {
+            return tuple.Items[index];
         }
 
 
@@ -430,9 +430,9 @@ namespace Handmada.ReLang.Compilation.Runtime {
                     ProgramOut.Write($"{range.Start}..{range.End}");
                     break;
 
-                case object[] tuple:
+                case TupleAdapter tuple:
                     ProgramOut.Write("(");
-                    PrintObjectList(tuple, true);
+                    PrintObjectList(tuple.Items, true);
                     ProgramOut.Write(")");
                     break;
 

@@ -1,0 +1,15 @@
+func main(args: [String]) {
+	let text = "Sample Text"
+	let point = getRandomPoint(0, 0) 
+	let label, (x1, y1), (x2, y2) = (text, point, getRandomPoint(1, 2))
+	print(label)
+	print(x1)
+	print(y1)
+	print(x2)
+	print(y2)
+}
+
+
+func getRandomPoint(shiftX: Float, shiftY: Float) -> (Float, Float) {
+	return (3.0 + shiftX, 4.0 + shiftY)
+}

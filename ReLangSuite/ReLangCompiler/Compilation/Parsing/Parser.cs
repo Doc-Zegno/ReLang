@@ -14,6 +14,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
         private List<Lexeme> lexemes;
         private IEnumerator<Lexeme> lexemeEnumerator;
         private Lexeme currentLexeme;
+        private Lexeme previousLexeme;
+        private Lexeme bufferedLexeme;
         private List<FunctionData> functions;
         private int? mainFunctionNumber;
         private FunctionTree functionTree;
@@ -438,17 +440,41 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
         private void ResetLexemes() {
+            bufferedLexeme = null;
+            previousLexeme = null;
             lexemeEnumerator = lexemes.GetEnumerator();
         }
 
 
         private bool MoveNextLexeme() {
-            if (lexemeEnumerator.MoveNext()) {
+            if (bufferedLexeme != null) {
+                previousLexeme = currentLexeme;
+                currentLexeme = bufferedLexeme;
+                bufferedLexeme = null;
+                return true;
+
+            } else if (lexemeEnumerator.MoveNext()) {
+                previousLexeme = currentLexeme;
                 currentLexeme = lexemeEnumerator.Current;
                 return true;
+
             } else {
-                currentLexeme = null;
+                if (currentLexeme != null) {
+                    previousLexeme = currentLexeme;
+                    currentLexeme = null;
+                }
                 return false;
+            }
+        }
+
+
+        private void PutBack() {
+            if (previousLexeme != null) {
+                bufferedLexeme = currentLexeme;
+                currentLexeme = previousLexeme;
+                previousLexeme = null;
+            } else {
+                throw new NotImplementedException("Current lexeme buffer can handle only 1 buffered lexeme");
             }
         }
     }
