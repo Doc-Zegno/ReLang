@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -44,7 +45,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                             if (primitiveTarget.TypeOption == Option.Float) {
                                 if (expression.IsCompileTime) {
                                     var integer = (int)expression.Value;
-                                    return new PrimitiveLiteralExpression((double)integer, new PrimitiveTypeInfo(Option.Float));
+                                    return new PrimitiveLiteralExpression((double)integer, Float);
                                 } else {
                                     return new ConversionExpression(ConversionExpression.Option.Int2Float, expression);
                                 }
@@ -57,6 +58,123 @@ namespace Handmada.ReLang.Compilation.Yet {
                             return null;
                     }
                 } 
+            } else {
+                return null;
+            }
+        }
+
+
+        public IExpression ConstructFrom(IExpression expression) {
+            var implicitConversion = ConvertTo(expression, this);
+            if (implicitConversion != null) {
+                return implicitConversion;
+
+            } else if (expression.TypeInfo is PrimitiveTypeInfo primitiveType) {
+                switch (primitiveType.TypeOption) {
+                    case Option.Bool:
+                        switch (TypeOption) {
+                            case Option.String:
+                                if (expression.IsCompileTime) {
+                                    var boolean = (bool)expression.Value;
+                                    return new PrimitiveLiteralExpression(boolean ? "true" : "false", String);
+                                } else {
+                                    return new ConversionExpression(ConversionExpression.Option.Bool2String, expression);
+                                }
+
+                            default:
+                                return null;
+                        }
+
+
+                    case Option.Int:
+                        switch (TypeOption) {
+                            case Option.String:
+                                if (expression.IsCompileTime) {
+                                    var integer = (int)expression.Value;
+                                    return new PrimitiveLiteralExpression(integer.ToString(), String);
+                                } else {
+                                    return new ConversionExpression(ConversionExpression.Option.Int2String, expression);
+                                }
+
+                            default:
+                                return null;
+                        }
+
+
+                    case Option.Float:
+                        switch (TypeOption) {
+                            case Option.Int:
+                                if (expression.IsCompileTime) {
+                                    var floating = (double)expression.Value;
+                                    return new PrimitiveLiteralExpression((int)floating, Int);
+                                } else {
+                                    return new ConversionExpression(ConversionExpression.Option.Float2Int, expression);
+                                }
+
+                            case Option.String:
+                                if (expression.IsCompileTime) {
+                                    var floating = (double)expression.Value;
+                                    return new PrimitiveLiteralExpression(floating.ToString(new CultureInfo("en-US")), String);
+                                } else {
+                                    return new ConversionExpression(ConversionExpression.Option.Float2String, expression);
+                                }
+
+                            default:
+                                return null;
+                        }
+
+
+                    case Option.String:
+                        switch (TypeOption) {
+                            case Option.Bool:
+                                if (expression.IsCompileTime) {
+                                    var s = (string)expression.Value;
+                                    var boolean = false;
+                                    if (s == "true") {
+                                        boolean = true;
+                                    } else if (s == "false") {
+                                        boolean = false;
+                                    } else {
+                                        throw new FormatException($"Cannot convert \"{s}\" to boolean");
+                                    }
+                                    return new PrimitiveLiteralExpression(boolean, Bool);
+                                } else {
+                                    return new ConversionExpression(ConversionExpression.Option.String2Bool, expression);
+                                }
+
+                            case Option.Int:
+                                if (expression.IsCompileTime) {
+                                    var s = (string)expression.Value;
+                                    if (int.TryParse(s, out int integer)) {
+                                        return new PrimitiveLiteralExpression(integer, Int);
+                                    } else {
+                                        throw new FormatException($"Cannot convert \"{s}\" to integer");
+                                    }
+                                } else {
+                                    return new ConversionExpression(ConversionExpression.Option.String2Int, expression);
+                                }
+
+                            case Option.Float:
+                                if (expression.IsCompileTime) {
+                                    var s = (string)expression.Value;
+                                    if (double.TryParse(s, NumberStyles.Number, new CultureInfo("en-US"), out double floating)) {
+                                        return new PrimitiveLiteralExpression(floating, Float);
+                                    } else {
+                                        throw new FormatException($"Cannot convert \"{s}\" to floating");
+                                    }
+                                } else {
+                                    return new ConversionExpression(ConversionExpression.Option.String2Float, expression);
+                                }
+
+                            default:
+                                return null;
+                        }
+
+
+                    default:
+                        return null;
+                }
+
             } else {
                 return null;
             }

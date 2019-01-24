@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -364,9 +365,60 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
 
         private object EvaluateConversion(ConversionExpression conversion) {
+            var value = EvaluateExpression(conversion.Operand);
+
             switch (conversion.ConversionOption) {
                 case ConversionExpression.Option.Int2Float:
-                    return (double)(int)EvaluateExpression(conversion.Operand);
+                    return (double)(int)value;
+
+                case ConversionExpression.Option.Bool2String:
+                    return (bool)value ? "true" : "false";
+
+                case ConversionExpression.Option.Float2Int:
+                    return (int)(double)value;
+
+                case ConversionExpression.Option.Int2String:
+                    return ((int)value).ToString();
+
+                case ConversionExpression.Option.Float2String:
+                    return ((double)value).ToString(new CultureInfo("en-US"));
+
+                case ConversionExpression.Option.String2Int:
+                    // TODO: insert error raising
+                    return int.Parse((string)value);
+
+                case ConversionExpression.Option.String2Float:
+                    // TODO: insert error raising
+                    return double.Parse((string)value, new CultureInfo("en-US"));
+
+                case ConversionExpression.Option.String2Bool:
+                    // TODO: insert error raising
+                    switch ((string)value) {
+                        case "true":
+                            return true;
+
+                        case "false":
+                            return false;
+
+                        default:
+                            throw new VirtualMachineException($"Conversion from string to bool failed");
+                    }
+
+                case ConversionExpression.Option.Iterable2List:
+                    return new List<object>((IEnumerable<object>)value);
+
+                case ConversionExpression.Option.Iterable2Set:
+                    return new HashSet<object>((IEnumerable<object>)value);
+
+                case ConversionExpression.Option.Iterable2Dictionary:
+                    return new DictionaryAdapter(
+                        ((IEnumerable<object>)value).Select(
+                            obj => {
+                                var tuple = (TupleAdapter)obj;
+                                return (tuple.Items[0], tuple.Items[1]);
+                            }
+                        )
+                    );
 
                 default:
                     throw new VirtualMachineException($"Unsupported conversion: {conversion.ConversionOption}");

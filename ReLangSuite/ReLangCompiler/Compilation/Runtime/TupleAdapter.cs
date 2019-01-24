@@ -46,7 +46,12 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
 
         public override int GetHashCode() {
-            return -604923257 + EqualityComparer<object[]>.Default.GetHashCode(Items);
+            var hash = 0;
+            foreach (var item in Items) {
+                hash ^= item.GetHashCode();
+            }
+            return hash;
+            //return -604923257 + EqualityComparer<object[]>.Default.GetHashCode(Items);
         }
     }
 }

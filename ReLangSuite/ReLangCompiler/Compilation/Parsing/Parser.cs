@@ -328,6 +328,26 @@ namespace Handmada.ReLang.Compilation.Parsing {
         }
 
 
+        private IExpression ForceConstructFrom(IExpression expression, ITypeInfo targetType, Location location) {
+            IExpression constructed = null;
+            try {
+                constructed = targetType.ConstructFrom(expression);
+            } catch (FormatException e) {
+                RaiseError(e.Message, location);
+            }
+
+            if (constructed != null) {
+                return constructed;
+            } else {
+                RaiseError(
+                    $"Cannot construct object of type '{targetType.Name}' from expression of type '{expression.TypeInfo.Name}'",
+                    location
+                );
+                return null;
+            }   
+        }
+
+
         private bool WhetherPrimitiveType(IExpression expression, PrimitiveTypeInfo.Option option) {
             if (expression.TypeInfo is PrimitiveTypeInfo primitiveType && primitiveType.TypeOption == option) {
                 return true;

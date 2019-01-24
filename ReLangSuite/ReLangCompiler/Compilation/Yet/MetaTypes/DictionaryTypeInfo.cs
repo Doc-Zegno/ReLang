@@ -61,5 +61,17 @@ namespace Handmada.ReLang.Compilation.Yet {
             hashCode = hashCode * -1521134295 + EqualityComparer<ITypeInfo>.Default.GetHashCode(ValueType);
             return hashCode;
         }
+
+
+        public IExpression ConstructFrom(IExpression expression) {
+            if (expression.TypeInfo is IIterableTypeInfo iterableType
+                && iterableType.ItemType is TupleTypeInfo tupleType
+                && tupleType.ItemTypes.Count == 2)
+            {
+                return new ConversionExpression(ConversionExpression.Option.Iterable2Dictionary, expression);
+            } else {
+                return null;
+            }
+        }
     }
 }

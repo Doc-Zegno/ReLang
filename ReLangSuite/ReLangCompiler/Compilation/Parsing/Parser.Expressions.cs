@@ -145,7 +145,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 case SymbolLexeme symbol:
                     MoveNextLexeme();
                     if (WhetherOperator(OperatorMeaning.OpenParenthesis)) {
-                        return GetFunctionCall(symbol.Text, location);
+                        return GetConstructorOrFunctionCall(symbol.Text, location);
 
                     } else {
                         var maybe = scopeStack.GetDefinition(symbol.Text);
@@ -201,6 +201,51 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
             // Sanity check
             return null;
+        }
+
+
+
+        private IExpression GetConstructorOrFunctionCall(string name, Location locationName) {
+            ITypeInfo targetType = null;
+            switch (name) {
+                case "Bool":
+                    targetType = PrimitiveTypeInfo.Bool;
+                    break;
+
+                case "Int":
+                    targetType = PrimitiveTypeInfo.Int;
+                    break;
+
+                case "Float":
+                    targetType = PrimitiveTypeInfo.Float;
+                    break;
+
+                case "String":
+                    targetType = PrimitiveTypeInfo.String;
+                    break;
+
+                case "List":
+                    targetType = new ArrayListTypeInfo(PrimitiveTypeInfo.Object);  // No matter what type it is
+                    break;
+
+                case "Set":
+                    targetType = new HashSetTypeInfo(PrimitiveTypeInfo.Object);  // Doesn't matter
+                    break;
+
+                case "Dictionary":
+                    targetType = new DictionaryTypeInfo(PrimitiveTypeInfo.Object, PrimitiveTypeInfo.Object);  // Doesn't matter
+                    break;
+
+                default:
+                    return GetFunctionCall(name, locationName);
+            }
+
+            CheckOperator(OperatorMeaning.OpenParenthesis);
+            var locationValue = currentLexeme.StartLocation;
+            var value = GetExpression();
+            CheckOperator(OperatorMeaning.CloseParenthesis);
+
+            return ForceConstructFrom(value, targetType, locationValue);
         }
 
 

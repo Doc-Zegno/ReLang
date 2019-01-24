@@ -61,5 +61,10 @@ namespace Handmada.ReLang.Compilation.Yet {
             hashCode = hashCode * -1521134295 + EqualityComparer<List<ITypeInfo>>.Default.GetHashCode(ItemTypes);
             return hashCode;
         }
+
+
+        public IExpression ConstructFrom(IExpression expression) {
+            throw new NotImplementedException();
+        }
     }
 }

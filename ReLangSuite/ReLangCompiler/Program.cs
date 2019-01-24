@@ -218,16 +218,7 @@ namespace Handmada.ReLang.Compilation {
                     break;
 
                 case ConversionExpression conversion:
-                    switch (conversion.ConversionOption) {
-                        case ConversionExpression.Option.Int2Float:
-                            Console.Write("Float(");
-                            PrintExpression(conversion.Operand);
-                            Console.Write(")");
-                            break;
-
-                        default:
-                            throw new NotImplementedException();
-                    }
+                    PrintConversion(conversion);
                     break;
 
                 case ILiteralExpression literal:
@@ -291,6 +282,13 @@ namespace Handmada.ReLang.Compilation {
                     break;
             }
             //Console.Write($"<{expression.TypeInfo.Name}>");
+        }
+
+
+        private static void PrintConversion(ConversionExpression conversion) {
+            Console.Write($"{conversion.TypeInfo.Name}(");
+            PrintExpression(conversion.Operand);
+            Console.Write(")");
         }
 
 

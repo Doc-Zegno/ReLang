@@ -14,6 +14,11 @@ namespace Handmada.ReLang.Compilation.Yet {
         public string Name => "Range";
 
 
+        public IExpression ConstructFrom(IExpression expression) {
+            throw new NotImplementedException();
+        }
+
+
         public IExpression ConvertTo(IExpression expression, ITypeInfo targetTypeInfo) {
             if (Equals(targetTypeInfo)) {
                 return expression;
