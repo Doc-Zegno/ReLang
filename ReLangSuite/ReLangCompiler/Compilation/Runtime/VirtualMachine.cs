@@ -203,6 +203,12 @@ namespace Handmada.ReLang.Compilation.Runtime {
                             }
                             return set;
 
+                        case DictionaryLiteralExpression dictionaryLiteral:
+                            var pairs = dictionaryLiteral.Pairs.Select(
+                                pair => (EvaluateExpression(pair.Item1), EvaluateExpression(pair.Item2))
+                            );
+                            return new DictionaryAdapter(pairs);
+
                         case RangeLiteralExpression rangeLiteral:
                             var start = (int)EvaluateExpression(rangeLiteral.Start);
                             var end = (int)EvaluateExpression(rangeLiteral.End);
@@ -395,12 +401,12 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
 
         private void CallPrint(object argument) {
-            PrintObject(argument, false);
+            PrintObject(argument, false, false);
             ProgramOut.WriteLine();
         }
 
 
-        private void PrintObject(object obj, bool isEscaped) {
+        private void PrintObject(object obj, bool isEscaped, bool isTuplePair) {
             switch (obj) {
                 case bool b:
                     ProgramOut.Write(b ? "true" : "false");
@@ -416,13 +422,19 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
                 case List<object> list:
                     ProgramOut.Write("[");
-                    PrintObjectList(list, true);
+                    PrintObjectList(list, true, false);
                     ProgramOut.Write("]");
                     break;
 
                 case ISet<object> set:
                     ProgramOut.Write("{");
-                    PrintObjectList(set, true);
+                    PrintObjectList(set, true, false);
+                    ProgramOut.Write("}");
+                    break;
+
+                case DictionaryAdapter dictionary:
+                    ProgramOut.Write("{");
+                    PrintObjectList(dictionary.Pairs, true, true);
                     ProgramOut.Write("}");
                     break;
 
@@ -431,9 +443,16 @@ namespace Handmada.ReLang.Compilation.Runtime {
                     break;
 
                 case TupleAdapter tuple:
-                    ProgramOut.Write("(");
-                    PrintObjectList(tuple.Items, true);
-                    ProgramOut.Write(")");
+                    if (isTuplePair && tuple.Items.Length == 2) {
+                        // Print as pair
+                        PrintObject(tuple.Items[0], true, false);
+                        ProgramOut.Write(": ");
+                        PrintObject(tuple.Items[1], true, false);
+                    } else {
+                        ProgramOut.Write("(");
+                        PrintObjectList(tuple.Items, true, false);
+                        ProgramOut.Write(")");
+                    }
                     break;
 
                 default:
@@ -443,14 +462,14 @@ namespace Handmada.ReLang.Compilation.Runtime {
         }
 
 
-        private void PrintObjectList(IEnumerable<object> objs, bool isEscaped) {
+        private void PrintObjectList(IEnumerable<object> objs, bool isEscaped, bool isTuplePair) {
             var isFirst = true;
             foreach (var obj in objs) {
                 if (!isFirst) {
                     ProgramOut.Write(", ");
                 }
                 isFirst = false;
-                PrintObject(obj, isEscaped);
+                PrintObject(obj, isEscaped, isTuplePair);
             }
         }
 

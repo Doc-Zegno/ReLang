@@ -135,7 +135,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                         case OperatorMeaning.OpenBrace:
                             MoveNextLexeme();
-                            return GetSetLiteral();
+                            return GetSetOrDictionaryLiteral();
 
                         default:
                             RaiseError($"Unexpected operator: {GetOperatorName(operatorLexeme.Meaning)}");
@@ -207,42 +207,85 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
         // [a, b, c, d, e]
         private IExpression GetListLiteral() {
-            var (items, itemType) = GetItemList(OperatorMeaning.CloseBracket);
-            return new ListLiteralExpression(items, itemType);
+            var item = GetExpression();
+            var items = new List<IExpression> { item };
+            items.AddRange(GetItemList(item.TypeInfo));
+            CheckOperator(OperatorMeaning.CloseBracket);
+            return new ListLiteralExpression(items, item.TypeInfo);
         }
 
 
 
         // {a, b, c, d, e}
-        private IExpression GetSetLiteral() {
-            var (items, itemType) = GetItemList(OperatorMeaning.CloseBrace);
-            return new SetLiteralExpression(items, itemType);
+        private IExpression GetSetOrDictionaryLiteral() {
+            // Determine whether this is set or dictionary
+            var key = GetExpression();
+
+            if (WhetherOperator(OperatorMeaning.Colon)) {
+                // Dictionary
+                MoveNextLexeme();
+                var value = GetExpression();
+
+                var pairs = new List<(IExpression, IExpression)> { (key, value) };
+                pairs.AddRange(GetPairList(key.TypeInfo, value.TypeInfo));
+                CheckOperator(OperatorMeaning.CloseBrace);
+                return new DictionaryLiteralExpression(pairs, key.TypeInfo, value.TypeInfo);
+
+            } else {
+                // Set
+                var items = new List<IExpression> { key };
+                items.AddRange(GetItemList(key.TypeInfo));
+                CheckOperator(OperatorMeaning.CloseBrace);
+                return new SetLiteralExpression(items, key.TypeInfo);
+            }
         }
 
 
 
-        private (List<IExpression>, ITypeInfo) GetItemList(OperatorMeaning stopOperator) {
+        private List<(IExpression, IExpression)> GetPairList(ITypeInfo keyType, ITypeInfo valueType) {
+            var pairs = new List<(IExpression, IExpression)>();
+            while (WhetherOperator(OperatorMeaning.Comma)) {
+                MoveNextLexeme();
+
+                // Get key and check type
+                var locationKey = currentLexeme.StartLocation;
+                var key = GetExpression();
+                if (!keyType.Equals(key.TypeInfo)) {
+                    RaiseError($"Key's type mismatch (expected '{keyType.Name}' but got '{key.TypeInfo.Name}')", locationKey);
+                }
+
+                // Swallow colon
+                CheckOperator(OperatorMeaning.Colon);
+
+                // Get value and check type
+                var locationValue = currentLexeme.StartLocation;
+                var value = GetExpression();
+                if (!valueType.Equals(value.TypeInfo)) {
+                    RaiseError($"Value's type mismatch (expected '{valueType.Name}' but got '{value.TypeInfo.Name}')", locationValue);
+                }
+
+                pairs.Add((key, value));
+            }
+            return pairs;
+        }
+
+
+
+        private List<IExpression> GetItemList(ITypeInfo itemType) {
             var items = new List<IExpression>();
-            ITypeInfo typeInfo = null;
-            while (true) {
+            while (WhetherOperator(OperatorMeaning.Comma)) {
+                MoveNextLexeme();
+
+                // Get item and check type
                 var location = currentLexeme.StartLocation;
                 var item = GetExpression();
-                if (typeInfo != null) {
-                    if (!typeInfo.Equals(item.TypeInfo)) {
-                        RaiseError($"Item's type mismatch (expected '{typeInfo.Name}', got '{item.TypeInfo.Name}')", location);
-                    }
-                } else {
-                    typeInfo = item.TypeInfo;
+                if (!itemType.Equals(item.TypeInfo)) {
+                    RaiseError($"Item's type mismatch (expected '{itemType.Name}' but got '{item.TypeInfo.Name}')", location);
                 }
-                items.Add(item);
 
-                if (WhetherOperator(stopOperator)) {
-                    MoveNextLexeme();
-                    return (items, typeInfo);
-                } else {
-                    CheckOperator(OperatorMeaning.Comma);
-                }
+                items.Add(item);
             }
+            return items;
         }
 
 

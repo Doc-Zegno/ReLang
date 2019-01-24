@@ -1,0 +1,13 @@
+func main(args: [String]) {
+    let ids2info = {3: ("Kunsar", 1000), 5: ("n00b", 500)}
+    printInfo(ids2info)
+}
+
+
+func printInfo(ids2info: {Int: (String, Int)}) {
+    for id, (login, score) in ids2info {
+        print(id)
+        print(login)
+        print(score)
+    }
+}

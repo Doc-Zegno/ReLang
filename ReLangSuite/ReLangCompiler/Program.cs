@@ -266,6 +266,12 @@ namespace Handmada.ReLang.Compilation {
                             Console.Write("}");
                             break;
 
+                        case DictionaryLiteralExpression dictionaryLiteral:
+                            Console.Write("{");
+                            PrintExpressionPairs(dictionaryLiteral.Pairs);
+                            Console.Write("}");
+                            break;
+
                         case RangeLiteralExpression rangeLiteral:
                             PrintExpression(rangeLiteral.Start);
                             Console.Write("..");
@@ -285,6 +291,20 @@ namespace Handmada.ReLang.Compilation {
                     break;
             }
             //Console.Write($"<{expression.TypeInfo.Name}>");
+        }
+
+
+        private static void PrintExpressionPairs(List<(IExpression, IExpression)> pairs) {
+            var isFirst = true;
+            foreach (var (key, value) in pairs) {
+                if (!isFirst) {
+                    Console.Write(", ");
+                }
+                isFirst = false;
+                PrintExpression(key);
+                Console.Write(": ");
+                PrintExpression(value);
+            }
         }
 
 

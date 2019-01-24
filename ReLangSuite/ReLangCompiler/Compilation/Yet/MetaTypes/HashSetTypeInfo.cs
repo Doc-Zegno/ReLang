@@ -20,12 +20,17 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public IExpression ConvertTo(IExpression expression, ITypeInfo targetTypeInfo) {
-            if (Equals(targetTypeInfo)
-                || targetTypeInfo is PrimitiveTypeInfo primitive && primitive.TypeOption == PrimitiveTypeInfo.Option.Object)
-            {
+            if (Equals(targetTypeInfo)) {
                 return expression;
             } else {
-                return null;
+                switch (targetTypeInfo) {
+                    case PrimitiveTypeInfo primitiveType when primitiveType.TypeOption == PrimitiveTypeInfo.Option.Object:
+                    case IIterableTypeInfo iterableType when ItemType.Equals(iterableType.ItemType):
+                        return expression;
+
+                    default:
+                        return null;
+                }
             }
         }
 

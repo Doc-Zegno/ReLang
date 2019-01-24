@@ -165,17 +165,23 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                 case OperatorLexeme operatorLexeme:
                     MoveNextLexeme();
-                    ITypeInfo itemType;
                     switch (operatorLexeme.Meaning) {
                         case OperatorMeaning.OpenBracket:
-                            itemType = GetTypeInfo();
+                            var itemType = GetTypeInfo();
                             CheckOperator(OperatorMeaning.CloseBracket);
                             return new ArrayListTypeInfo(itemType);
 
                         case OperatorMeaning.OpenBrace:
-                            itemType = GetTypeInfo();
-                            CheckOperator(OperatorMeaning.CloseBrace);
-                            return new HashSetTypeInfo(itemType);
+                            var keyType = GetTypeInfo();
+                            if (WhetherOperator(OperatorMeaning.Colon)) {
+                                MoveNextLexeme();
+                                var valueType = GetTypeInfo();
+                                CheckOperator(OperatorMeaning.CloseBrace);
+                                return new DictionaryTypeInfo(keyType, valueType);
+                            } else {
+                                CheckOperator(OperatorMeaning.CloseBrace);
+                                return new HashSetTypeInfo(keyType);
+                            }
 
                         case OperatorMeaning.OpenParenthesis:
                             var tupleType = GetTupleTypeInfo();
