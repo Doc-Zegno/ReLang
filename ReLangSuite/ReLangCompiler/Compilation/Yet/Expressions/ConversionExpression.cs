@@ -14,6 +14,9 @@ namespace Handmada.ReLang.Compilation.Yet {
         /// Possible conversion
         /// </summary>
         public enum Option {
+            Char2Int,
+            Char2String,
+            Int2Char,
             Int2Float,
             Float2Int,
             Bool2String,
@@ -41,9 +44,14 @@ namespace Handmada.ReLang.Compilation.Yet {
             ConversionOption = conversionOption;
             Operand = operand;
 
-            if (operand.TypeInfo is IterableTypeInfo iterableType) {
-                var itemType = iterableType.ItemType;
+            ITypeInfo itemType = null;
+            if (operand.TypeInfo is IterableTypeInfo iterable) {
+                itemType = iterable.ItemType;
+            } else if (operand.TypeInfo.Equals(PrimitiveTypeInfo.String)) {
+                itemType = PrimitiveTypeInfo.Char;
+            }
 
+            if (itemType != null) {
                 switch (conversionOption) {
                     case Option.Iterable2List:
                         TypeInfo = new ArrayListTypeInfo(itemType);
@@ -64,6 +72,18 @@ namespace Handmada.ReLang.Compilation.Yet {
 
             } else {
                 switch (ConversionOption) {
+                    case Option.Char2Int:
+                        TypeInfo = PrimitiveTypeInfo.Int;
+                        break;
+
+                    case Option.Char2String:
+                        TypeInfo = PrimitiveTypeInfo.String;
+                        break;
+
+                    case Option.Int2Char:
+                        TypeInfo = PrimitiveTypeInfo.Char;
+                        break;
+
                     case Option.Int2Float:
                         TypeInfo = PrimitiveTypeInfo.Float;
                         break;

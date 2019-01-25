@@ -175,6 +175,10 @@ namespace Handmada.ReLang.Compilation.Parsing {
                             typeOption = PrimitiveTypeInfo.Option.Bool;
                             break;
 
+                        case char value:
+                            typeOption = PrimitiveTypeInfo.Option.Char;
+                            break;
+
                         case int value:
                             typeOption = PrimitiveTypeInfo.Option.Int;
                             break;
@@ -210,6 +214,10 @@ namespace Handmada.ReLang.Compilation.Parsing {
             switch (name) {
                 case "Bool":
                     targetType = PrimitiveTypeInfo.Bool;
+                    break;
+
+                case "Char":
+                    targetType = PrimitiveTypeInfo.Char;
                     break;
 
                 case "Int":

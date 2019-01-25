@@ -28,6 +28,8 @@ namespace Handmada.ReLang.Compilation.Yet {
         public virtual IExpression ConvertFrom(IExpression expression) {
             switch (expression) {
                 case IterableTypeInfo iterableType when ItemType.Equals(iterableType.ItemType):
+                case PrimitiveTypeInfo primitive
+                when primitive.TypeOption == PrimitiveTypeInfo.Option.String && ItemType.Equals(PrimitiveTypeInfo.Char):
                     return expression;
 
                 default:

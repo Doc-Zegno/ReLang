@@ -116,7 +116,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
                 case ForEachStatement forEach:
                     //Log("Executing for-each...");
                     statements = forEach.Statements;
-                    var iterable = (IEnumerable<object>)EvaluateExpression(forEach.Iterable);
+                    var iterable = ConvertToEnumerable(EvaluateExpression(forEach.Iterable));
                     EnterFrame();
                     foreach (var item in iterable) {
                         ClearFrame();
@@ -151,6 +151,22 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
                 default:
                     throw new VirtualMachineException($"Unsupported statement: {statement}");
+            }
+        }
+
+
+        private IEnumerable<object> ConvertToEnumerable(object value) {
+            if (value is string str) {
+                return GetStringEnumerable(str);
+            } else {
+                return (IEnumerable<object>)value;
+            }
+        }
+
+
+        private IEnumerable<object> GetStringEnumerable(string str) {
+            foreach (var ch in str) {
+                yield return ch;
             }
         }
 
@@ -368,8 +384,23 @@ namespace Handmada.ReLang.Compilation.Runtime {
             var value = EvaluateExpression(conversion.Operand);
 
             switch (conversion.ConversionOption) {
+                case ConversionExpression.Option.Char2Int:
+                    return (int)(char)value;
+
+                case ConversionExpression.Option.Char2String:
+                    return ((char)value).ToString();
+
                 case ConversionExpression.Option.Int2Float:
                     return (double)(int)value;
+
+                case ConversionExpression.Option.Int2Char:
+                    // TODO: insert error raising
+                    var integer = (int)value;
+                    if (integer >= 0 && integer <= char.MaxValue) {
+                        return (char)integer;
+                    } else {
+                        throw new VirtualMachineException($"Conversion from 'Int' to 'Char' failed");
+                    }
 
                 case ConversionExpression.Option.Bool2String:
                     return (bool)value ? "true" : "false";
@@ -401,18 +432,18 @@ namespace Handmada.ReLang.Compilation.Runtime {
                             return false;
 
                         default:
-                            throw new VirtualMachineException($"Conversion from string to bool failed");
+                            throw new VirtualMachineException($"Conversion from 'String' to 'Bool' failed");
                     }
 
                 case ConversionExpression.Option.Iterable2List:
-                    return new List<object>((IEnumerable<object>)value);
+                    return new List<object>(ConvertToEnumerable(value));
 
                 case ConversionExpression.Option.Iterable2Set:
-                    return new HashSet<object>((IEnumerable<object>)value);
+                    return new HashSet<object>(ConvertToEnumerable(value));
 
                 case ConversionExpression.Option.Iterable2Dictionary:
                     return new DictionaryAdapter(
-                        ((IEnumerable<object>)value).Select(
+                        ConvertToEnumerable(value).Select(
                             obj => {
                                 var tuple = (TupleAdapter)obj;
                                 return (tuple.Items[0], tuple.Items[1]);
@@ -462,6 +493,14 @@ namespace Handmada.ReLang.Compilation.Runtime {
             switch (obj) {
                 case bool b:
                     ProgramOut.Write(b ? "true" : "false");
+                    break;
+
+                case char ch:
+                    if (isEscaped) {
+                        ProgramOut.Write($"'{ch}'");
+                    } else {
+                        ProgramOut.Write(ch);
+                    }
                     break;
 
                 case string s:

@@ -146,6 +146,9 @@ namespace Handmada.ReLang.Compilation.Parsing {
                         case "Bool":
                             return PrimitiveTypeInfo.Bool;
 
+                        case "Char":
+                            return PrimitiveTypeInfo.Char;
+
                         case "Int":
                             return PrimitiveTypeInfo.Int;
 
@@ -349,10 +352,15 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
         private ITypeInfo TryGetItemType(ITypeInfo typeInfo) {
-            if (typeInfo is IterableTypeInfo iterable) {
-                return iterable.ItemType;
-            } else {
-                return null;
+            switch (typeInfo) {
+                case IterableTypeInfo iterable:
+                    return iterable.ItemType;
+
+                case PrimitiveTypeInfo primitive when primitive.TypeOption == PrimitiveTypeInfo.Option.String:
+                    return PrimitiveTypeInfo.Char;
+
+                default:
+                    return null;
             }
         }
 

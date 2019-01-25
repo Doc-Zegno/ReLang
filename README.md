@@ -9,7 +9,7 @@ Compiler and interpreter for Re:Lang
 - [x] Type checks and implicit conversions
 - [x] Complex expressions
 - [x] Explicit conversions (`Int("5")`, `String(5)`)
-- [ ] `Char` data type (and iterating over string)
+- [x] `Char` data type (and iterating over string)
 - [ ] Shorthand operators (`+=`, `++`)
 - [x] `for-each`-style loop
 - [ ] `do-while`, `while` and C-style `for` loops

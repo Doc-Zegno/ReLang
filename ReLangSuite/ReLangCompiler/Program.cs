@@ -230,6 +230,10 @@ namespace Handmada.ReLang.Compilation {
                                     representation = value ? "true" : "false";
                                     break;
 
+                                case char value:
+                                    representation = $"'{value}'";
+                                    break;
+
                                 case int value:
                                     representation = value.ToString();
                                     break;
@@ -241,6 +245,9 @@ namespace Handmada.ReLang.Compilation {
                                 case string value:
                                     representation = $"\"{value}\"";
                                     break;
+
+                                default:
+                                    throw new NotImplementedException($"Unsupported literal type: {primitiveLiteral.Value.GetType().Name}");
                             }
                             Console.Write(representation);
                             break;

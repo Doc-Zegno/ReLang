@@ -17,6 +17,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         public enum Option {
             Void,
             Bool,
+            Char,
             Int,
             Float,
             String,
@@ -45,6 +46,18 @@ namespace Handmada.ReLang.Compilation.Yet {
 
                 } else {
                     switch (primitiveSource.TypeOption) {
+                        case Option.Char:
+                            if (TypeOption == Option.Int) {
+                                if (expression.IsCompileTime) {
+                                    var character = (char)expression.Value;
+                                    return new PrimitiveLiteralExpression((int)character, Int);
+                                } else {
+                                    return new ConversionExpression(ConversionExpression.Option.Char2Int, expression);
+                                }
+                            } else {
+                                return null;
+                            }
+
                         case Option.Int:
                             if (TypeOption == Option.Float) {
                                 if (expression.IsCompileTime) {
@@ -53,8 +66,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 } else {
                                     return new ConversionExpression(ConversionExpression.Option.Int2Float, expression);
                                 }
-                                //return new ConversionExpression(ConversionExpression.Option.Int2Float, expression);
-                            } else {
+                            } else { 
                                 return null;
                             }
 
@@ -91,8 +103,35 @@ namespace Handmada.ReLang.Compilation.Yet {
                         }
 
 
+                    case Option.Char:
+                        switch (TypeOption) {
+                            case Option.String:
+                                if (expression.IsCompileTime) {
+                                    var character = (char)expression.Value;
+                                    return new PrimitiveLiteralExpression(new string(character, 1), String);
+                                } else {
+                                    return new ConversionExpression(ConversionExpression.Option.Char2String, expression);
+                                }
+
+                            default:
+                                return null;
+                        }
+
+
                     case Option.Int:
                         switch (TypeOption) {
+                            case Option.Char:
+                                if (expression.IsCompileTime) {
+                                    var integer = (int)expression.Value;
+                                    if (integer >= 0 && integer <= char.MaxValue) {
+                                        return new PrimitiveLiteralExpression((char)integer, Char);
+                                    } else {
+                                        throw new FormatException($"Value {integer} cannot be converted to valid character code");
+                                    }
+                                } else {
+                                    return new ConversionExpression(ConversionExpression.Option.Int2Char, expression);
+                                }
+
                             case Option.String:
                                 if (expression.IsCompileTime) {
                                     var integer = (int)expression.Value;
@@ -205,6 +244,7 @@ namespace Handmada.ReLang.Compilation.Yet {
 
         public static PrimitiveTypeInfo Void => new PrimitiveTypeInfo(Option.Void);
         public static PrimitiveTypeInfo Bool => new PrimitiveTypeInfo(Option.Bool);
+        public static PrimitiveTypeInfo Char => new PrimitiveTypeInfo(Option.Char);
         public static PrimitiveTypeInfo Int => new PrimitiveTypeInfo(Option.Int);
         public static PrimitiveTypeInfo Float => new PrimitiveTypeInfo(Option.Float);
         public static PrimitiveTypeInfo String => new PrimitiveTypeInfo(Option.String);

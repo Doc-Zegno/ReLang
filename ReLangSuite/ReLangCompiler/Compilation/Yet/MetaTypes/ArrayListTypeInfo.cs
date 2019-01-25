@@ -27,10 +27,13 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public override IExpression ConstructFrom(IExpression expression) {
-            if (expression.TypeInfo is IterableTypeInfo iterableType) {
-                return new ConversionExpression(ConversionExpression.Option.Iterable2List, expression);
-            } else {
-                return null;
+            switch (expression.TypeInfo) {
+                case IterableTypeInfo iterable:
+                case PrimitiveTypeInfo primitive when primitive.TypeOption == PrimitiveTypeInfo.Option.String:
+                    return new ConversionExpression(ConversionExpression.Option.Iterable2List, expression);
+
+                default:
+                    return null;
             }
         }
 

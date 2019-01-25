@@ -61,6 +61,10 @@ namespace Handmada.ReLang.Compilation.Lexing {
                     // String literal
                     return ScanString();
 
+                } else if (currentCharacter == '\'') {
+                    // Character literal
+                    return ScanGrapheme();
+
                 } else if (char.IsDigit(currentCharacter)) {
                     // Numeric literal
                     return ScanNumeric();
@@ -261,7 +265,7 @@ namespace Handmada.ReLang.Compilation.Lexing {
                     } else if (currentCharacter == '\n') {
                         RaiseError("Closing quote was expected");
                     } else {
-                        builder.Append(currentCharacter);
+                        builder.Append(ScanCharacter());
                     }
                 } else {
                     RaiseError("Closing quote was expected");
@@ -270,6 +274,49 @@ namespace Handmada.ReLang.Compilation.Lexing {
 
             MoveNextCharacter();
             return new LiteralLexeme(builder.ToString(), location);
+        }
+
+
+        private Lexeme ScanGrapheme() {
+            var location = CurrentLocation;
+
+            if (!MoveNextCharacter() || currentCharacter == '\'') {
+                RaiseError("Character was expected");
+            }
+
+            var ch = ScanCharacter();
+            if (!MoveNextCharacter() || currentCharacter != '\'') {
+                RaiseError("Closing single quote was expected");
+            }
+
+            MoveNextCharacter();
+            return new LiteralLexeme(ch, location);
+        }
+
+
+        private char ScanCharacter() {
+            if (currentCharacter == '\\') {
+                if (MoveNextCharacter()) {
+                    switch (currentCharacter) {
+                        case 'n':
+                            return '\n';
+
+                        case 't':
+                            return '\t';
+
+                        default:
+                            RaiseError($"Unrecognized control sequence: '\\{currentCharacter}");
+                            break;
+                    }
+                } else {
+                    RaiseError("Unexpected ending of control sequence");
+                }
+            } else if (char.IsControl(currentCharacter)) {
+                RaiseError("Printable character was expected");
+            } else {
+                return currentCharacter;
+            }
+            return (char)0;  // Useless
         }
 
 
