@@ -14,32 +14,48 @@ namespace Handmada.ReLang.Compilation.Parsing {
             CheckOperator(OperatorMeaning.OpenParenthesis);
 
             Console.WriteLine($"parsing call of '{name}'...");
-            FunctionDefinition definition;
-            BuiltinFunctionCallExpression.Option? builtinOption = null;
+            IFunctionDefinition definition;
+            //BuiltinFunctionDefinition.Option? builtinOption = null;
 
             // Filter built-ins
             switch (name) {
                 case "print":
-                    definition = Builtins.PrintDefinition;
-                    builtinOption = BuiltinFunctionCallExpression.Option.Print;
+                    definition = BuiltinFunctionDefinition.Print;
+                    //builtinOption = BuiltinFunctionCallExpression.Option.Print;
                     break;
 
                 default:
-                    var maybe = functionTree.GetFunctionDefinition(name);
-                    if (maybe == null) {
+                    definition = functionTree.GetFunctionDefinition(name);
+                    if (definition == null) {
                         RaiseError($"Undeclared function '{name}'", location);
                         return null;
-                    } else {
-                        definition = maybe.Value;
                     }
                     break;
             }
 
             // Pick all the arguments
-            var arguments = new List<IExpression>();
-            var expectedTypes = definition.ArgumentTypes;
+            var arguments = GetFunctionArguments(definition.ArgumentTypes, location);
 
-            if (WhetherOperator(OperatorMeaning.CloseParenthesis)) {
+            // return appropriate function call expression
+            return new FunctionCallExpression(definition, arguments);
+
+            /*if (builtinOption != null) {
+                return new BuiltinFunctionCallExpression(definition.ResultType, arguments, builtinOption.Value);
+            } else {
+                return new CustomFunctionCallExpression(definition.ResultType, arguments, definition.Number);
+            }*/
+        }
+
+
+
+        private List<IExpression> GetFunctionArguments(
+            List<ITypeInfo> expectedTypes,
+            Location location,
+            OperatorMeaning stop = OperatorMeaning.CloseParenthesis)
+        {
+            var arguments = new List<IExpression>();
+
+            if (WhetherOperator(stop)) {
                 MoveNextLexeme();
             } else {
                 for (var index = 0; currentLexeme != null; index++) {
@@ -70,7 +86,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     }
                 }
 
-                CheckOperator(OperatorMeaning.CloseParenthesis);
+                CheckOperator(stop);
             }
 
             // Final count check
@@ -80,12 +96,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 return null;
             }
 
-            // return appropriate function call expression
-            if (builtinOption != null) {
-                return new BuiltinFunctionCallExpression(definition.ResultType, arguments, builtinOption.Value);
-            } else {
-                return new CustomFunctionCallExpression(definition.ResultType, arguments, definition.Number);
-            }
+            return arguments;
         }
 
 
@@ -117,8 +128,82 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
 
-        // variable, f(x, y, z), (a + b), [a, b, c], {a, b, c}, literal
+        // [a, b, c].append(d)
         private IExpression GetAtomicExpression() {
+            var expression = GetPrimitiveExpression();
+            while (currentLexeme is OperatorLexeme operatorLexeme) {
+                switch (operatorLexeme.Meaning) {
+                    case OperatorMeaning.Dot:
+                        // Access to the field
+                        expression = GetMemberAccessExpression(expression);
+                        break;
+
+                    case OperatorMeaning.OpenBracket:
+                        // Indexing
+                        expression = GetIndexingExpression(expression);
+                        break;
+
+                    default:
+                        return expression;
+                }
+            }
+            return expression;
+        }
+
+
+
+        // [i]
+        private IExpression GetIndexingExpression(IExpression expression) {
+            var location = currentLexeme.StartLocation;
+            CheckOperator(OperatorMeaning.OpenBracket);
+            var definition = expression.TypeInfo.GetMethodDefinition("get");
+
+            if (definition == null) {
+                RaiseError($"Type '{expression.TypeInfo.Name}' doesn't implement indexing", location);
+            }
+
+            var arguments = new List<IExpression> { expression };
+            arguments.AddRange(GetFunctionArguments(definition.ArgumentTypes, location, OperatorMeaning.CloseBracket));
+            return new FunctionCallExpression(definition, arguments);
+        }
+
+
+
+        // .append(d)
+        private IExpression GetMemberAccessExpression(IExpression expression) {
+            CheckOperator(OperatorMeaning.Dot);
+            var location = currentLexeme.StartLocation;
+            var name = GetSymbolText("Member's name");
+
+            var arguments = new List<IExpression> { expression };
+            IFunctionDefinition definition = null;
+
+            if (WhetherOperator(OperatorMeaning.OpenParenthesis)) {
+                // Get method's definition
+                definition = expression.TypeInfo.GetMethodDefinition(name);
+                if (definition == null) {
+                    RaiseError($"Type '{expression.TypeInfo.Name}' doesn't implement method '{name}'", location);
+                }
+
+                MoveNextLexeme();
+                arguments.AddRange(GetFunctionArguments(definition.ArgumentTypes, location));
+
+            } else {
+                // Get property's definition
+                var fullName = name + "Get";
+                definition = expression.TypeInfo.GetMethodDefinition(fullName);
+                if (definition == null) {
+                    RaiseError($"Type '{expression.TypeInfo.Name}' doesn't have property '{name}'", location);
+                }
+            }
+
+            return new FunctionCallExpression(definition, arguments);
+        }
+
+
+
+        // variable, f(x, y, z), (a + b), [a, b, c], {a, b, c}, literal
+        private IExpression GetPrimitiveExpression() {
             var location = currentLexeme.StartLocation;
             switch (currentLexeme) {
                 case OperatorLexeme operatorLexeme:

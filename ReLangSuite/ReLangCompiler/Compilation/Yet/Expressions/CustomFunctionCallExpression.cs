@@ -6,10 +6,11 @@ using System.Threading.Tasks;
 
 
 namespace Handmada.ReLang.Compilation.Yet {
+    // TODO: remove this
     /// <summary>
     /// Expression representing a custom function call
     /// </summary>
-    class CustomFunctionCallExpression : IFunctionCallExpression {
+    /*class CustomFunctionCallExpression : IFunctionCallExpression {
         public List<IExpression> Arguments { get; }
         public bool HasSideEffect => true;
         public bool IsCompileTime => false;
@@ -27,5 +28,5 @@ namespace Handmada.ReLang.Compilation.Yet {
             Arguments = arguments;
             Number = number;
         }
-    }
+    }*/
 }

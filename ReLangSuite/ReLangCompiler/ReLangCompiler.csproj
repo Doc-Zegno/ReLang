@@ -82,7 +82,11 @@
     <Compile Include="Compilation\Yet\Expressions\TupleLiteralExpression.cs" />
     <Compile Include="Compilation\Yet\MetaTypes\ArrayListTypeInfo.cs" />
     <Compile Include="Compilation\Yet\MetaTypes\DictionaryTypeInfo.cs" />
+    <Compile Include="Compilation\Yet\MetaTypes\FunctionTypeInfo.cs" />
     <Compile Include="Compilation\Yet\MetaTypes\TupleTypeInfo.cs" />
+    <Compile Include="Compilation\Yet\Misc\BuiltinFunctionDefinition.cs" />
+    <Compile Include="Compilation\Yet\Misc\CustomFunctionDefinition.cs" />
+    <Compile Include="Compilation\Yet\Misc\IFunctionDefinition.cs" />
     <Compile Include="Compilation\Yet\Statements\AssignmentStatement.cs" />
     <Compile Include="Compilation\Yet\Expressions\BinaryOperatorExpression.cs" />
     <Compile Include="Compilation\Yet\Expressions\BuiltinFunctionCallExpression.cs" />
@@ -105,7 +109,7 @@
     <Compile Include="Compilation\Parsing\ScopeStack.cs" />
     <Compile Include="Compilation\Yet\Statements\IDeclarationStatement.cs" />
     <Compile Include="Compilation\Yet\Expressions\IExpression.cs" />
-    <Compile Include="Compilation\Yet\Expressions\IFunctionCallExpression.cs" />
+    <Compile Include="Compilation\Yet\Expressions\FunctionCallExpression.cs" />
     <Compile Include="Compilation\Yet\Statements\FunctionDeclarationStatement.cs" />
     <Compile Include="Compilation\Lexing\Lexeme.cs" />
     <Compile Include="Compilation\Lexing\Lexer.cs" />

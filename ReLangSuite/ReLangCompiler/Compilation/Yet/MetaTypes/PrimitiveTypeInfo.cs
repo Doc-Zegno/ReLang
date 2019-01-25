@@ -225,6 +225,11 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
+        public IFunctionDefinition GetMethodDefinition(string name) {
+            return null;
+        }
+
+
         public override bool Equals(object obj) {
             if (obj is PrimitiveTypeInfo primitiveType && TypeOption == primitiveType.TypeOption) {
                 return true;

@@ -30,5 +30,12 @@ namespace Handmada.ReLang.Compilation.Yet {
         /// <param name="expression">Source expression</param>
         /// <returns>Expression of target type constructed from a source one</returns>
         IExpression ConstructFrom(IExpression expression);
+
+        /// <summary>
+        /// Get the definition of a method with specified name
+        /// </summary>
+        /// <param name="name">Name of method</param>
+        /// <returns>Definition of requested method</returns>
+        IFunctionDefinition GetMethodDefinition(string name);
     }
 }

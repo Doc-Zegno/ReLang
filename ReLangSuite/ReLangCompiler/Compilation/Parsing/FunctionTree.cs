@@ -8,29 +8,9 @@ using Handmada.ReLang.Compilation.Yet;
 
 
 namespace Handmada.ReLang.Compilation.Parsing {
-    struct FunctionDefinition {
-        public ITypeInfo ResultType { get; }
-        public List<ITypeInfo> ArgumentTypes { get; }
-        public int Number { get; }
-        public string FullQualification { get; }
-        public bool IsGlobal { get; }
-
-
-        public FunctionDefinition(ITypeInfo resultType, List<ITypeInfo> argumentTypes,
-                                  int number, string fullQualification, bool isGlobal)
-        {
-            ResultType = resultType;
-            ArgumentTypes = argumentTypes;
-            Number = number;
-            FullQualification = fullQualification;
-            IsGlobal = isGlobal;
-        }
-    }
-
-
     class FunctionTree {
         class Scope {
-            private IDictionary<string, (FunctionDefinition, Scope)> table;
+            private IDictionary<string, (CustomFunctionDefinition, Scope)> table;
             private FunctionTree tree;
 
             public string Name { get; }
@@ -39,7 +19,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
             public Scope(string name, Scope parent, bool isGlobal, FunctionTree tree) {
-                table = new Dictionary<string, (FunctionDefinition, Scope)>();
+                table = new Dictionary<string, (CustomFunctionDefinition, Scope)>();
                 this.tree = tree;
 
                 Name = name;
@@ -51,8 +31,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
             public Scope DeclareFunction(string name, ITypeInfo resultType, List<ITypeInfo> argumentTypes) {
                 if (name != Name && !table.ContainsKey(name)) {
                     var scope = new Scope(name, this, false, tree);
-                    var definition = new FunctionDefinition(resultType, argumentTypes, tree.Count,
-                                                            GetFullQualification(), IsGlobal);
+                    var definition = new CustomFunctionDefinition(argumentTypes, resultType, name,
+                                                                  GetFullQualification(), tree.Count, IsGlobal);
                     table[name] = (definition, scope);
                     tree.Count++;
                     return scope;
@@ -68,11 +48,11 @@ namespace Handmada.ReLang.Compilation.Parsing {
             }
 
 
-            public FunctionDefinition? GetFunctionDefinition(string name) {
+            public CustomFunctionDefinition GetFunctionDefinition(string name) {
                 var scope = this;
                 do {
                     Console.WriteLine($"searching for '{name}' within {scope.GetFullQualification()}...");
-                    if (scope.table.TryGetValue(name, out (FunctionDefinition, Scope) value)) {
+                    if (scope.table.TryGetValue(name, out (CustomFunctionDefinition, Scope) value)) {
                         return value.Item1;
                     } else {
                         scope = scope.Parent;
@@ -115,7 +95,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
         public FunctionTree() {
-            top = new Scope("", null, true, this);
+            top = new Scope("UserPackage", null, true, this);
         }
 
 
@@ -140,13 +120,13 @@ namespace Handmada.ReLang.Compilation.Parsing {
         }
 
 
-        public FunctionDefinition? GetFunctionDefinition(string name) {
+        public CustomFunctionDefinition GetFunctionDefinition(string name) {
             return top.GetFunctionDefinition(name);
         }
 
 
-        public FunctionDefinition GetCurrentFunctionDefinition() {
-            return top.GetFunctionDefinition(top.Name).Value;
+        public CustomFunctionDefinition GetCurrentFunctionDefinition() {
+            return top.GetFunctionDefinition(top.Name);
         }
 
 

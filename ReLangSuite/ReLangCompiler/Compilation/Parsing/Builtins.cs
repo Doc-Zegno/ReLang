@@ -8,14 +8,15 @@ using Handmada.ReLang.Compilation.Yet;
 
 
 namespace Handmada.ReLang.Compilation.Parsing {
-    static class Builtins {
+    // TODO: remove this
+    /*static class Builtins {
         public const string BuiltinNamespace = "ReLang";
 
         /// <summary>
         /// Definition of built-in function `print(object obj)`
         /// </summary>
-        public static FunctionDefinition PrintDefinition =>
-            new FunctionDefinition(PrimitiveTypeInfo.Void, new List<ITypeInfo> { PrimitiveTypeInfo.Object },
+        public static CustomFunctionDefinition PrintDefinition =>
+            new CustomFunctionDefinition(PrimitiveTypeInfo.Void, new List<ITypeInfo> { PrimitiveTypeInfo.Object },
                                    -1, BuiltinNamespace, true);
-    }
+    }*/
 }

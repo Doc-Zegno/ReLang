@@ -18,6 +18,8 @@ namespace Handmada.ReLang.Compilation.Runtime {
         /// </summary>
         public IEnumerable<object> Pairs => dictionary.Select(ConvertToTuple);
 
+        public int Count => dictionary.Count;
+
 
         public DictionaryAdapter(IEnumerable<(object, object)> pairs) {
             dictionary = new Dictionary<object, object>();

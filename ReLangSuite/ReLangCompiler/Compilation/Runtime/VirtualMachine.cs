@@ -173,18 +173,8 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
         private object EvaluateExpression(IExpression expression) {
             switch (expression) {
-                case IFunctionCallExpression functionCall:
-                    var arguments = functionCall.Arguments;
-                    switch (functionCall) {
-                        case BuiltinFunctionCallExpression builtin:
-                            return EvaluateBuiltinFunction(builtin.BuiltinOption, arguments);
-
-                        case CustomFunctionCallExpression custom:
-                            return EvaluateCustomFunction(custom.Number, arguments);
-
-                        default:
-                            throw new VirtualMachineException("Unsupported function call expression");
-                    }
+                case FunctionCallExpression functionCall:
+                    return EvaluateFunction(functionCall.FunctionDefinition, functionCall.Arguments);
 
                 case IOperatorExpression operatorExpression:
                     switch (operatorExpression) {
@@ -247,6 +237,20 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
                 default:
                     throw new VirtualMachineException($"Unsupported expression: {expression}");
+            }
+        }
+
+
+        private object EvaluateFunction(IFunctionDefinition definition, List<IExpression> arguments) {
+            switch (definition) {
+                case BuiltinFunctionDefinition builtin:
+                    return EvaluateBuiltinFunction(builtin.BuiltinOption, arguments);
+
+                case CustomFunctionDefinition custom:
+                    return EvaluateCustomFunction(custom.Number, arguments);
+
+                default:
+                    throw new NotImplementedException($"Unknown functional type: {definition}");
             }
         }
 
@@ -458,23 +462,65 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
 
         private object EvaluateBuiltinFunction(
-            BuiltinFunctionCallExpression.Option option, 
+            BuiltinFunctionDefinition.Option option, 
             List<IExpression> arguments) 
         {
             switch (option) {
-                case BuiltinFunctionCallExpression.Option.Print:
+                case BuiltinFunctionDefinition.Option.Print:
                     CallPrint(EvaluateExpression(arguments[0]));
                     return null;
 
-                case BuiltinFunctionCallExpression.Option.TupleGet:
+                case BuiltinFunctionDefinition.Option.TupleGet:
                     return CallTupleGet(
                         (TupleAdapter)EvaluateExpression(arguments[0]),
-                        (int)EvaluateExpression(arguments[1])
-                    );
+                        (int)EvaluateExpression(arguments[1]));
+
+                case BuiltinFunctionDefinition.Option.TupleFirstGet:
+                    return CallTupleGet((TupleAdapter)EvaluateExpression(arguments[0]), 0);
+
+                case BuiltinFunctionDefinition.Option.TupleSecondGet:
+                    return CallTupleGet((TupleAdapter)EvaluateExpression(arguments[0]), 1);
+
+                case BuiltinFunctionDefinition.Option.TupleThirdGet:
+                    return CallTupleGet((TupleAdapter)EvaluateExpression(arguments[0]), 2);
+
+                case BuiltinFunctionDefinition.Option.ListGet:
+                    return CallListGet(
+                        (List<object>)EvaluateExpression(arguments[0]), 
+                        (int)EvaluateExpression(arguments[1]));
+
+                case BuiltinFunctionDefinition.Option.ListLengthGet:
+                    return CallListLengthGet((List<object>)EvaluateExpression(arguments[0]));
+
+                case BuiltinFunctionDefinition.Option.SetLengthGet:
+                    return CallSetLengthGet((ISet<object>)EvaluateExpression(arguments[0]));
+
+                case BuiltinFunctionDefinition.Option.DictionaryLengthGet:
+                    return CallDictionaryLengthGet((DictionaryAdapter)EvaluateExpression(arguments[0]));
 
                 default:
                     throw new VirtualMachineException($"Unsupported built-in function call: {option}");
             }
+        }
+
+
+        private object CallListGet(List<object> list, int index) {
+            return list[index];
+        }
+
+
+        private object CallListLengthGet(List<object> list) {
+            return list.Count;
+        }
+
+
+        private object CallSetLengthGet(ISet<object> set) {
+            return set.Count;
+        }
+
+
+        private object CallDictionaryLengthGet(DictionaryAdapter dictionary) {
+            return dictionary.Count;
         }
 
 

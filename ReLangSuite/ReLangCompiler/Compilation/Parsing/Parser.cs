@@ -259,8 +259,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             Console.WriteLine($"stopped parsing function '{name}'");
 
             // Add function to list
-            var maybe = functionTree.GetFunctionDefinition(name);
-            var definition = maybe.Value;
+            var definition = functionTree.GetFunctionDefinition(name);
             functions[number] = new FunctionData(name, definition.FullQualification, resultType,
                                                  argumentNames, argumentTypes, body);
 

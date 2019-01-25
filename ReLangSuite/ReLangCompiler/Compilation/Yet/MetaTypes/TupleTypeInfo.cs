@@ -37,6 +37,39 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
+        public IFunctionDefinition GetMethodDefinition(string name) {
+            switch (name) {
+                case "firstGet" when ItemTypes.Count >= 1:
+                    return new BuiltinFunctionDefinition(
+                        BuiltinFunctionDefinition.Option.TupleFirstGet, 
+                        new List<ITypeInfo> { }, 
+                        ItemTypes[0]);
+
+                case "secondGet" when ItemTypes.Count >= 2:
+                    return new BuiltinFunctionDefinition(
+                        BuiltinFunctionDefinition.Option.TupleSecondGet, 
+                        new List<ITypeInfo> { }, 
+                        ItemTypes[1]);
+
+                case "thirdGet" when ItemTypes.Count >= 3:
+                    return new BuiltinFunctionDefinition(
+                        BuiltinFunctionDefinition.Option.TupleThirdGet, 
+                        new List<ITypeInfo> { }, 
+                        ItemTypes[2]);
+
+                default:
+                    return null;
+            }
+        }
+
+
+        public IFunctionDefinition GetTupleAccessorDefinition(int index) =>
+            new BuiltinFunctionDefinition(
+                BuiltinFunctionDefinition.Option.TupleGet,
+                new List<ITypeInfo> { this, PrimitiveTypeInfo.Int },
+                ItemTypes[index]);
+
+
         public override bool Equals(object obj) {
             if (obj is TupleTypeInfo tupleType) {
                 if (tupleType.ItemTypes.Count == ItemTypes.Count) {

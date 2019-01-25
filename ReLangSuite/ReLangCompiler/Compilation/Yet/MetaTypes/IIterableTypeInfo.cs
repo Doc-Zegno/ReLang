@@ -36,5 +36,10 @@ namespace Handmada.ReLang.Compilation.Yet {
                     return null;
             }
         }
+
+
+        public virtual IFunctionDefinition GetMethodDefinition(string name) {
+            return null;
+        }
     }
 }

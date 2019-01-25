@@ -32,6 +32,11 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
+        public override IFunctionDefinition GetMethodDefinition(string name) {
+            return base.GetMethodDefinition(name);
+        }
+
+
         public override bool Equals(object obj) {
             return obj is RangeTypeInfo;
         }

@@ -161,37 +161,10 @@ namespace Handmada.ReLang.Compilation {
                     Console.Write($"{variable.Name}<{number}:{frameOffset}>");
                     break;
 
-                case IFunctionCallExpression functionCall:
-                    var fullName = "";
-                    if (functionCall is BuiltinFunctionCallExpression builtin) {
-                        var name = "";
-                        switch (builtin.BuiltinOption) {
-                            case BuiltinFunctionCallExpression.Option.Print:
-                                name = "print";
-                                break;
-
-                            case BuiltinFunctionCallExpression.Option.TupleGet:
-                                name = "tupleGet";
-                                break;
-
-                            default:
-                                throw new NotImplementedException();
-                        }
-                        fullName = $"_{name}";
-                    } else {
-                        var custom = (CustomFunctionCallExpression)functionCall;
-                        fullName = $"_customFunction{custom.Number}";
-                    }
-
-                    Console.Write($"{fullName}(");
-                    var isFirst = true;
-                    foreach (var argument in functionCall.Arguments) {
-                        if (!isFirst) {
-                            Console.Write(", ");
-                        }
-                        isFirst = false;
-                        PrintExpression(argument);
-                    }
+                case FunctionCallExpression functionCall:
+                    var definition = functionCall.FunctionDefinition;
+                    Console.Write($"{definition.FullQualification}.{definition.Name}(");
+                    PrintExpressionList(functionCall.Arguments);
                     Console.Write(")");
                     break;
 

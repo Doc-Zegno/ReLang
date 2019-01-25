@@ -64,5 +64,19 @@ namespace Handmada.ReLang.Compilation.Yet {
             hashCode = hashCode * -1521134295 + EqualityComparer<ITypeInfo>.Default.GetHashCode(ValueType);
             return hashCode;
         }
+
+
+        public override IFunctionDefinition GetMethodDefinition(string name) {
+            switch (name) {
+                case "lengthGet":
+                    return new BuiltinFunctionDefinition(
+                        BuiltinFunctionDefinition.Option.DictionaryLengthGet,
+                        new List<ITypeInfo> { },
+                        PrimitiveTypeInfo.Int);
+
+                default:
+                    return base.GetMethodDefinition(name);
+            }
+        }
     }
 }

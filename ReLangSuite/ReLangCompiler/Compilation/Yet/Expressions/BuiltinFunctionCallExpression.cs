@@ -6,10 +6,11 @@ using System.Threading.Tasks;
 
 
 namespace Handmada.ReLang.Compilation.Yet {
+    // TODO: remove this
     /// <summary>
     /// Statement representing a built-in function call
     /// </summary>
-    class BuiltinFunctionCallExpression : IFunctionCallExpression {
+    /*class BuiltinFunctionCallExpression : IFunctionCallExpression {
         /// <summary>
         /// Possible built-ins
         /// </summary>
@@ -36,5 +37,5 @@ namespace Handmada.ReLang.Compilation.Yet {
             Arguments = arguments;
             BuiltinOption = builtinOption;
         }
-    }
+    }*/
 }

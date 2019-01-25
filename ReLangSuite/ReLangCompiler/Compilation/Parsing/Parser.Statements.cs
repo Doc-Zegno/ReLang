@@ -429,11 +429,13 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                         new PrimitiveLiteralExpression(i, PrimitiveTypeInfo.Int),
                                     };
 
-                var expression = new BuiltinFunctionCallExpression(
+                var expression = new FunctionCallExpression(tupleType.GetTupleAccessorDefinition(i), arguments);
+
+                /*var expression = new BuiltinFunctionCallExpression(
                     tupleType.ItemTypes[i],
                     arguments,
                     BuiltinFunctionCallExpression.Option.TupleGet
-                );
+                );*/
 
                 var identifier = identifierList.Identifiers[i];
                 subStatements.Add(func(identifier, expression, isMutable, right));
