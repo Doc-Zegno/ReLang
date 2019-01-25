@@ -33,16 +33,20 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public IExpression ConvertTo(IExpression expression, ITypeInfo targetTypeInfo) {
-            if (targetTypeInfo is PrimitiveTypeInfo primitiveTarget) {
-                if (primitiveTarget.TypeOption == TypeOption || primitiveTarget.TypeOption == Option.Object) {
-                    // Identity conversion or trivial conversion
+        public IExpression ConvertFrom(IExpression expression) {
+            if (TypeOption == Option.Object) {
+                // Trivial conversion
+                return expression;
+
+            } else if (expression.TypeInfo is PrimitiveTypeInfo primitiveSource) {
+                if (primitiveSource.TypeOption == TypeOption) {
+                    // Identity conversion
                     return expression;
 
                 } else {
-                    switch (TypeOption) {
+                    switch (primitiveSource.TypeOption) {
                         case Option.Int:
-                            if (primitiveTarget.TypeOption == Option.Float) {
+                            if (TypeOption == Option.Float) {
                                 if (expression.IsCompileTime) {
                                     var integer = (int)expression.Value;
                                     return new PrimitiveLiteralExpression((double)integer, Float);
@@ -57,7 +61,8 @@ namespace Handmada.ReLang.Compilation.Yet {
                         default:
                             return null;
                     }
-                } 
+                }
+                
             } else {
                 return null;
             }
@@ -65,7 +70,7 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public IExpression ConstructFrom(IExpression expression) {
-            var implicitConversion = ConvertTo(expression, this);
+            var implicitConversion = ConvertFrom(expression);
             if (implicitConversion != null) {
                 return implicitConversion;
 

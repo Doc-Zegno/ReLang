@@ -13,7 +13,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         public bool HasSideEffect { get; }
         public bool IsCompileTime => false;
         public object Value => throw new NotImplementedException();
-        public ITypeInfo TypeInfo => new RangeTypeInfo();
+        public ITypeInfo TypeInfo => new RangeTypeInfo(Start.TypeInfo);
 
         /// <summary>
         /// Interval's start (inclusive)

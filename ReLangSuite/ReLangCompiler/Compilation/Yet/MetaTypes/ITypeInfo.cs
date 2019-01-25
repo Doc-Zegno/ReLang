@@ -16,12 +16,11 @@ namespace Handmada.ReLang.Compilation.Yet {
         string Name { get; }
 
         /// <summary>
-        /// Get expression that can be used for conversion
-        /// from this type to the specified one
+        /// Get expression of this type converted from given source expression
         /// </summary>
-        /// <param name="targetTypeInfo">Target type</param>
-        /// <returns>Converting expression if it exists and `null` otherwise</returns>
-        IExpression ConvertTo(IExpression expression, ITypeInfo targetTypeInfo);
+        /// <param name="expression">Source expression</param>
+        /// <returns>Converted expression if it exists and `null` otherwise</returns>
+        IExpression ConvertFrom(IExpression expression);
 
         /// <summary>
         /// Get an expression of current type that is constructed

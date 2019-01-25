@@ -313,7 +313,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
         private IExpression TryConvertExpression(IExpression expression, ITypeInfo targetType) {
-            return expression.TypeInfo.ConvertTo(expression, targetType);
+            return targetType.ConvertFrom(expression);
         }
 
 
@@ -345,6 +345,15 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 );
                 return null;
             }   
+        }
+
+
+        private ITypeInfo TryGetItemType(ITypeInfo typeInfo) {
+            if (typeInfo is IterableTypeInfo iterable) {
+                return iterable.ItemType;
+            } else {
+                return null;
+            }
         }
 
 

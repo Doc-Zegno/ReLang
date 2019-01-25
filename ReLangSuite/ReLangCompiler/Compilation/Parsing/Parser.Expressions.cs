@@ -868,11 +868,11 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
         private (IExpression, IExpression) CrossConvert(IExpression left, IExpression right, Location location) {
-            var x = left.TypeInfo.ConvertTo(left, right.TypeInfo);
+            var x = right.TypeInfo.ConvertFrom(left);
             if (x != null) {
                 return (x, right);
             } else {
-                var y = right.TypeInfo.ConvertTo(right, left.TypeInfo);
+                var y = left.TypeInfo.ConvertFrom(right);
                 if (y != null) {
                     return (left, y);
                 } else {
@@ -907,6 +907,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                     // Get right operand
                     MoveNextLexeme();
+                    var locationRight = currentLexeme.StartLocation;
                     var right = GetNegateExpression();
 
                     // Try to convert to each other
@@ -959,8 +960,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                                         case OperatorMeaning.ForwardSlash:
                                             option = BinaryOperatorExpression.Option.DivideFloating;
-                                            x = x.TypeInfo.ConvertTo(x, PrimitiveTypeInfo.Float);
-                                            y = y.TypeInfo.ConvertTo(y, PrimitiveTypeInfo.Float);
+                                            x = ForceConvertExpression(x, PrimitiveTypeInfo.Float, locationLeft);
+                                            y = ForceConvertExpression(y, PrimitiveTypeInfo.Float, locationRight);
                                             break;
 
                                         case OperatorMeaning.Modulo:
@@ -1045,7 +1046,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                 switch (meaning) {
                     case OperatorMeaning.Not:
-                        converted = atomic.TypeInfo.ConvertTo(atomic, PrimitiveTypeInfo.Bool);
+                        converted = TryConvertExpression(atomic, PrimitiveTypeInfo.Bool);
                         if (converted != null) {
                             if (converted.IsCompileTime) {
                                 var a = (bool)converted.Value;
@@ -1060,7 +1061,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
                     case OperatorMeaning.Minus:
-                        converted = atomic.TypeInfo.ConvertTo(atomic, PrimitiveTypeInfo.Int);
+                        converted = TryConvertExpression(atomic, PrimitiveTypeInfo.Int);
                         if (converted != null) {
                             if (converted.IsCompileTime) {
                                 var a = (int)converted.Value;
@@ -1070,7 +1071,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                             }
 
                         } else {
-                            converted = atomic.TypeInfo.ConvertTo(atomic, PrimitiveTypeInfo.Float);
+                            converted = TryConvertExpression(atomic, PrimitiveTypeInfo.Float);
                             if (converted != null) {
                                 if (converted.IsCompileTime) {
                                     var a = (double)converted.Value;

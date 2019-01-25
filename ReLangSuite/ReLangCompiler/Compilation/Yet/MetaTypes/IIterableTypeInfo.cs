@@ -6,10 +6,33 @@ using System.Threading.Tasks;
 
 
 namespace Handmada.ReLang.Compilation.Yet {
-    interface IIterableTypeInfo : ITypeInfo {
+    class IterableTypeInfo : ITypeInfo {
+        public virtual string Name => $"{ItemType.Name}&";
+
         /// <summary>
         /// Type of items obtained from this iterable
         /// </summary>
-        ITypeInfo ItemType { get; }
+        public ITypeInfo ItemType { get; }
+
+
+        public IterableTypeInfo(ITypeInfo itemType) {
+            ItemType = itemType;
+        }
+
+
+        public virtual IExpression ConstructFrom(IExpression expression) {
+            throw new NotImplementedException();
+        }
+
+
+        public virtual IExpression ConvertFrom(IExpression expression) {
+            switch (expression) {
+                case IterableTypeInfo iterableType when ItemType.Equals(iterableType.ItemType):
+                    return expression;
+
+                default:
+                    return null;
+            }
+        }
     }
 }

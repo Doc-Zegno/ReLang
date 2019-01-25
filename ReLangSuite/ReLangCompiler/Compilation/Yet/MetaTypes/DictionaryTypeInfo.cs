@@ -9,34 +9,37 @@ namespace Handmada.ReLang.Compilation.Yet {
     /// <summary>
     /// Information about dictionary type
     /// </summary>
-    class DictionaryTypeInfo : IIterableTypeInfo {
-        public ITypeInfo ItemType { get; }
-        public string Name => $"{{{KeyType.Name}: {ValueType.Name}}}";
+    class DictionaryTypeInfo : IterableTypeInfo {
+        public override string Name => $"{{{KeyType.Name}: {ValueType.Name}}}";
 
         public ITypeInfo KeyType { get; }
         public ITypeInfo ValueType { get; }
 
 
-        public DictionaryTypeInfo(ITypeInfo keyType, ITypeInfo valueType) {
+        public DictionaryTypeInfo(ITypeInfo keyType, ITypeInfo valueType)
+            : base(new TupleTypeInfo(new List<ITypeInfo> { keyType, valueType }))
+        {
             KeyType = keyType;
             ValueType = valueType;
-
-            ItemType = new TupleTypeInfo(new List<ITypeInfo> { KeyType, ValueType });
         }
 
 
-        public IExpression ConvertTo(IExpression expression, ITypeInfo targetTypeInfo) {
-            if (Equals(targetTypeInfo)) {
+        public override IExpression ConvertFrom(IExpression expression) {
+            if (Equals(expression.TypeInfo)) {
                 return expression;
             } else {
-                switch (targetTypeInfo) {
-                    case PrimitiveTypeInfo primitiveType when primitiveType.TypeOption == PrimitiveTypeInfo.Option.Object:
-                    case IIterableTypeInfo iterableType when ItemType.Equals(iterableType.ItemType):
-                        return expression;
+                return null;
+            }
+        }
 
-                    default:
-                        return null;
-                }
+
+        public override IExpression ConstructFrom(IExpression expression) {
+            if (expression.TypeInfo is IterableTypeInfo iterableType
+                && iterableType.ItemType is TupleTypeInfo tupleType
+                && tupleType.ItemTypes.Count == 2) {
+                return new ConversionExpression(ConversionExpression.Option.Iterable2Dictionary, expression);
+            } else {
+                return null;
             }
         }
 
@@ -60,18 +63,6 @@ namespace Handmada.ReLang.Compilation.Yet {
             hashCode = hashCode * -1521134295 + EqualityComparer<ITypeInfo>.Default.GetHashCode(KeyType);
             hashCode = hashCode * -1521134295 + EqualityComparer<ITypeInfo>.Default.GetHashCode(ValueType);
             return hashCode;
-        }
-
-
-        public IExpression ConstructFrom(IExpression expression) {
-            if (expression.TypeInfo is IIterableTypeInfo iterableType
-                && iterableType.ItemType is TupleTypeInfo tupleType
-                && tupleType.ItemTypes.Count == 2)
-            {
-                return new ConversionExpression(ConversionExpression.Option.Iterable2Dictionary, expression);
-            } else {
-                return null;
-            }
         }
     }
 }

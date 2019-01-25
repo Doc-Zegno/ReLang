@@ -233,10 +233,9 @@ namespace Handmada.ReLang.Compilation.Parsing {
             CheckOperator(OperatorMeaning.In);
             var location = currentLexeme.StartLocation;
             var iterable = GetExpression();
+            var itemType = TryGetItemType(iterable.TypeInfo);
 
-            if (iterable.TypeInfo is IIterableTypeInfo iterableType) {
-                var itemType = iterableType.ItemType;
-
+            if (itemType != null) {
                 // Enter scope and add item variable
                 CheckOperator(OperatorMeaning.OpenBrace);
                 scopeStack.EnterScope(isStrong: false);

@@ -23,15 +23,17 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public IExpression ConvertTo(IExpression expression, ITypeInfo targetTypeInfo) {
-            if (Equals(targetTypeInfo)
-                || targetTypeInfo is PrimitiveTypeInfo primitive
-                   && primitive.TypeOption == PrimitiveTypeInfo.Option.Object)
-            {
+        public IExpression ConvertFrom(IExpression expression) {
+            if (Equals(expression.TypeInfo)) {
                 return expression;
             } else {
                 return null;
             }
+        }
+
+
+        public IExpression ConstructFrom(IExpression expression) {
+            throw new NotImplementedException();
         }
 
 
@@ -60,11 +62,6 @@ namespace Handmada.ReLang.Compilation.Yet {
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
             hashCode = hashCode * -1521134295 + EqualityComparer<List<ITypeInfo>>.Default.GetHashCode(ItemTypes);
             return hashCode;
-        }
-
-
-        public IExpression ConstructFrom(IExpression expression) {
-            throw new NotImplementedException();
         }
     }
 }

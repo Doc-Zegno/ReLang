@@ -9,28 +9,25 @@ namespace Handmada.ReLang.Compilation.Yet {
     /// <summary>
     /// Type information about range object
     /// </summary>
-    class RangeTypeInfo : IIterableTypeInfo {
-        public ITypeInfo ItemType => PrimitiveTypeInfo.Int;
-        public string Name => "Range";
+    class RangeTypeInfo : IterableTypeInfo {
+        public override string Name => $"Range<{ItemType}>";
 
 
-        public IExpression ConstructFrom(IExpression expression) {
+        public RangeTypeInfo(ITypeInfo itemType) : base(itemType) {
+
+        }
+
+
+        public override IExpression ConstructFrom(IExpression expression) {
             throw new NotImplementedException();
         }
 
 
-        public IExpression ConvertTo(IExpression expression, ITypeInfo targetTypeInfo) {
-            if (Equals(targetTypeInfo)) {
+        public override IExpression ConvertFrom(IExpression expression) {
+            if (Equals(expression.TypeInfo)) {
                 return expression;
             } else {
-                switch (targetTypeInfo) {
-                    case PrimitiveTypeInfo primitiveType when primitiveType.TypeOption == PrimitiveTypeInfo.Option.Object:
-                    case IIterableTypeInfo iterableType when ItemType.Equals(iterableType.ItemType):
-                        return expression;
-
-                    default:
-                        return null;
-                }
+                return null;
             }
         }
 

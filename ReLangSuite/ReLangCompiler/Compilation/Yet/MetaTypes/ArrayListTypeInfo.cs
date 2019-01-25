@@ -9,28 +9,28 @@ namespace Handmada.ReLang.Compilation.Yet {
     /// <summary>
     /// Type information about ArrayList
     /// </summary>
-    class ArrayListTypeInfo : IIterableTypeInfo {
-        public string Name => $"[{ItemType.Name}]";
-        public ITypeInfo ItemType { get; }
+    class ArrayListTypeInfo : IterableTypeInfo {
+        public override string Name => $"[{ItemType.Name}]";
 
 
-        public ArrayListTypeInfo(ITypeInfo itemType) {
-            ItemType = itemType;
+        public ArrayListTypeInfo(ITypeInfo itemType) : base(itemType) {
         }
 
 
-        public IExpression ConvertTo(IExpression expression, ITypeInfo targetTypeInfo) {
-            if (Equals(targetTypeInfo)) {
+        public override IExpression ConvertFrom(IExpression expression) {
+            if (Equals(expression.TypeInfo)) {
                 return expression;
             } else {
-                switch (targetTypeInfo) {
-                    case PrimitiveTypeInfo primitiveType when primitiveType.TypeOption == PrimitiveTypeInfo.Option.Object:
-                    case IIterableTypeInfo iterableType when ItemType.Equals(iterableType.ItemType):
-                        return expression;
+                return null;
+            }
+        }
 
-                    default:
-                        return null;
-                }
+
+        public override IExpression ConstructFrom(IExpression expression) {
+            if (expression.TypeInfo is IterableTypeInfo iterableType) {
+                return new ConversionExpression(ConversionExpression.Option.Iterable2List, expression);
+            } else {
+                return null;
             }
         }
 
@@ -49,15 +49,6 @@ namespace Handmada.ReLang.Compilation.Yet {
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
             hashCode = hashCode * -1521134295 + EqualityComparer<ITypeInfo>.Default.GetHashCode(ItemType);
             return hashCode;
-        }
-
-
-        public IExpression ConstructFrom(IExpression expression) {
-            if (expression.TypeInfo is IIterableTypeInfo iterableType) {
-                return new ConversionExpression(ConversionExpression.Option.Iterable2List, expression);
-            } else {
-                return null;
-            }
         }
     }
 }

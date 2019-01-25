@@ -41,7 +41,7 @@ namespace Handmada.ReLang.Compilation.Yet {
             ConversionOption = conversionOption;
             Operand = operand;
 
-            if (operand.TypeInfo is IIterableTypeInfo iterableType) {
+            if (operand.TypeInfo is IterableTypeInfo iterableType) {
                 var itemType = iterableType.ItemType;
 
                 switch (conversionOption) {
