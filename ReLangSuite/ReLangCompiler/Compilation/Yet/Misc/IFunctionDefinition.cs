@@ -9,7 +9,8 @@ namespace Handmada.ReLang.Compilation.Yet {
     public interface IFunctionDefinition {
         List<ITypeInfo> ArgumentTypes { get; }
         ITypeInfo ResultType { get; }
-        string Name { get; }
+        string FullName { get; }
+        string ShortName { get; }
         string FullQualification { get; }
     }
 }

@@ -29,7 +29,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         /// </summary>
         /// <param name="expression">Source expression</param>
         /// <returns>Expression of target type constructed from a source one</returns>
-        IExpression ConstructFrom(IExpression expression);
+        IExpression ConstructFrom(IExpression expression, Location location);
 
         /// <summary>
         /// Get the definition of a method with specified name

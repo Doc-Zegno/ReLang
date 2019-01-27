@@ -14,11 +14,14 @@ namespace Handmada.ReLang.Compilation.Yet {
         public bool IsCompileTime => true;
         public object Value { get; }
         public ITypeInfo TypeInfo { get; }
+        public bool IsLvalue => false;
+        public Location MainLocation { get; }
 
 
-        public PrimitiveLiteralExpression(object value, ITypeInfo typeInfo) {
+        public PrimitiveLiteralExpression(object value, ITypeInfo typeInfo, Location mainLocation) {
             Value = value;
             TypeInfo = typeInfo;
+            MainLocation = mainLocation;
         }
     }
 }

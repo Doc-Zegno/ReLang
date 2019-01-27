@@ -10,7 +10,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
     /// List of arbitrary identifiers
     /// </summary>
     class IdentifierList : IIdentifier {
-        public Lexing.Location StartLocation { get; }
+        public Location StartLocation { get; }
         public List<IIdentifier> Identifiers { get; }
 
 

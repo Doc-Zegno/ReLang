@@ -14,10 +14,13 @@ namespace Handmada.ReLang.Compilation.Yet {
         public bool IsCompileTime => true;
         public object Value => throw new NotImplementedException();
         public ITypeInfo TypeInfo { get; }
+        public bool IsLvalue => false;
+        public Location MainLocation { get; }
 
 
-        public TypeLiteralExpression(ITypeInfo typeInfo) {
+        public TypeLiteralExpression(ITypeInfo typeInfo, Location mainLocation) {
             TypeInfo = typeInfo;
+            MainLocation = mainLocation;
         }
     }
 }

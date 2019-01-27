@@ -49,9 +49,9 @@ namespace Handmada.ReLang.Compilation.Runtime {
             var itemType = PrimitiveTypeInfo.String;
             var items = new List<IExpression>();
             foreach (var arg in commandLineArguments) {
-                items.Add(new PrimitiveLiteralExpression(arg, itemType));
+                items.Add(new PrimitiveLiteralExpression(arg, itemType, null));
             }
-            var list = new ListLiteralExpression(items, itemType);
+            var list = new ListLiteralExpression(items, itemType, null);
             return new List<IExpression> { list };
         }
 
@@ -475,13 +475,13 @@ namespace Handmada.ReLang.Compilation.Runtime {
                         (TupleAdapter)EvaluateExpression(arguments[0]),
                         (int)EvaluateExpression(arguments[1]));
 
-                case BuiltinFunctionDefinition.Option.TupleFirstGet:
+                case BuiltinFunctionDefinition.Option.TupleGetFirst:
                     return CallTupleGet((TupleAdapter)EvaluateExpression(arguments[0]), 0);
 
-                case BuiltinFunctionDefinition.Option.TupleSecondGet:
+                case BuiltinFunctionDefinition.Option.TupleGetSecond:
                     return CallTupleGet((TupleAdapter)EvaluateExpression(arguments[0]), 1);
 
-                case BuiltinFunctionDefinition.Option.TupleThirdGet:
+                case BuiltinFunctionDefinition.Option.TupleGetThird:
                     return CallTupleGet((TupleAdapter)EvaluateExpression(arguments[0]), 2);
 
                 case BuiltinFunctionDefinition.Option.ListGet:
@@ -489,18 +489,67 @@ namespace Handmada.ReLang.Compilation.Runtime {
                         (List<object>)EvaluateExpression(arguments[0]), 
                         (int)EvaluateExpression(arguments[1]));
 
-                case BuiltinFunctionDefinition.Option.ListLengthGet:
-                    return CallListLengthGet((List<object>)EvaluateExpression(arguments[0]));
+                case BuiltinFunctionDefinition.Option.ListGetLength:
+                    return CallListGetLength((List<object>)EvaluateExpression(arguments[0]));
 
-                case BuiltinFunctionDefinition.Option.SetLengthGet:
-                    return CallSetLengthGet((ISet<object>)EvaluateExpression(arguments[0]));
+                case BuiltinFunctionDefinition.Option.ListSet:
+                    return CallListSet(
+                        (List<object>)EvaluateExpression(arguments[0]), 
+                        (int)EvaluateExpression(arguments[1]), 
+                        EvaluateExpression(arguments[2]));
 
-                case BuiltinFunctionDefinition.Option.DictionaryLengthGet:
-                    return CallDictionaryLengthGet((DictionaryAdapter)EvaluateExpression(arguments[0]));
+                case BuiltinFunctionDefinition.Option.ListAppend:
+                    return CallListAppend(
+                        (List<object>)EvaluateExpression(arguments[0]), 
+                        EvaluateExpression(arguments[1]));
+
+                case BuiltinFunctionDefinition.Option.ListExtend:
+                    return CallListExtend(
+                        (List<object>)EvaluateExpression(arguments[0]), 
+                        (List<object>)EvaluateExpression(arguments[1]));
+
+                case BuiltinFunctionDefinition.Option.SetGetLength:
+                    return CallSetGetLength((ISet<object>)EvaluateExpression(arguments[0]));
+
+                case BuiltinFunctionDefinition.Option.SetAdd:
+                    return CallSetAdd(
+                        (ISet<object>)EvaluateExpression(arguments[0]), 
+                        EvaluateExpression(arguments[1]));
+
+                case BuiltinFunctionDefinition.Option.DictionaryGet:
+                    return CallDictionaryGet(
+                        (DictionaryAdapter)EvaluateExpression(arguments[0]), 
+                        EvaluateExpression(arguments[1]));
+
+                case BuiltinFunctionDefinition.Option.DictionaryGetLength:
+                    return CallDictionaryGetLength((DictionaryAdapter)EvaluateExpression(arguments[0]));
 
                 default:
                     throw new VirtualMachineException($"Unsupported built-in function call: {option}");
             }
+        }
+
+
+        private object CallListAppend(List<object> list, object item) {
+            list.Add(item);
+            return null;
+        }
+
+
+        private object CallListExtend(List<object> listA, List<object> listB) {
+            listA.AddRange(listB);
+            return null;
+        }
+
+
+        private object CallSetAdd(ISet<object> set, object item) {
+            set.Add(item);
+            return null;
+        }
+
+
+        private object CallDictionaryGet(DictionaryAdapter dictionary, object key) {
+            return dictionary[key];
         }
 
 
@@ -509,17 +558,23 @@ namespace Handmada.ReLang.Compilation.Runtime {
         }
 
 
-        private object CallListLengthGet(List<object> list) {
+        private object CallListSet(List<object> list, int index, object item) {
+            list[index] = item;
+            return null;
+        }
+
+
+        private object CallListGetLength(List<object> list) {
             return list.Count;
         }
 
 
-        private object CallSetLengthGet(ISet<object> set) {
+        private object CallSetGetLength(ISet<object> set) {
             return set.Count;
         }
 
 
-        private object CallDictionaryLengthGet(DictionaryAdapter dictionary) {
+        private object CallDictionaryGetLength(DictionaryAdapter dictionary) {
             return dictionary.Count;
         }
 

@@ -14,6 +14,8 @@ namespace Handmada.ReLang.Compilation.Yet {
         public bool IsCompileTime => false;
         public object Value => throw new NotImplementedException();
         public ITypeInfo TypeInfo => new RangeTypeInfo(Start.TypeInfo);
+        public bool IsLvalue => false;
+        public Location MainLocation { get; }
 
         /// <summary>
         /// Interval's start (inclusive)
@@ -30,6 +32,7 @@ namespace Handmada.ReLang.Compilation.Yet {
             Start = start;
             End = end;
 
+            MainLocation = start.MainLocation;
             HasSideEffect = start.HasSideEffect || end.HasSideEffect;
         }
     }

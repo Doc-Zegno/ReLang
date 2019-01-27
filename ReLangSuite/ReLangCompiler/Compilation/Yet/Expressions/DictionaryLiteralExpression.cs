@@ -14,6 +14,8 @@ namespace Handmada.ReLang.Compilation.Yet {
         public bool IsCompileTime => false;
         public object Value => throw new NotImplementedException();
         public ITypeInfo TypeInfo { get; }
+        public bool IsLvalue => false;
+        public Location MainLocation { get; }
 
         /// <summary>
         /// (key, value)-pairs of this dictionary literal
@@ -21,9 +23,12 @@ namespace Handmada.ReLang.Compilation.Yet {
         public List<(IExpression, IExpression)> Pairs { get; }
 
 
-        public DictionaryLiteralExpression(List<(IExpression, IExpression)> pairs, ITypeInfo keyType, ITypeInfo valueType) {
+        public DictionaryLiteralExpression(List<(IExpression, IExpression)> pairs, ITypeInfo keyType,
+                                           ITypeInfo valueType, Location mainLocation)
+        {
             Pairs = pairs;
             TypeInfo = new DictionaryTypeInfo(keyType, valueType);
+            MainLocation = mainLocation;
 
             HasSideEffect = false;
             foreach (var (key, value) in pairs) {

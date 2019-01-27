@@ -15,13 +15,11 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
             Console.WriteLine($"parsing call of '{name}'...");
             IFunctionDefinition definition;
-            //BuiltinFunctionDefinition.Option? builtinOption = null;
 
             // Filter built-ins
             switch (name) {
                 case "print":
                     definition = BuiltinFunctionDefinition.Print;
-                    //builtinOption = BuiltinFunctionCallExpression.Option.Print;
                     break;
 
                 default:
@@ -37,13 +35,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             var arguments = GetFunctionArguments(definition.ArgumentTypes, location);
 
             // return appropriate function call expression
-            return new FunctionCallExpression(definition, arguments);
-
-            /*if (builtinOption != null) {
-                return new BuiltinFunctionCallExpression(definition.ResultType, arguments, builtinOption.Value);
-            } else {
-                return new CustomFunctionCallExpression(definition.ResultType, arguments, definition.Number);
-            }*/
+            return new FunctionCallExpression(definition, arguments, false, location);
         }
 
 
@@ -58,45 +50,46 @@ namespace Handmada.ReLang.Compilation.Parsing {
             if (WhetherOperator(stop)) {
                 MoveNextLexeme();
             } else {
-                for (var index = 0; currentLexeme != null; index++) {
-                    var loc = currentLexeme.StartLocation;
-                    var argument = GetExpression();
-
-                    // Type checks (and conversions if necessary)
-                    if (index + 1 > expectedTypes.Count) {
-                        RaiseError($"Too many arguments for this function call (expected {expectedTypes.Count})", loc);
-                        return null;
-                    } else {
-                        var expectedType = expectedTypes[index];
-                        var converted = TryConvertExpression(argument, expectedType);
-                        if (converted == null) {
-                            RaiseError($"Cannot convert given argument to target type (expected '{expectedType.Name}'"
-                                       + $" but got '{argument.TypeInfo.Name}')", loc);
-                            return null;
-                        } else {
-                            argument = converted;
-                        }
-                    }
-
-                    arguments.Add(argument);
+                while (true) {
+                    arguments.Add(GetExpression());
                     if (WhetherOperator(OperatorMeaning.Comma)) {
                         MoveNextLexeme();
                     } else {
                         break;
                     }
                 }
-
                 CheckOperator(stop);
             }
 
-            // Final count check
+            CheckAndConvertFunctionArguments(expectedTypes, arguments, location);
+            return arguments;
+        }
+
+
+
+        private void CheckAndConvertFunctionArguments(
+            List<ITypeInfo> expectedTypes,
+            List<IExpression> arguments,
+            Location location)
+        {
             if (arguments.Count != expectedTypes.Count) {
                 RaiseError($"Wrong number of arguments for this function call (expected {expectedTypes.Count}"
                            + $" but got {arguments.Count})", location);
-                return null;
             }
 
-            return arguments;
+            for (var index = 0; index < arguments.Count; index++) {
+                var argument = arguments[index];
+                var expectedType = expectedTypes[index];
+
+                // Type checks (and conversions if necessary)
+                var converted = TryConvertExpression(argument, expectedType);
+                if (converted == null) {
+                    RaiseError($"Cannot convert given argument to target type (expected '{expectedType.Name}'"
+                               + $" but got '{argument.TypeInfo.Name}')", argument.MainLocation);
+                }
+
+                arguments[index] = converted;
+            }
         }
 
 
@@ -164,7 +157,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
             var arguments = new List<IExpression> { expression };
             arguments.AddRange(GetFunctionArguments(definition.ArgumentTypes, location, OperatorMeaning.CloseBracket));
-            return new FunctionCallExpression(definition, arguments);
+            return new FunctionCallExpression(definition, arguments, true, location);
         }
 
 
@@ -177,6 +170,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
             var arguments = new List<IExpression> { expression };
             IFunctionDefinition definition = null;
+            var isLvalue = false;
 
             if (WhetherOperator(OperatorMeaning.OpenParenthesis)) {
                 // Get method's definition
@@ -190,14 +184,15 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
             } else {
                 // Get property's definition
-                var fullName = name + "Get";
+                var fullName = "get" + char.ToUpper(name[0]) + name.Substring(1);
                 definition = expression.TypeInfo.GetMethodDefinition(fullName);
                 if (definition == null) {
                     RaiseError($"Type '{expression.TypeInfo.Name}' doesn't have property '{name}'", location);
                 }
+                isLvalue = true;
             }
 
-            return new FunctionCallExpression(definition, arguments);
+            return new FunctionCallExpression(definition, arguments, isLvalue, location);
         }
 
 
@@ -216,11 +211,11 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                         case OperatorMeaning.OpenBracket:
                             MoveNextLexeme();
-                            return GetListLiteral();
+                            return GetListLiteral(location);
 
                         case OperatorMeaning.OpenBrace:
                             MoveNextLexeme();
-                            return GetSetOrDictionaryLiteral();
+                            return GetSetOrDictionaryLiteral(location);
 
                         default:
                             RaiseError($"Unexpected operator: {GetOperatorName(operatorLexeme.Meaning)}");
@@ -233,12 +228,11 @@ namespace Handmada.ReLang.Compilation.Parsing {
                         return GetConstructorOrFunctionCall(symbol.Text, location);
 
                     } else {
-                        var maybe = scopeStack.GetDefinition(symbol.Text);
-                        if (!maybe.HasValue) {
+                        var definition = scopeStack.GetDefinition(symbol.Text);
+                        if (definition == null) {
                             RaiseError($"Undeclared identifier '{symbol.Text}'");
                         }
-
-                        var definition = maybe.Value;
+                        
                         if (!definition.IsMutable && definition.Value != null && definition.Value.IsCompileTime) {
                             // Can be evaluated at compile-time
                             return definition.Value;
@@ -248,8 +242,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
                         } else {
                             // Should be resolved at run-time
                             var frameOffset = definition.ScopeNumber - (scopeStack.Count - 1);
-                            return new VariableExpression(symbol.Text, definition.Number,
-                                                          frameOffset, false, definition.TypeInfo);
+                            return new VariableExpression(symbol.Text, definition.Number, frameOffset,
+                                                          false, definition.TypeInfo, location);
                         }
                     }
 
@@ -281,7 +275,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                             break;
                     }
                     MoveNextLexeme();
-                    return new PrimitiveLiteralExpression(literal.Value, new PrimitiveTypeInfo(typeOption));
+                    return new PrimitiveLiteralExpression(literal.Value, new PrimitiveTypeInfo(typeOption), location);
 
                 default:
                     RaiseError("Expression was expected");
@@ -344,18 +338,18 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
         // [a, b, c, d, e]
-        private IExpression GetListLiteral() {
+        private IExpression GetListLiteral(Location location) {
             var item = GetExpression();
             var items = new List<IExpression> { item };
             items.AddRange(GetItemList(item.TypeInfo));
             CheckOperator(OperatorMeaning.CloseBracket);
-            return new ListLiteralExpression(items, item.TypeInfo);
+            return new ListLiteralExpression(items, item.TypeInfo, location);
         }
 
 
 
         // {a, b, c, d, e}
-        private IExpression GetSetOrDictionaryLiteral() {
+        private IExpression GetSetOrDictionaryLiteral(Location location) {
             // Determine whether this is set or dictionary
             var key = GetExpression();
 
@@ -367,14 +361,14 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 var pairs = new List<(IExpression, IExpression)> { (key, value) };
                 pairs.AddRange(GetPairList(key.TypeInfo, value.TypeInfo));
                 CheckOperator(OperatorMeaning.CloseBrace);
-                return new DictionaryLiteralExpression(pairs, key.TypeInfo, value.TypeInfo);
+                return new DictionaryLiteralExpression(pairs, key.TypeInfo, value.TypeInfo, location);
 
             } else {
                 // Set
                 var items = new List<IExpression> { key };
                 items.AddRange(GetItemList(key.TypeInfo));
                 CheckOperator(OperatorMeaning.CloseBrace);
-                return new SetLiteralExpression(items, key.TypeInfo);
+                return new SetLiteralExpression(items, key.TypeInfo, location);
             }
         }
 
@@ -447,14 +441,14 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                     if (x.IsCompileTime) {
                         if ((bool)x.Value) {
-                            left = new PrimitiveLiteralExpression(true, PrimitiveTypeInfo.Bool);
+                            left = new PrimitiveLiteralExpression(true, PrimitiveTypeInfo.Bool, locationLeft);
                         } else {
                             left = y;
                         }
                     } else {
                         // Short-circuit evaluation:
                         // (y) shouldn't be evaluated before (x)
-                        left = new BinaryOperatorExpression(BinaryOperatorExpression.Option.Or, x, y);
+                        left = new BinaryOperatorExpression(BinaryOperatorExpression.Option.Or, x, y, locationMiddle);
                     }
 
                 } else {
@@ -484,14 +478,14 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                     if (x.IsCompileTime) {
                         if (!(bool)x.Value) {
-                            left = new PrimitiveLiteralExpression(false, PrimitiveTypeInfo.Bool);
+                            left = new PrimitiveLiteralExpression(false, PrimitiveTypeInfo.Bool, locationLeft);
                         } else {
                             left = y;
                         }
                     } else {
                         // Short-circuit evaluation:
                         // (y) shouldn't be evaluated before (x)
-                        left = new BinaryOperatorExpression(BinaryOperatorExpression.Option.And, x, y);
+                        left = new BinaryOperatorExpression(BinaryOperatorExpression.Option.And, x, y, locationMiddle);
                     }
 
                 } else {
@@ -548,7 +542,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                     RaiseError("Boolean operands don't support this operator", locationMiddle);
                                     return null;
                                 }
-                                left = new PrimitiveLiteralExpression(result, PrimitiveTypeInfo.Bool);
+                                left = new PrimitiveLiteralExpression(result, PrimitiveTypeInfo.Bool, locationLeft);
 
                             } else {
                                 // Delay evaluation until run-time
@@ -561,7 +555,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                     RaiseError("Boolean operands don't support this operator", locationMiddle);
                                     return null;
                                 }
-                                left = new BinaryOperatorExpression(option, x, y);
+                                left = new BinaryOperatorExpression(option, x, y, locationMiddle);
                             }
                             break;
 
@@ -602,7 +596,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                         RaiseError("Integer operands don't support this operator", locationMiddle);
                                         return null;
                                 }
-                                left = new PrimitiveLiteralExpression(result, PrimitiveTypeInfo.Bool);
+                                left = new PrimitiveLiteralExpression(result, PrimitiveTypeInfo.Bool, locationLeft);
 
                             } else {
                                 // Delay evaluation until run-time
@@ -636,7 +630,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                         RaiseError("Integer operands don't support this operator", locationMiddle);
                                         return null;
                                 }
-                                left = new BinaryOperatorExpression(option, x, y);
+                                left = new BinaryOperatorExpression(option, x, y, locationMiddle);
                             }
                             break;
 
@@ -677,7 +671,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                         RaiseError("Floating operands don't support this operator", locationMiddle);
                                         return null;
                                 }
-                                left = new PrimitiveLiteralExpression(result, PrimitiveTypeInfo.Bool);
+                                left = new PrimitiveLiteralExpression(result, PrimitiveTypeInfo.Bool, locationLeft);
 
                             } else {
                                 // Delay evaluation until run-time
@@ -711,7 +705,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                         RaiseError("Floating operands don't support this operator", locationMiddle);
                                         return null;
                                 }
-                                left = new BinaryOperatorExpression(option, x, y);
+                                left = new BinaryOperatorExpression(option, x, y, locationMiddle);
                             }
                             break;
 
@@ -731,7 +725,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                     RaiseError("String operands don't support this operator", locationMiddle);
                                     return null;
                                 }
-                                left = new PrimitiveLiteralExpression(result, PrimitiveTypeInfo.Bool);
+                                left = new PrimitiveLiteralExpression(result, PrimitiveTypeInfo.Bool, locationLeft);
 
                             } else {
                                 // Delay until run-time
@@ -744,7 +738,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                     RaiseError("String operands don't support this operator", locationMiddle);
                                     return null;
                                 }
-                                left = new BinaryOperatorExpression(option, x, y);
+                                left = new BinaryOperatorExpression(option, x, y, locationMiddle);
                             }
                             break;
 
@@ -764,7 +758,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                     RaiseError("Object operands don't support this operator", locationMiddle);
                                     return null;
                                 }
-                                left = new PrimitiveLiteralExpression(result, PrimitiveTypeInfo.Bool);
+                                left = new PrimitiveLiteralExpression(result, PrimitiveTypeInfo.Bool, locationLeft);
 
                             } else {
                                 // Delay evaluation until run-time
@@ -777,7 +771,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                     RaiseError("Object operands don't support this operator", locationMiddle);
                                     return null;
                                 }
-                                left = new BinaryOperatorExpression(option, x, y);
+                                left = new BinaryOperatorExpression(option, x, y, locationMiddle);
                             }
                             break;
 
@@ -870,7 +864,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                         RaiseError("Integer operands don't support this operator", locationMiddle);
                                         return null;
                                     }
-                                    left = new PrimitiveLiteralExpression(result, PrimitiveTypeInfo.Int);
+                                    left = new PrimitiveLiteralExpression(result, PrimitiveTypeInfo.Int, locationLeft);
 
                                 } else {
                                     BinaryOperatorExpression.Option option;
@@ -882,7 +876,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                         RaiseError("Integer operands don't support this operator", locationMiddle);
                                         return null;
                                     }
-                                    left = new BinaryOperatorExpression(option, x, y);
+                                    left = new BinaryOperatorExpression(option, x, y, locationMiddle);
                                 }
                                 break;
 
@@ -901,7 +895,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                         RaiseError("Floating operands don't support this operator", locationMiddle);
                                         return null;
                                     }
-                                    left = new PrimitiveLiteralExpression(result, PrimitiveTypeInfo.Float);
+                                    left = new PrimitiveLiteralExpression(result, PrimitiveTypeInfo.Float, locationLeft);
 
                                 } else {
                                     BinaryOperatorExpression.Option option;
@@ -913,7 +907,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                         RaiseError("Floating operands don't support this operator", locationMiddle);
                                         return null;
                                     }
-                                    left = new BinaryOperatorExpression(option, x, y);
+                                    left = new BinaryOperatorExpression(option, x, y, locationMiddle);
                                 }
                                 break;
 
@@ -930,7 +924,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                         RaiseError("String operands don't support this operator", locationMiddle);
                                         return null;
                                     }
-                                    left = new PrimitiveLiteralExpression(result, PrimitiveTypeInfo.String);
+                                    left = new PrimitiveLiteralExpression(result, PrimitiveTypeInfo.String, locationLeft);
 
                                 } else {
                                     BinaryOperatorExpression.Option option;
@@ -940,7 +934,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                         RaiseError("String operands don't support this operator", locationMiddle);
                                         return null;
                                     }
-                                    left = new BinaryOperatorExpression(option, x, y);
+                                    left = new BinaryOperatorExpression(option, x, y, locationMiddle);
                                 }
                                 break;
 
@@ -1038,7 +1032,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                             return null;
                                     }
 
-                                    left = new PrimitiveLiteralExpression(result, typeInfo);
+                                    left = new PrimitiveLiteralExpression(result, typeInfo, locationLeft);
 
                                 } else {
                                     BinaryOperatorExpression.Option option;
@@ -1065,7 +1059,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                             RaiseError("Integer operands don't support this operator", locationMiddle);
                                             return null;
                                     }
-                                    left = new BinaryOperatorExpression(option, x, y);
+                                    left = new BinaryOperatorExpression(option, x, y, locationMiddle);
                                 }
                                 break;
 
@@ -1085,7 +1079,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                         return null;
                                     }
 
-                                    left = new PrimitiveLiteralExpression(result, PrimitiveTypeInfo.Float);
+                                    left = new PrimitiveLiteralExpression(result, PrimitiveTypeInfo.Float, locationLeft);
 
                                 } else {
                                     BinaryOperatorExpression.Option option;
@@ -1097,7 +1091,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                         RaiseError("Floating operands don't support this operator", locationMiddle);
                                         return null;
                                     }
-                                    left = new BinaryOperatorExpression(option, x, y);
+                                    left = new BinaryOperatorExpression(option, x, y, locationMiddle);
                                 }
                                 break;
 
@@ -1121,6 +1115,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
         private IExpression GetNegateExpression() {
             if (currentLexeme is OperatorLexeme operatorLexeme) {
+                var mainLocation = currentLexeme.StartLocation;
                 var meaning = operatorLexeme.Meaning;
                 switch (meaning) {
                     case OperatorMeaning.Not:
@@ -1143,9 +1138,9 @@ namespace Handmada.ReLang.Compilation.Parsing {
                         if (converted != null) {
                             if (converted.IsCompileTime) {
                                 var a = (bool)converted.Value;
-                                return new PrimitiveLiteralExpression(!a, PrimitiveTypeInfo.Bool);
+                                return new PrimitiveLiteralExpression(!a, PrimitiveTypeInfo.Bool, mainLocation);
                             } else {
-                                return new UnaryOperatorExpression(UnaryOperatorExpression.Option.Not, converted);
+                                return new UnaryOperatorExpression(UnaryOperatorExpression.Option.Not, converted, mainLocation);
                             }
                         } else {
                             RaiseError($"Operand of logical Not must be a boolean expression (got '{typeName}')");
@@ -1158,9 +1153,9 @@ namespace Handmada.ReLang.Compilation.Parsing {
                         if (converted != null) {
                             if (converted.IsCompileTime) {
                                 var a = (int)converted.Value;
-                                return new PrimitiveLiteralExpression(-a, PrimitiveTypeInfo.Int);
+                                return new PrimitiveLiteralExpression(-a, PrimitiveTypeInfo.Int, mainLocation);
                             } else {
-                                return new UnaryOperatorExpression(UnaryOperatorExpression.Option.NegateInteger, converted);
+                                return new UnaryOperatorExpression(UnaryOperatorExpression.Option.NegateInteger, converted, mainLocation);
                             }
 
                         } else {
@@ -1168,9 +1163,9 @@ namespace Handmada.ReLang.Compilation.Parsing {
                             if (converted != null) {
                                 if (converted.IsCompileTime) {
                                     var a = (double)converted.Value;
-                                    return new PrimitiveLiteralExpression(-a, PrimitiveTypeInfo.Float);
+                                    return new PrimitiveLiteralExpression(-a, PrimitiveTypeInfo.Float, mainLocation);
                                 } else {
-                                    return new UnaryOperatorExpression(UnaryOperatorExpression.Option.NegateFloating, converted);
+                                    return new UnaryOperatorExpression(UnaryOperatorExpression.Option.NegateFloating, converted, mainLocation);
                                 }
                             } else {
                                 RaiseError($"Operand of negation operator must be a numeric expression (got '{typeName}')");

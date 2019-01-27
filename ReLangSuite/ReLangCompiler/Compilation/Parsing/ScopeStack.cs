@@ -8,7 +8,7 @@ using Handmada.ReLang.Compilation.Yet;
 
 
 namespace Handmada.ReLang.Compilation.Parsing {
-    struct VariableDefinition {
+    class VariableDefinition {
         public ITypeInfo TypeInfo { get; }
         public bool IsMutable { get; }
         public int Number { get; }
@@ -64,7 +64,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             }
 
 
-            public VariableDefinition? GetDefinition(string name) {
+            public VariableDefinition GetDefinition(string name) {
                 var scope = this;
                 while (scope != null) {
                     if (scope.table.TryGetValue(name, out VariableDefinition definition)) {
@@ -111,7 +111,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
         }
 
 
-        public VariableDefinition? GetDefinition(string name) {
+        public VariableDefinition GetDefinition(string name) {
             return top.GetDefinition(name);
         }
     }

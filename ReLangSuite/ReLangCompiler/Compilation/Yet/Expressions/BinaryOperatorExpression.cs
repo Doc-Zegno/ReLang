@@ -62,13 +62,15 @@ namespace Handmada.ReLang.Compilation.Yet {
         public bool IsCompileTime => false;
         public object Value => throw new NotImplementedException();
         public ITypeInfo TypeInfo { get; }
+        public bool IsLvalue => false;
+        public Location MainLocation { get; }
 
         public Option OperatorOption { get; }
         public IExpression LeftOperand { get; }
         public IExpression RightOperang { get; }
 
 
-        public BinaryOperatorExpression(Option operatorOption, IExpression leftOperand, IExpression rightOperand) {
+        public BinaryOperatorExpression(Option operatorOption, IExpression leftOperand, IExpression rightOperand, Location mainLocation) {
             OperatorOption = operatorOption;
             LeftOperand = leftOperand;
             RightOperang = rightOperand;
@@ -78,6 +80,7 @@ namespace Handmada.ReLang.Compilation.Yet {
             } else {
                 TypeInfo = leftOperand.TypeInfo;
             }
+            MainLocation = mainLocation;
         }
     }
 }

@@ -35,14 +35,17 @@ namespace Handmada.ReLang.Compilation.Yet {
         public bool IsCompileTime => false;
         public object Value => throw new NotImplementedException();
         public ITypeInfo TypeInfo { get; }
+        public bool IsLvalue => false;
+        public Location MainLocation { get; }
 
         public Option ConversionOption { get; }
         public IExpression Operand { get; }
 
 
-        public ConversionExpression(Option conversionOption, IExpression operand) {
+        public ConversionExpression(Option conversionOption, IExpression operand, Location mainLocation) {
             ConversionOption = conversionOption;
             Operand = operand;
+            MainLocation = mainLocation;
 
             ITypeInfo itemType = null;
             if (operand.TypeInfo is IterableTypeInfo iterable) {

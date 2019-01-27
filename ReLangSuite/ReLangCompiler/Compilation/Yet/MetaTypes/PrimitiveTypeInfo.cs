@@ -50,9 +50,9 @@ namespace Handmada.ReLang.Compilation.Yet {
                             if (TypeOption == Option.Int) {
                                 if (expression.IsCompileTime) {
                                     var character = (char)expression.Value;
-                                    return new PrimitiveLiteralExpression((int)character, Int);
+                                    return new PrimitiveLiteralExpression((int)character, Int, expression.MainLocation);
                                 } else {
-                                    return new ConversionExpression(ConversionExpression.Option.Char2Int, expression);
+                                    return new ConversionExpression(ConversionExpression.Option.Char2Int, expression, expression.MainLocation);
                                 }
                             } else {
                                 return null;
@@ -62,9 +62,9 @@ namespace Handmada.ReLang.Compilation.Yet {
                             if (TypeOption == Option.Float) {
                                 if (expression.IsCompileTime) {
                                     var integer = (int)expression.Value;
-                                    return new PrimitiveLiteralExpression((double)integer, Float);
+                                    return new PrimitiveLiteralExpression((double)integer, Float, expression.MainLocation);
                                 } else {
-                                    return new ConversionExpression(ConversionExpression.Option.Int2Float, expression);
+                                    return new ConversionExpression(ConversionExpression.Option.Int2Float, expression, expression.MainLocation);
                                 }
                             } else { 
                                 return null;
@@ -81,7 +81,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public IExpression ConstructFrom(IExpression expression) {
+        public IExpression ConstructFrom(IExpression expression, Location location) {
             var implicitConversion = ConvertFrom(expression);
             if (implicitConversion != null) {
                 return implicitConversion;
@@ -93,9 +93,9 @@ namespace Handmada.ReLang.Compilation.Yet {
                             case Option.String:
                                 if (expression.IsCompileTime) {
                                     var boolean = (bool)expression.Value;
-                                    return new PrimitiveLiteralExpression(boolean ? "true" : "false", String);
+                                    return new PrimitiveLiteralExpression(boolean ? "true" : "false", String, location);
                                 } else {
-                                    return new ConversionExpression(ConversionExpression.Option.Bool2String, expression);
+                                    return new ConversionExpression(ConversionExpression.Option.Bool2String, expression, location);
                                 }
 
                             default:
@@ -108,9 +108,9 @@ namespace Handmada.ReLang.Compilation.Yet {
                             case Option.String:
                                 if (expression.IsCompileTime) {
                                     var character = (char)expression.Value;
-                                    return new PrimitiveLiteralExpression(new string(character, 1), String);
+                                    return new PrimitiveLiteralExpression(new string(character, 1), String, location);
                                 } else {
-                                    return new ConversionExpression(ConversionExpression.Option.Char2String, expression);
+                                    return new ConversionExpression(ConversionExpression.Option.Char2String, expression, location);
                                 }
 
                             default:
@@ -124,20 +124,20 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 if (expression.IsCompileTime) {
                                     var integer = (int)expression.Value;
                                     if (integer >= 0 && integer <= char.MaxValue) {
-                                        return new PrimitiveLiteralExpression((char)integer, Char);
+                                        return new PrimitiveLiteralExpression((char)integer, Char, location);
                                     } else {
                                         throw new FormatException($"Value {integer} cannot be converted to valid character code");
                                     }
                                 } else {
-                                    return new ConversionExpression(ConversionExpression.Option.Int2Char, expression);
+                                    return new ConversionExpression(ConversionExpression.Option.Int2Char, expression, location);
                                 }
 
                             case Option.String:
                                 if (expression.IsCompileTime) {
                                     var integer = (int)expression.Value;
-                                    return new PrimitiveLiteralExpression(integer.ToString(), String);
+                                    return new PrimitiveLiteralExpression(integer.ToString(), String, location);
                                 } else {
-                                    return new ConversionExpression(ConversionExpression.Option.Int2String, expression);
+                                    return new ConversionExpression(ConversionExpression.Option.Int2String, expression, location);
                                 }
 
                             default:
@@ -150,17 +150,17 @@ namespace Handmada.ReLang.Compilation.Yet {
                             case Option.Int:
                                 if (expression.IsCompileTime) {
                                     var floating = (double)expression.Value;
-                                    return new PrimitiveLiteralExpression((int)floating, Int);
+                                    return new PrimitiveLiteralExpression((int)floating, Int, location);
                                 } else {
-                                    return new ConversionExpression(ConversionExpression.Option.Float2Int, expression);
+                                    return new ConversionExpression(ConversionExpression.Option.Float2Int, expression, location);
                                 }
 
                             case Option.String:
                                 if (expression.IsCompileTime) {
                                     var floating = (double)expression.Value;
-                                    return new PrimitiveLiteralExpression(floating.ToString(new CultureInfo("en-US")), String);
+                                    return new PrimitiveLiteralExpression(floating.ToString(new CultureInfo("en-US")), String, location);
                                 } else {
-                                    return new ConversionExpression(ConversionExpression.Option.Float2String, expression);
+                                    return new ConversionExpression(ConversionExpression.Option.Float2String, expression, location);
                                 }
 
                             default:
@@ -181,33 +181,33 @@ namespace Handmada.ReLang.Compilation.Yet {
                                     } else {
                                         throw new FormatException($"Cannot convert \"{s}\" to boolean");
                                     }
-                                    return new PrimitiveLiteralExpression(boolean, Bool);
+                                    return new PrimitiveLiteralExpression(boolean, Bool, location);
                                 } else {
-                                    return new ConversionExpression(ConversionExpression.Option.String2Bool, expression);
+                                    return new ConversionExpression(ConversionExpression.Option.String2Bool, expression, location);
                                 }
 
                             case Option.Int:
                                 if (expression.IsCompileTime) {
                                     var s = (string)expression.Value;
                                     if (int.TryParse(s, out int integer)) {
-                                        return new PrimitiveLiteralExpression(integer, Int);
+                                        return new PrimitiveLiteralExpression(integer, Int, location);
                                     } else {
                                         throw new FormatException($"Cannot convert \"{s}\" to integer");
                                     }
                                 } else {
-                                    return new ConversionExpression(ConversionExpression.Option.String2Int, expression);
+                                    return new ConversionExpression(ConversionExpression.Option.String2Int, expression, location);
                                 }
 
                             case Option.Float:
                                 if (expression.IsCompileTime) {
                                     var s = (string)expression.Value;
                                     if (double.TryParse(s, NumberStyles.Number, new CultureInfo("en-US"), out double floating)) {
-                                        return new PrimitiveLiteralExpression(floating, Float);
+                                        return new PrimitiveLiteralExpression(floating, Float, location);
                                     } else {
                                         throw new FormatException($"Cannot convert \"{s}\" to floating");
                                     }
                                 } else {
-                                    return new ConversionExpression(ConversionExpression.Option.String2Float, expression);
+                                    return new ConversionExpression(ConversionExpression.Option.String2Float, expression, location);
                                 }
 
                             default:

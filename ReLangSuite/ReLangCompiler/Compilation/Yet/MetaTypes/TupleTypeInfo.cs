@@ -32,28 +32,31 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public IExpression ConstructFrom(IExpression expression) {
+        public IExpression ConstructFrom(IExpression expression, Location location) {
             throw new NotImplementedException();
         }
 
 
         public IFunctionDefinition GetMethodDefinition(string name) {
             switch (name) {
-                case "firstGet" when ItemTypes.Count >= 1:
+                case "getFirst" when ItemTypes.Count >= 1:
                     return new BuiltinFunctionDefinition(
-                        BuiltinFunctionDefinition.Option.TupleFirstGet, 
+                        name,
+                        BuiltinFunctionDefinition.Option.TupleGetFirst, 
                         new List<ITypeInfo> { }, 
                         ItemTypes[0]);
 
-                case "secondGet" when ItemTypes.Count >= 2:
+                case "getSecond" when ItemTypes.Count >= 2:
                     return new BuiltinFunctionDefinition(
-                        BuiltinFunctionDefinition.Option.TupleSecondGet, 
+                        name,
+                        BuiltinFunctionDefinition.Option.TupleGetSecond, 
                         new List<ITypeInfo> { }, 
                         ItemTypes[1]);
 
-                case "thirdGet" when ItemTypes.Count >= 3:
+                case "getThird" when ItemTypes.Count >= 3:
                     return new BuiltinFunctionDefinition(
-                        BuiltinFunctionDefinition.Option.TupleThirdGet, 
+                        name,
+                        BuiltinFunctionDefinition.Option.TupleGetThird, 
                         new List<ITypeInfo> { }, 
                         ItemTypes[2]);
 
@@ -65,6 +68,7 @@ namespace Handmada.ReLang.Compilation.Yet {
 
         public IFunctionDefinition GetTupleAccessorDefinition(int index) =>
             new BuiltinFunctionDefinition(
+                "get",
                 BuiltinFunctionDefinition.Option.TupleGet,
                 new List<ITypeInfo> { this, PrimitiveTypeInfo.Int },
                 ItemTypes[index]);

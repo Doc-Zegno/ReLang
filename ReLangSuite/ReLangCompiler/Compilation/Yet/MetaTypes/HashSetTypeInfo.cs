@@ -26,11 +26,11 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public override IExpression ConstructFrom(IExpression expression) {
+        public override IExpression ConstructFrom(IExpression expression, Location location) {
             switch (expression.TypeInfo) {
                 case IterableTypeInfo iterable:
                 case PrimitiveTypeInfo primitive when primitive.TypeOption == PrimitiveTypeInfo.Option.String:
-                    return new ConversionExpression(ConversionExpression.Option.Iterable2Set, expression);
+                    return new ConversionExpression(ConversionExpression.Option.Iterable2Set, expression, location);
 
                 default:
                     return null;
@@ -57,11 +57,19 @@ namespace Handmada.ReLang.Compilation.Yet {
 
         public override IFunctionDefinition GetMethodDefinition(string name) {
             switch (name) {
-                case "lengthGet":
+                case "getLength":
                     return new BuiltinFunctionDefinition(
-                        BuiltinFunctionDefinition.Option.SetLengthGet,
+                        name,
+                        BuiltinFunctionDefinition.Option.SetGetLength,
                         new List<ITypeInfo> { },
                         PrimitiveTypeInfo.Int);
+
+                case "add":
+                    return new BuiltinFunctionDefinition(
+                        name,
+                        BuiltinFunctionDefinition.Option.SetAdd, 
+                        new List<ITypeInfo> { ItemType }, 
+                        PrimitiveTypeInfo.Void);
 
                 default:
                     return base.GetMethodDefinition(name);

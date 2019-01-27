@@ -20,6 +20,11 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
         public int Count => dictionary.Count;
 
+        public object this[object key] {
+            get { return dictionary[key]; }
+            set { dictionary[key] = value; }
+        }
+
 
         public DictionaryAdapter(IEnumerable<(object, object)> pairs) {
             dictionary = new Dictionary<object, object>();

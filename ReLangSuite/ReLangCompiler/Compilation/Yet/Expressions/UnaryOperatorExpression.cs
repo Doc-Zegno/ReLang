@@ -24,16 +24,19 @@ namespace Handmada.ReLang.Compilation.Yet {
         public bool IsCompileTime => false;
         public object Value => throw new NotImplementedException();
         public ITypeInfo TypeInfo { get; }
+        public bool IsLvalue => false;
+        public Location MainLocation { get; }
 
         public Option OperatorOption { get; }
         public IExpression Expression { get; }
 
 
-        public UnaryOperatorExpression(Option operatorOption, IExpression expression) {
+        public UnaryOperatorExpression(Option operatorOption, IExpression expression, Location mainLocation) {
             OperatorOption = operatorOption;
             Expression = expression;
 
             TypeInfo = expression.TypeInfo;
+            MainLocation = mainLocation;
         }
     }
 }

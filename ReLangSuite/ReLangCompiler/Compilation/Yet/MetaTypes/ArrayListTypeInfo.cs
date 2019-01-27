@@ -26,11 +26,11 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public override IExpression ConstructFrom(IExpression expression) {
+        public override IExpression ConstructFrom(IExpression expression, Location location) {
             switch (expression.TypeInfo) {
                 case IterableTypeInfo iterable:
                 case PrimitiveTypeInfo primitive when primitive.TypeOption == PrimitiveTypeInfo.Option.String:
-                    return new ConversionExpression(ConversionExpression.Option.Iterable2List, expression);
+                    return new ConversionExpression(ConversionExpression.Option.Iterable2List, expression, location);
 
                 default:
                     return null;
@@ -59,15 +59,38 @@ namespace Handmada.ReLang.Compilation.Yet {
             switch (name) {
                 case "get":
                     return new BuiltinFunctionDefinition(
+                        name,
                         BuiltinFunctionDefinition.Option.ListGet, 
                         new List<ITypeInfo> { PrimitiveTypeInfo.Int }, 
                         ItemType);
 
-                case "lengthGet":
+                case "getLength":
                     return new BuiltinFunctionDefinition(
-                        BuiltinFunctionDefinition.Option.ListLengthGet, 
+                        name,
+                        BuiltinFunctionDefinition.Option.ListGetLength, 
                         new List<ITypeInfo> { }, 
                         PrimitiveTypeInfo.Int);
+
+                case "set":
+                    return new BuiltinFunctionDefinition(
+                        name,
+                        BuiltinFunctionDefinition.Option.ListSet, 
+                        new List<ITypeInfo> { PrimitiveTypeInfo.Int, ItemType }, 
+                        PrimitiveTypeInfo.Void);
+
+                case "append":
+                    return new BuiltinFunctionDefinition(
+                        name,
+                        BuiltinFunctionDefinition.Option.ListAppend, 
+                        new List<ITypeInfo> { ItemType }, 
+                        PrimitiveTypeInfo.Void);
+
+                case "extend":
+                    return new BuiltinFunctionDefinition(
+                        name,
+                        BuiltinFunctionDefinition.Option.ListExtend, 
+                        new List<ITypeInfo> { this }, 
+                        PrimitiveTypeInfo.Void);
 
                 default:
                     return base.GetMethodDefinition(name);

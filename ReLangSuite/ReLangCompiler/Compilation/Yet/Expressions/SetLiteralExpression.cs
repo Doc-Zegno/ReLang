@@ -14,13 +14,16 @@ namespace Handmada.ReLang.Compilation.Yet {
         public bool IsCompileTime => false;
         public object Value => throw new NotImplementedException();
         public ITypeInfo TypeInfo { get; }
+        public bool IsLvalue => false;
+        public Location MainLocation { get; }
 
         public List<IExpression> Items { get; }
 
 
-        public SetLiteralExpression(List<IExpression> items, ITypeInfo itemType) {
+        public SetLiteralExpression(List<IExpression> items, ITypeInfo itemType, Location mainLocation) {
             Items = items;
             TypeInfo = new HashSetTypeInfo(itemType);
+            MainLocation = mainLocation;
 
             HasSideEffect = false;
             foreach (var item in items) {

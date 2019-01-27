@@ -163,7 +163,7 @@ namespace Handmada.ReLang.Compilation {
 
                 case FunctionCallExpression functionCall:
                     var definition = functionCall.FunctionDefinition;
-                    Console.Write($"{definition.FullQualification}.{definition.Name}(");
+                    Console.Write($"{definition.FullQualification}.{definition.FullName}(");
                     PrintExpressionList(functionCall.Arguments);
                     Console.Write(")");
                     break;

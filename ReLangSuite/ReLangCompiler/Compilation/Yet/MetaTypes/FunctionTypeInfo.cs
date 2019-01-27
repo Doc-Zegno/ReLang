@@ -29,7 +29,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public IExpression ConstructFrom(IExpression expression) {
+        public IExpression ConstructFrom(IExpression expression, Location location) {
             return ConvertFrom(expression);
         }
 

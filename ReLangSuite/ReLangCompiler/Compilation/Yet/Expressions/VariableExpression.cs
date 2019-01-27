@@ -30,16 +30,19 @@ namespace Handmada.ReLang.Compilation.Yet {
         public bool IsCompileTime { get; }
         public object Value { get; }
         public ITypeInfo TypeInfo { get; }
+        public bool IsLvalue => true;
+        public Location MainLocation { get; }
 
 
-        public VariableExpression(string name, int number, int frameOffset, 
-                                  bool isCompileTime, ITypeInfo typeInfo, object value = null) 
+        public VariableExpression(string name, int number, int frameOffset, bool isCompileTime,
+                                  ITypeInfo typeInfo, Location mainLocation, object value = null) 
         {
             Name = name;
             Number = number;
             FrameOffset = frameOffset;
             IsCompileTime = isCompileTime;
             TypeInfo = typeInfo;
+            MainLocation = mainLocation;
             Value = value;
         }
     }

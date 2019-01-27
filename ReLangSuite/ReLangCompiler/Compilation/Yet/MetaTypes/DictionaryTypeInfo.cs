@@ -33,11 +33,11 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public override IExpression ConstructFrom(IExpression expression) {
+        public override IExpression ConstructFrom(IExpression expression, Location location) {
             if (expression.TypeInfo is IterableTypeInfo iterableType
                 && iterableType.ItemType is TupleTypeInfo tupleType
                 && tupleType.ItemTypes.Count == 2) {
-                return new ConversionExpression(ConversionExpression.Option.Iterable2Dictionary, expression);
+                return new ConversionExpression(ConversionExpression.Option.Iterable2Dictionary, expression, location);
             } else {
                 return null;
             }
@@ -68,9 +68,17 @@ namespace Handmada.ReLang.Compilation.Yet {
 
         public override IFunctionDefinition GetMethodDefinition(string name) {
             switch (name) {
-                case "lengthGet":
+                case "get":
                     return new BuiltinFunctionDefinition(
-                        BuiltinFunctionDefinition.Option.DictionaryLengthGet,
+                        name,
+                        BuiltinFunctionDefinition.Option.DictionaryGet, 
+                        new List<ITypeInfo> { KeyType }, 
+                        ValueType);
+
+                case "getLength":
+                    return new BuiltinFunctionDefinition(
+                        name,
+                        BuiltinFunctionDefinition.Option.DictionaryGetLength,
                         new List<ITypeInfo> { },
                         PrimitiveTypeInfo.Int);
 

@@ -44,25 +44,33 @@ namespace Handmada.ReLang.Compilation.Parsing {
         private IStatement GetStatement() {
             var location = currentLexeme.StartLocation;
             var lexeme = currentLexeme;
-            MoveNextLexeme();
+            //MoveNextLexeme();
 
             switch (lexeme) {
                 case OperatorLexeme operatorLexeme:
                     switch (operatorLexeme.Meaning) {
                         case OperatorMeaning.If:
+                            MoveNextLexeme();
                             return GetConditional();
 
                         case OperatorMeaning.Var:
+                            MoveNextLexeme();
                             return GetVariableDeclaration(true, location);
 
                         case OperatorMeaning.Let:
+                            MoveNextLexeme();
                             return GetVariableDeclaration(false, location);
 
                         case OperatorMeaning.For:
+                            MoveNextLexeme();
                             return GetForLoop();
 
                         case OperatorMeaning.Return:
+                            MoveNextLexeme();
                             return GetReturn();
+
+                        case OperatorMeaning.OpenParenthesis:
+                            return GetFunctionCallOrAssignment();
 
                         default:
                             RaiseError("Unknown operator lexeme found", location);
@@ -70,15 +78,14 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     }
                     break;
 
-                case SymbolLexeme symbolLexeme:
+                default:
+                    return GetFunctionCallOrAssignment();
+
+                /*case SymbolLexeme symbolLexeme:
                     if (currentLexeme is OperatorLexeme op) {
                         switch (op.Meaning) {
                             case OperatorMeaning.OpenParenthesis:
                                 return new ExpressionStatement(GetFunctionCall(symbolLexeme.Text, location));
-
-                            /*case OperatorMeaning.Assignment:
-                                PutBack();
-                                return GetAssignment(symbolLexeme.Text, location);*/
 
                             default:
                                 // Assignment
@@ -94,7 +101,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                 default:
                     RaiseError("Statement was expected", location);
-                    break;
+                    break;*/
             }
 
             return null;
@@ -102,8 +109,69 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
 
+        private IStatement GetFunctionCallOrAssignment() {
+            var location = currentLexeme.StartLocation;
+            var expression = GetMultipleExpression();
+
+            if (!expression.IsLvalue) {
+                // Function call only
+                if (expression is FunctionCallExpression) {
+                    return new ExpressionStatement(expression);
+                } else {
+                    RaiseError($"Function call was expected", location);
+                    return null;
+                }
+
+            } else {
+                // Assignment only
+                CheckOperator(OperatorMeaning.Assignment);
+                var identifiers = ConvertExpressionToIdentifierList(expression);
+
+                var right = currentLexeme.StartLocation;
+                var value = GetMultipleExpression();
+
+                return ForceAssignVariableList(identifiers, value, right);
+            }
+        }
+
+
+
+        private IIdentifier ConvertExpressionToIdentifierList(IExpression expression) {
+            switch (expression) {
+                case TupleLiteralExpression tupleLiteral:
+                    var identifiers = new List<IIdentifier>();
+                    foreach (var item in tupleLiteral.Items) {
+                        identifiers.Add(ConvertExpressionToIdentifierList(item));
+                    }
+                    return new IdentifierList(identifiers);
+
+                case VariableExpression variable:
+                    return new SingleIdentifier(variable.Name, variable.MainLocation);
+
+                case FunctionCallExpression functionCall:
+                    var self = functionCall.Arguments[0];
+                    var methodName = functionCall.FunctionDefinition.ShortName;
+                    var definition = self.TypeInfo.GetMethodDefinition("s" + methodName.Substring(1));
+
+                    Console.WriteLine($"Type of 'self' is '{self.TypeInfo.Name}'");
+                    Console.WriteLine($"Method name is '{methodName}'");
+
+                    if (definition == null) {
+                        RaiseError("No setter is available for this expression", functionCall.MainLocation);
+                    }
+
+                    return new SetterIdentifier(definition, functionCall.Arguments, functionCall.MainLocation);
+
+                default:
+                    RaiseError("This expression cannot be at the left side of assignment", expression.MainLocation);
+                    return null;
+            }
+        }
+
+
+
         // x = y + z
-        private IStatement GetAssignment() {
+        /*private IStatement GetAssignment() {
             var identifiers = GetIdentifierList();
             CheckOperator(OperatorMeaning.Assignment);
 
@@ -111,7 +179,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             var value = GetMultipleExpression();
 
             return ForceAssignVariableList(identifiers, value, right);
-        }
+        }*/
 
 
 
@@ -119,6 +187,16 @@ namespace Handmada.ReLang.Compilation.Parsing {
             switch (identifiers) {
                 case SingleIdentifier single:
                     return ForceAssignVariable(single, value, right);
+
+
+                case SetterIdentifier setter:
+                    var definition = setter.FunctionDefinition;
+                    var lastType = definition.ArgumentTypes.Last();
+                    var converted = ForceConvertExpression(value, lastType, value.MainLocation);
+                    setter.Arguments.Add(converted);
+                    return new ExpressionStatement(
+                        new FunctionCallExpression(definition, setter.Arguments, false, setter.StartLocation)
+                    );
 
 
                 case IdentifierList identifierList:
@@ -196,12 +274,11 @@ namespace Handmada.ReLang.Compilation.Parsing {
         private IStatement ForceAssignVariable(SingleIdentifier identifier, IExpression value, Location right) {
             // Check variable definition
             var name = identifier.Name;
-            var maybe = scopeStack.GetDefinition(name);
-            if (!maybe.HasValue) {
+            var definition = scopeStack.GetDefinition(name);
+            if (definition == null) {
                 RaiseError($"Undeclared identifier '{name}'", identifier.StartLocation);
             }
-
-            var definition = maybe.Value;
+            
             var frameOffset = definition.ScopeNumber - (scopeStack.Count - 1);
 
             // Check if it's mutable
@@ -398,15 +475,15 @@ namespace Handmada.ReLang.Compilation.Parsing {
             }
 
             // Get a variable expression
-            var maybe = scopeStack.GetDefinition(tmpName);
-            var definition = maybe.Value;
+            var definition = scopeStack.GetDefinition(tmpName);
             var frameOffset = definition.ScopeNumber - (scopeStack.Count - 1);
             return new VariableExpression(
                 tmpName,
                 definition.Number,
                 frameOffset,
                 false,
-                typeInfo
+                typeInfo,
+                null
             );
         }
 
@@ -426,10 +503,10 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 // Generate a call of built-in function `tupleGet(tuple, index)`
                 var arguments = new List<IExpression> {
                                         tupleVariable,
-                                        new PrimitiveLiteralExpression(i, PrimitiveTypeInfo.Int),
+                                        new PrimitiveLiteralExpression(i, PrimitiveTypeInfo.Int, null),
                                     };
 
-                var expression = new FunctionCallExpression(tupleType.GetTupleAccessorDefinition(i), arguments);
+                var expression = new FunctionCallExpression(tupleType.GetTupleAccessorDefinition(i), arguments, false, null);
 
                 /*var expression = new BuiltinFunctionCallExpression(
                     tupleType.ItemTypes[i],

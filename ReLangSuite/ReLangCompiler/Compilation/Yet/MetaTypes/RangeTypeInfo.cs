@@ -18,7 +18,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public override IExpression ConstructFrom(IExpression expression) {
+        public override IExpression ConstructFrom(IExpression expression, Location location) {
             throw new NotImplementedException();
         }
 

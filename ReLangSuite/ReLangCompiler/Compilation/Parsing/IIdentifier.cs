@@ -10,6 +10,6 @@ namespace Handmada.ReLang.Compilation.Parsing {
     /// Generalization of variable names
     /// </summary>
     interface IIdentifier {
-        Lexing.Location StartLocation { get; }
+        Location StartLocation { get; }
     }
 }

@@ -20,7 +20,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public virtual IExpression ConstructFrom(IExpression expression) {
+        public virtual IExpression ConstructFrom(IExpression expression, Location location) {
             throw new NotImplementedException();
         }
 

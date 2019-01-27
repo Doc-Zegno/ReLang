@@ -71,10 +71,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Compilation\Location.cs" />
     <Compile Include="Compilation\Parsing\IdentifierList.cs" />
     <Compile Include="Compilation\Parsing\IIdentifier.cs" />
     <Compile Include="Compilation\Parsing\Parser.Expressions.cs" />
     <Compile Include="Compilation\Parsing\Parser.Statements.cs" />
+    <Compile Include="Compilation\Parsing\SetterIdentifier.cs" />
     <Compile Include="Compilation\Parsing\SingleIdentifier.cs" />
     <Compile Include="Compilation\Runtime\DictionaryAdapter.cs" />
     <Compile Include="Compilation\Runtime\TupleAdapter.cs" />

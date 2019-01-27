@@ -29,5 +29,15 @@ namespace Handmada.ReLang.Compilation.Yet {
         /// Information about type of expression
         /// </summary>
         ITypeInfo TypeInfo { get; }
+
+        /// <summary>
+        /// Whether this expression can be at the left side of assignment
+        /// </summary>
+        bool IsLvalue { get; }
+
+        /// <summary>
+        /// Location of the expression's main token
+        /// </summary>
+        Location MainLocation { get; }
     }
 }

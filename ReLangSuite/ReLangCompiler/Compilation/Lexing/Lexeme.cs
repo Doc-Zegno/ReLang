@@ -6,20 +6,6 @@ using System.Threading.Tasks;
 
 
 namespace Handmada.ReLang.Compilation.Lexing {
-    public struct Location {
-        public string Line { get; }
-        public int LineNumber { get; }
-        public int ColumnNumber { get; }
-
-        public Location(string line, int lineNumber, int columnNumber) {
-            Line = line;
-            LineNumber = lineNumber;
-            ColumnNumber = columnNumber;
-        }
-    }
-
-
-
     /// <summary>
     /// Token of input text which is meaningful for the compiler
     /// </summary>

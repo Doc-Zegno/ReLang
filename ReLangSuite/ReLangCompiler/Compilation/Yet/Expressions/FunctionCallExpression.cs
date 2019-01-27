@@ -14,6 +14,8 @@ namespace Handmada.ReLang.Compilation.Yet {
         public bool IsCompileTime => false;
         public object Value => throw new NotImplementedException();
         public ITypeInfo TypeInfo { get; }
+        public bool IsLvalue { get; }
+        public Location MainLocation { get; }
 
         /// <summary>
         /// Arguments of function call
@@ -26,10 +28,14 @@ namespace Handmada.ReLang.Compilation.Yet {
         public IFunctionDefinition FunctionDefinition { get; }
 
 
-        public FunctionCallExpression(IFunctionDefinition functionDefinition, List<IExpression> arguments) {
+        public FunctionCallExpression(IFunctionDefinition functionDefinition, List<IExpression> arguments,
+                                      bool isLvalue, Location mainLocation)
+        {
             FunctionDefinition = functionDefinition;
             Arguments = arguments;
             TypeInfo = FunctionDefinition.ResultType;
+            IsLvalue = isLvalue;
+            MainLocation = mainLocation;
         }
     }
 }

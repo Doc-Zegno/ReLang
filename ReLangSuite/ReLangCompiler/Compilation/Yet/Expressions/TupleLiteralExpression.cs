@@ -14,6 +14,8 @@ namespace Handmada.ReLang.Compilation.Yet {
         public bool IsCompileTime { get; }
         public object Value => throw new NotImplementedException();
         public ITypeInfo TypeInfo { get; }
+        public bool IsLvalue { get; }
+        public Location MainLocation { get; }
 
         /// <summary>
         /// Items of this tuple literal
@@ -27,6 +29,8 @@ namespace Handmada.ReLang.Compilation.Yet {
             var itemTypes = new List<ITypeInfo>();
             var hasSideEffect = false;
             var isCompileTime = true;
+            var isLvalue = true;
+
             foreach (var item in items) {
                 itemTypes.Add(item.TypeInfo);
                 if (item.HasSideEffect) {
@@ -35,11 +39,16 @@ namespace Handmada.ReLang.Compilation.Yet {
                 if (!item.IsCompileTime) {
                     isCompileTime = false;
                 }
+                if (!item.IsLvalue) {
+                    isLvalue = false;
+                }
             }
 
             HasSideEffect = hasSideEffect;
             IsCompileTime = isCompileTime;
+            IsLvalue = isLvalue;
             TypeInfo = new TupleTypeInfo(itemTypes);
+            MainLocation = items[0].MainLocation;
         }
     }
 }

@@ -9,37 +9,49 @@ namespace Handmada.ReLang.Compilation.Yet {
     class BuiltinFunctionDefinition : IFunctionDefinition {
         public enum Option {
             Print,
+
             TupleGet,
-            TupleFirstGet,
-            TupleSecondGet,
-            TupleThirdGet,
+            TupleGetFirst,
+            TupleGetSecond,
+            TupleGetThird,
+
             ListGet,
-            ListLengthGet,
-            SetLengthGet,
-            DictionaryLengthGet,
+            ListGetLength,
+            ListSet,
+            ListAppend,
+            ListExtend,
+
+            SetGetLength,
+            SetAdd,
+
+            DictionaryGet,
+            DictionaryGetLength,
         }
 
 
         public List<ITypeInfo> ArgumentTypes { get; }
         public ITypeInfo ResultType { get; }
-        public string Name { get; }
+        public string FullName { get; }
+        public string ShortName { get; }
         public string FullQualification => "ReLang";
         
         public Option BuiltinOption { get; }
 
 
-        public BuiltinFunctionDefinition(Option builtinOption, List<ITypeInfo> argumentTypes, ITypeInfo resultType) {
+        public BuiltinFunctionDefinition(string shortName, Option builtinOption, List<ITypeInfo> argumentTypes, ITypeInfo resultType) {
             BuiltinOption = builtinOption;
             ArgumentTypes = argumentTypes;
             ResultType = resultType;
 
             var name = builtinOption.ToString();
-            Name = char.ToLower(name[0]) + name.Substring(1);
+            FullName = char.ToLower(name[0]) + name.Substring(1);
+            ShortName = shortName;
         }
 
 
         public static BuiltinFunctionDefinition Print =>
             new BuiltinFunctionDefinition(
+                "print",
                 Option.Print, 
                 new List<ITypeInfo> { PrimitiveTypeInfo.Object }, 
                 PrimitiveTypeInfo.Void);

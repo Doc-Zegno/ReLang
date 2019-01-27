@@ -333,7 +333,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
         private IExpression ForceConstructFrom(IExpression expression, ITypeInfo targetType, Location location) {
             IExpression constructed = null;
             try {
-                constructed = targetType.ConstructFrom(expression);
+                constructed = targetType.ConstructFrom(expression, location);
             } catch (FormatException e) {
                 RaiseError(e.Message, location);
             }
@@ -475,7 +475,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
         }
 
 
-        private void RaiseError(string message, Location? location = null) {
+        private void RaiseError(string message, Location location = null) {
             var loc = location ?? currentLexeme.StartLocation;
             throw new ParserException(message, loc.Line, loc.LineNumber, loc.ColumnNumber);
         }

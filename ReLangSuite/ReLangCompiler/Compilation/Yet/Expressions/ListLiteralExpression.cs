@@ -14,6 +14,8 @@ namespace Handmada.ReLang.Compilation.Yet {
         public bool IsCompileTime => false;
         public object Value => throw new NotImplementedException();
         public ITypeInfo TypeInfo { get; }
+        public bool IsLvalue => false;
+        public Location MainLocation { get; }
 
         /// <summary>
         /// Items of list literal
@@ -21,9 +23,10 @@ namespace Handmada.ReLang.Compilation.Yet {
         public List<IExpression> Items { get; }
 
 
-        public ListLiteralExpression(List<IExpression> items, ITypeInfo itemType) {
+        public ListLiteralExpression(List<IExpression> items, ITypeInfo itemType, Location mainLocation) {
             Items = items;
             TypeInfo = new ArrayListTypeInfo(itemType);
+            MainLocation = mainLocation;
 
             HasSideEffect = false;
             foreach (var item in items) {
