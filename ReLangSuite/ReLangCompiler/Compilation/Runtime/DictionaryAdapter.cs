@@ -34,6 +34,11 @@ namespace Handmada.ReLang.Compilation.Runtime {
         }
 
 
+        public bool TryGetValue(object key, out object value) {
+            return dictionary.TryGetValue(key, out value);
+        }
+
+
         public IEnumerator<object> GetEnumerator() {
             foreach (var pair in dictionary) {
                 yield return ConvertToTuple(pair);

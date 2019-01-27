@@ -76,6 +76,7 @@
     <Compile Include="Compilation\Parsing\IIdentifier.cs" />
     <Compile Include="Compilation\Parsing\Parser.Expressions.cs" />
     <Compile Include="Compilation\Parsing\Parser.Statements.cs" />
+    <Compile Include="Compilation\Parsing\ProgramException.cs" />
     <Compile Include="Compilation\Parsing\SetterIdentifier.cs" />
     <Compile Include="Compilation\Parsing\SingleIdentifier.cs" />
     <Compile Include="Compilation\Runtime\DictionaryAdapter.cs" />

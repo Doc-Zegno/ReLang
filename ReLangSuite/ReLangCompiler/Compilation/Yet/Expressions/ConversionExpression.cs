@@ -58,70 +58,67 @@ namespace Handmada.ReLang.Compilation.Yet {
                 switch (conversionOption) {
                     case Option.Iterable2List:
                         TypeInfo = new ArrayListTypeInfo(itemType);
-                        break;
+                        return;
 
                     case Option.Iterable2Set:
                         TypeInfo = new HashSetTypeInfo(itemType);
-                        break;
+                        return;
 
                     case Option.Iterable2Dictionary:
                         var tupleType = (TupleTypeInfo)itemType;
                         TypeInfo = new DictionaryTypeInfo(tupleType.ItemTypes[0], tupleType.ItemTypes[1]);
-                        break;
-
-                    default:
-                        throw new NotImplementedException();
+                        return;
                 }
 
-            } else {
-                switch (ConversionOption) {
-                    case Option.Char2Int:
-                        TypeInfo = PrimitiveTypeInfo.Int;
-                        break;
+            }
 
-                    case Option.Char2String:
-                        TypeInfo = PrimitiveTypeInfo.String;
-                        break;
+            switch (ConversionOption) {
+                case Option.Char2Int:
+                    TypeInfo = PrimitiveTypeInfo.Int;
+                    break;
 
-                    case Option.Int2Char:
-                        TypeInfo = PrimitiveTypeInfo.Char;
-                        break;
+                case Option.Char2String:
+                    TypeInfo = PrimitiveTypeInfo.String;
+                    break;
 
-                    case Option.Int2Float:
-                        TypeInfo = PrimitiveTypeInfo.Float;
-                        break;
+                case Option.Int2Char:
+                    TypeInfo = PrimitiveTypeInfo.Char;
+                    break;
 
-                    case Option.Float2Int:
-                        TypeInfo = PrimitiveTypeInfo.Int;
-                        break;
+                case Option.Int2Float:
+                    TypeInfo = PrimitiveTypeInfo.Float;
+                    break;
 
-                    case Option.Bool2String:
-                        TypeInfo = PrimitiveTypeInfo.String;
-                        break;
+                case Option.Float2Int:
+                    TypeInfo = PrimitiveTypeInfo.Int;
+                    break;
 
-                    case Option.Int2String:
-                        TypeInfo = PrimitiveTypeInfo.String;
-                        break;
+                case Option.Bool2String:
+                    TypeInfo = PrimitiveTypeInfo.String;
+                    break;
 
-                    case Option.Float2String:
-                        TypeInfo = PrimitiveTypeInfo.String;
-                        break;
+                case Option.Int2String:
+                    TypeInfo = PrimitiveTypeInfo.String;
+                    break;
 
-                    case Option.String2Int:
-                        TypeInfo = PrimitiveTypeInfo.Int;
-                        break;
+                case Option.Float2String:
+                    TypeInfo = PrimitiveTypeInfo.String;
+                    break;
 
-                    case Option.String2Float:
-                        TypeInfo = PrimitiveTypeInfo.Float;
-                        break;
+                case Option.String2Int:
+                    TypeInfo = PrimitiveTypeInfo.Int;
+                    break;
 
-                    case Option.String2Bool:
-                        TypeInfo = PrimitiveTypeInfo.Bool;
-                        break;
+                case Option.String2Float:
+                    TypeInfo = PrimitiveTypeInfo.Float;
+                    break;
 
-                    default:
-                        throw new NotImplementedException();
-                }
+                case Option.String2Bool:
+                    TypeInfo = PrimitiveTypeInfo.Bool;
+                    break;
+
+                default:
+                    throw new NotImplementedException($"Unsupported conversion: {conversionOption}");
             } 
         }
     }

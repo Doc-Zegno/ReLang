@@ -51,7 +51,7 @@ namespace Handmada.ReLang.Tests {
 
             // Execute it and compare with results
             var writer = new StringWriter();
-            var machine = new VirtualMachine(writer);
+            var machine = new VirtualMachine(writer, writer);
             var args = new string[] { "Sample", "Text", "Serious", "Arguments" };
             var exitCode = machine.Execute(program, args);
             Assert.AreEqual(0, exitCode);

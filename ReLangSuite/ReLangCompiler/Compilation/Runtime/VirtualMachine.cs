@@ -18,11 +18,13 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
         //public System.IO.TextWriter VmOut { get; }
         public System.IO.TextWriter ProgramOut { get; }
+        public System.IO.TextWriter ProgramErr { get; }
 
 
-        public VirtualMachine(System.IO.TextWriter programOut) {
+        public VirtualMachine(System.IO.TextWriter programOut, System.IO.TextWriter programErr) {
             //VmOut = vmOut;
             ProgramOut = programOut;
+            ProgramErr = programErr;
         }
 
 
@@ -30,54 +32,88 @@ namespace Handmada.ReLang.Compilation.Runtime {
             frames = new List<List<object>>();
             functions = program.Functions;
             functionValue = null;
-            Log("Executing main()...");
+            LogInfo("Executing main()...");
 
             // Converting command line arguments to external representation
             var arguments = ConvertArguments(commandLineArguments);
 
-            var maybe = EvaluateCustomFunction(program.MainFunctionNumber, arguments);
-            var result = 0;
-            if (maybe != null) {
-                result = (int)maybe;
+            try {
+                var maybe = EvaluateCustomFunction(program.MainFunctionNumber, arguments);
+                var result = 0;
+                if (maybe != null) {
+                    result = (int)maybe;
+                }
+                LogInfo($"Process finished with exit code: {result}");
+                return result;
+
+            } catch (ProgramException e) {
+                HandleProgramError(e);
+                return 1;
+
+            } catch (VirtualMachineException e) {
+                HandleVirtualMachineError(e);
+                return 1;
             }
-            Log($"Process finished with exit code: {result}");
-            return result;
         }
 
 
-        private List<IExpression> ConvertArguments(string[] commandLineArguments) {
-            var itemType = PrimitiveTypeInfo.String;
-            var items = new List<IExpression>();
-            foreach (var arg in commandLineArguments) {
-                items.Add(new PrimitiveLiteralExpression(arg, itemType, null));
+        private void HandleProgramError(ProgramException e) {
+            var oldForeground = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Red;
+
+            ProgramErr.WriteLine("Error has occured during program's execution:");
+            foreach (var location in e.Locations) {
+                if (location != null) {
+                    ProgramErr.WriteLine($"  at line {location.LineNumber + 1} at column {location.ColumnNumber + 1}");
+                    ProgramErr.Write($"    {location.Line}");
+                    ProgramErr.WriteLine($"{new string(' ', location.ColumnNumber + 4)}^\n");
+                }
             }
-            var list = new ListLiteralExpression(items, itemType, null);
-            return new List<IExpression> { list };
+            ProgramErr.WriteLine($"{e.ErrorOption}: {e.Message}\n");
+
+            Console.ForegroundColor = oldForeground;
+
+            LogError("Aborted");
         }
 
 
-        private object EvaluateCustomFunction(int number, List<IExpression> arguments) {
-            var values = new List<object>();
-            foreach (var argument in arguments) {
-                values.Add(EvaluateExpression(argument));
-            }
+        private void HandleVirtualMachineError(VirtualMachineException e) {
+            LogError("Virtual machine's internal error:");
+            LogError(e.Message);
+            LogError(e.StackTrace);
+        }
 
+
+        private List<object> ConvertArguments(string[] commandLineArguments) {
+            var arguments = new List<object>();
+            foreach (var argument in commandLineArguments) {
+                arguments.Add(argument);
+            }
+            return new List<object> { arguments };
+        }
+
+
+        private object EvaluateCustomFunction(int number, List<object> arguments) {
             EnterFrame();
 
             // Push arguments
-            foreach (var value in values) {
-                CreateVariable(value);
+            foreach (var argument in arguments) {
+                CreateVariable(argument);
             }
 
             // Execute body
             functionValue = null;
             needReturn = false;
             var function = functions[number];
-            ExecuteStatementList(function.Body);
+
+            try {
+                ExecuteStatementList(function.Body);
+            } finally {
+                LeaveFrame();
+            }
 
             // Leave frame and return function value
             needReturn = false;
-            LeaveFrame();
             var result = functionValue;
             functionValue = null;  // No one will see this value outside evaluation anymore
             return result;
@@ -108,8 +144,11 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
                     if (statements != null) {
                         EnterFrame();
-                        ExecuteStatementList(statements);
-                        LeaveFrame();
+                        try {
+                            ExecuteStatementList(statements);
+                        } finally {
+                            LeaveFrame();
+                        }
                     }
                     break;
 
@@ -118,12 +157,15 @@ namespace Handmada.ReLang.Compilation.Runtime {
                     statements = forEach.Statements;
                     var iterable = ConvertToEnumerable(EvaluateExpression(forEach.Iterable));
                     EnterFrame();
-                    foreach (var item in iterable) {
-                        ClearFrame();
-                        CreateVariable(item);
-                        ExecuteStatementList(statements);
+                    try {
+                        foreach (var item in iterable) {
+                            ClearFrame();
+                            CreateVariable(item);
+                            ExecuteStatementList(statements);
+                        }
+                    } finally {
+                        LeaveFrame();
                     }
-                    LeaveFrame();
                     break;
 
                 case ExpressionStatement expression:
@@ -174,7 +216,17 @@ namespace Handmada.ReLang.Compilation.Runtime {
         private object EvaluateExpression(IExpression expression) {
             switch (expression) {
                 case FunctionCallExpression functionCall:
-                    return EvaluateFunction(functionCall.FunctionDefinition, functionCall.Arguments);
+                    var values = new List<object>();
+                    foreach (var argument in functionCall.Arguments) {
+                        values.Add(EvaluateExpression(argument));
+                    }
+
+                    try {
+                        return EvaluateFunction(functionCall.FunctionDefinition, values);
+                    } catch (ProgramException e) {
+                        e.AddLocation(expression.MainLocation);
+                        throw e;
+                    }                   
 
                 case IOperatorExpression operatorExpression:
                     switch (operatorExpression) {
@@ -241,7 +293,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
         }
 
 
-        private object EvaluateFunction(IFunctionDefinition definition, List<IExpression> arguments) {
+        private object EvaluateFunction(IFunctionDefinition definition, List<object> arguments) {
             switch (definition) {
                 case BuiltinFunctionDefinition builtin:
                     return EvaluateBuiltinFunction(builtin.BuiltinOption, arguments);
@@ -398,12 +450,14 @@ namespace Handmada.ReLang.Compilation.Runtime {
                     return (double)(int)value;
 
                 case ConversionExpression.Option.Int2Char:
-                    // TODO: insert error raising
                     var integer = (int)value;
                     if (integer >= 0 && integer <= char.MaxValue) {
                         return (char)integer;
                     } else {
-                        throw new VirtualMachineException($"Conversion from 'Int' to 'Char' failed");
+                        throw new ProgramException(
+                            ProgramException.Option.FormatError, 
+                            $"Cannot convert {integer} to a valid character code", 
+                            conversion.MainLocation);
                     }
 
                 case ConversionExpression.Option.Bool2String:
@@ -419,15 +473,26 @@ namespace Handmada.ReLang.Compilation.Runtime {
                     return ((double)value).ToString(new CultureInfo("en-US"));
 
                 case ConversionExpression.Option.String2Int:
-                    // TODO: insert error raising
-                    return int.Parse((string)value);
+                    if (int.TryParse((string)value, out int resultInt)) {
+                        return resultInt;
+                    } else {
+                        throw new ProgramException(
+                            ProgramException.Option.FormatError, 
+                            $"Cannot convert \"{value}\" to integer", 
+                            conversion.MainLocation);
+                    }
 
                 case ConversionExpression.Option.String2Float:
-                    // TODO: insert error raising
-                    return double.Parse((string)value, new CultureInfo("en-US"));
+                    if (double.TryParse((string)value, NumberStyles.Number, new CultureInfo("en-US"), out double resultFloat)) {
+                        return resultFloat;
+                    } else {
+                        throw new ProgramException(
+                            ProgramException.Option.FormatError, 
+                            $"Cannot convert \"{value}\" to floating", 
+                            conversion.MainLocation);
+                    }
 
                 case ConversionExpression.Option.String2Bool:
-                    // TODO: insert error raising
                     switch ((string)value) {
                         case "true":
                             return true;
@@ -436,7 +501,10 @@ namespace Handmada.ReLang.Compilation.Runtime {
                             return false;
 
                         default:
-                            throw new VirtualMachineException($"Conversion from 'String' to 'Bool' failed");
+                            throw new ProgramException(
+                                ProgramException.Option.FormatError, 
+                                $"Cannot convert \"{value}\" to boolean", 
+                                conversion.MainLocation);
                     }
 
                 case ConversionExpression.Option.Iterable2List:
@@ -461,68 +529,49 @@ namespace Handmada.ReLang.Compilation.Runtime {
         }
 
 
-        private object EvaluateBuiltinFunction(
-            BuiltinFunctionDefinition.Option option, 
-            List<IExpression> arguments) 
-        {
+        private object EvaluateBuiltinFunction(BuiltinFunctionDefinition.Option option, List<object> arguments) {
             switch (option) {
                 case BuiltinFunctionDefinition.Option.Print:
-                    CallPrint(EvaluateExpression(arguments[0]));
-                    return null;
+                    return CallPrint(arguments[0]);
 
                 case BuiltinFunctionDefinition.Option.TupleGet:
-                    return CallTupleGet(
-                        (TupleAdapter)EvaluateExpression(arguments[0]),
-                        (int)EvaluateExpression(arguments[1]));
+                    return CallTupleGet((TupleAdapter)arguments[0],(int)arguments[1]);
 
                 case BuiltinFunctionDefinition.Option.TupleGetFirst:
-                    return CallTupleGet((TupleAdapter)EvaluateExpression(arguments[0]), 0);
+                    return CallTupleGet((TupleAdapter)arguments[0], 0);
 
                 case BuiltinFunctionDefinition.Option.TupleGetSecond:
-                    return CallTupleGet((TupleAdapter)EvaluateExpression(arguments[0]), 1);
+                    return CallTupleGet((TupleAdapter)arguments[0], 1);
 
                 case BuiltinFunctionDefinition.Option.TupleGetThird:
-                    return CallTupleGet((TupleAdapter)EvaluateExpression(arguments[0]), 2);
+                    return CallTupleGet((TupleAdapter)arguments[0], 2);
 
                 case BuiltinFunctionDefinition.Option.ListGet:
-                    return CallListGet(
-                        (List<object>)EvaluateExpression(arguments[0]), 
-                        (int)EvaluateExpression(arguments[1]));
+                    return CallListGet((List<object>)arguments[0], (int)arguments[1]);
 
                 case BuiltinFunctionDefinition.Option.ListGetLength:
-                    return CallListGetLength((List<object>)EvaluateExpression(arguments[0]));
+                    return CallListGetLength((List<object>)arguments[0]);
 
                 case BuiltinFunctionDefinition.Option.ListSet:
-                    return CallListSet(
-                        (List<object>)EvaluateExpression(arguments[0]), 
-                        (int)EvaluateExpression(arguments[1]), 
-                        EvaluateExpression(arguments[2]));
+                    return CallListSet((List<object>)arguments[0], (int)arguments[1], arguments[2]);
 
                 case BuiltinFunctionDefinition.Option.ListAppend:
-                    return CallListAppend(
-                        (List<object>)EvaluateExpression(arguments[0]), 
-                        EvaluateExpression(arguments[1]));
+                    return CallListAppend((List<object>)arguments[0], arguments[1]);
 
                 case BuiltinFunctionDefinition.Option.ListExtend:
-                    return CallListExtend(
-                        (List<object>)EvaluateExpression(arguments[0]), 
-                        (List<object>)EvaluateExpression(arguments[1]));
+                    return CallListExtend((List<object>)arguments[0], (List<object>)arguments[1]);
 
                 case BuiltinFunctionDefinition.Option.SetGetLength:
-                    return CallSetGetLength((ISet<object>)EvaluateExpression(arguments[0]));
+                    return CallSetGetLength((ISet<object>)arguments[0]);
 
                 case BuiltinFunctionDefinition.Option.SetAdd:
-                    return CallSetAdd(
-                        (ISet<object>)EvaluateExpression(arguments[0]), 
-                        EvaluateExpression(arguments[1]));
+                    return CallSetAdd((ISet<object>)arguments[0], arguments[1]);
 
                 case BuiltinFunctionDefinition.Option.DictionaryGet:
-                    return CallDictionaryGet(
-                        (DictionaryAdapter)EvaluateExpression(arguments[0]), 
-                        EvaluateExpression(arguments[1]));
+                    return CallDictionaryGet((DictionaryAdapter)arguments[0], arguments[1]);
 
                 case BuiltinFunctionDefinition.Option.DictionaryGetLength:
-                    return CallDictionaryGetLength((DictionaryAdapter)EvaluateExpression(arguments[0]));
+                    return CallDictionaryGetLength((DictionaryAdapter)arguments[0]);
 
                 default:
                     throw new VirtualMachineException($"Unsupported built-in function call: {option}");
@@ -549,18 +598,33 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
 
         private object CallDictionaryGet(DictionaryAdapter dictionary, object key) {
-            return dictionary[key];
+            if (dictionary.TryGetValue(key, out object value)) {
+                return value;
+            } else {
+                throw ProgramException.CreateKeyError(ObjectToString(key, true, false), null);
+            }
         }
 
 
         private object CallListGet(List<object> list, int index) {
-            return list[index];
+            var adjusted = GetAdjustedListIndex(index, list.Count);
+            return list[adjusted];
         }
 
 
         private object CallListSet(List<object> list, int index, object item) {
-            list[index] = item;
+            var adjusted = GetAdjustedListIndex(index, list.Count);
+            list[adjusted] = item;
             return null;
+        }
+
+
+        private int GetAdjustedListIndex(int index, int maximum) {
+            if (index >= -maximum && index < maximum) {
+                return index >= 0 ? index : maximum + index;
+            } else {
+                throw ProgramException.CreateRangeError(index, maximum, null);
+            }
         }
 
 
@@ -584,85 +648,54 @@ namespace Handmada.ReLang.Compilation.Runtime {
         }
 
 
-        private void CallPrint(object argument) {
-            PrintObject(argument, false, false);
-            ProgramOut.WriteLine();
+        private object CallPrint(object argument) {
+            ProgramOut.WriteLine(ObjectToString(argument, false, false));
+            return null;
         }
 
 
-        private void PrintObject(object obj, bool isEscaped, bool isTuplePair) {
+        private string ObjectToString(object obj, bool isEscaped, bool isTuplePair) {
             switch (obj) {
                 case bool b:
-                    ProgramOut.Write(b ? "true" : "false");
-                    break;
+                    return b ? "true" : "false";
 
                 case char ch:
-                    if (isEscaped) {
-                        ProgramOut.Write($"'{ch}'");
-                    } else {
-                        ProgramOut.Write(ch);
-                    }
-                    break;
+                    return isEscaped ? $"'{ch}'" : ch.ToString();
+
+                case double d:
+                    return d.ToString(new CultureInfo("en-US"));
 
                 case string s:
-                    if (isEscaped) {
-                        ProgramOut.Write($"\"{s}\"");
-                    } else {
-                        ProgramOut.Write(s);
-                    }
-                    break;
+                    return isEscaped ? $"\"{s}\"" : s;
 
                 case List<object> list:
-                    ProgramOut.Write("[");
-                    PrintObjectList(list, true, false);
-                    ProgramOut.Write("]");
-                    break;
+                    return $"[{ObjectListToString(list, true, false)}]";        
 
                 case ISet<object> set:
-                    ProgramOut.Write("{");
-                    PrintObjectList(set, true, false);
-                    ProgramOut.Write("}");
-                    break;
+                    return $"{{{ObjectListToString(set, true, false)}}}";
 
                 case DictionaryAdapter dictionary:
-                    ProgramOut.Write("{");
-                    PrintObjectList(dictionary.Pairs, true, true);
-                    ProgramOut.Write("}");
-                    break;
+                    return $"{{{ObjectListToString(dictionary, true, true)}}}";
 
                 case RangeAdapter range:
-                    ProgramOut.Write($"{range.Start}..{range.End}");
-                    break;
+                    return $"{range.Start}..{range.End}";
 
                 case TupleAdapter tuple:
                     if (isTuplePair && tuple.Items.Length == 2) {
-                        // Print as pair
-                        PrintObject(tuple.Items[0], true, false);
-                        ProgramOut.Write(": ");
-                        PrintObject(tuple.Items[1], true, false);
+                        // Consider a pair
+                        return $"{ObjectToString(tuple.Items[0], true, false)}: {ObjectToString(tuple.Items[1], true, false)}";
                     } else {
-                        ProgramOut.Write("(");
-                        PrintObjectList(tuple.Items, true, false);
-                        ProgramOut.Write(")");
+                        return $"({ObjectListToString(tuple.Items, true, false)})";
                     }
-                    break;
 
                 default:
-                    ProgramOut.Write(obj);
-                    break;
+                    return obj.ToString();
             }
         }
 
 
-        private void PrintObjectList(IEnumerable<object> objs, bool isEscaped, bool isTuplePair) {
-            var isFirst = true;
-            foreach (var obj in objs) {
-                if (!isFirst) {
-                    ProgramOut.Write(", ");
-                }
-                isFirst = false;
-                PrintObject(obj, isEscaped, isTuplePair);
-            }
+        private string ObjectListToString(IEnumerable<object> objs, bool isEscaped, bool isTuplePair) {
+            return string.Join(", ", objs.Select(obj => ObjectToString(obj, isEscaped, isTuplePair)));
         }
 
 
@@ -709,12 +742,29 @@ namespace Handmada.ReLang.Compilation.Runtime {
         }
 
 
-        private void Log(string message) {
+        private void PrintError(string message) {
+            PrintColorMessage(message, ConsoleColor.Red);
+        }
+
+
+        private void LogInfo(string message) {
+            PrintColorMessage(message, ConsoleColor.Yellow, ConsoleColor.Blue);
+        }
+
+
+        private void LogError(string message) {
+            PrintColorMessage(message, ConsoleColor.DarkRed, ConsoleColor.Blue);
+        }
+
+
+        private void PrintColorMessage(string message, ConsoleColor foreground, ConsoleColor? background = null) {
             var oldBackgroundColor = Console.BackgroundColor;
             var oldForegroundColor = Console.ForegroundColor;
 
-            Console.BackgroundColor = ConsoleColor.Blue;
-            Console.ForegroundColor = ConsoleColor.Yellow;
+            if (background != null) {
+                Console.BackgroundColor = background.Value;
+            }
+            Console.ForegroundColor = foreground;
 
             Console.WriteLine(message);
 
