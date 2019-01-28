@@ -16,16 +16,26 @@ namespace Handmada.ReLang.Compilation.Yet {
             TupleGetThird,
 
             ListGet,
-            ListGetLength,
             ListSet,
+            ListGetLength,
             ListAppend,
             ListExtend,
+            ListCopy,
 
             SetGetLength,
             SetAdd,
+            SetRemove,
+            SetUnion,
+            SetIntersection,
+            SetDifference,
+            SetContains,
+            SetCopy,
 
             DictionaryGet,
+            DictionarySet,
             DictionaryGetLength,
+            DictionaryContains,
+            DictionaryCopy,
         }
 
 

@@ -71,6 +71,48 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<ITypeInfo> { ItemType }, 
                         PrimitiveTypeInfo.Void);
 
+                case "remove":
+                    return new BuiltinFunctionDefinition(
+                        name, 
+                        BuiltinFunctionDefinition.Option.SetRemove, 
+                        new List<ITypeInfo> { ItemType }, 
+                        PrimitiveTypeInfo.Bool);
+
+                case "union":
+                    return new BuiltinFunctionDefinition(
+                        name, 
+                        BuiltinFunctionDefinition.Option.SetUnion, 
+                        new List<ITypeInfo> { this }, 
+                        this);
+
+                case "intersection":
+                    return new BuiltinFunctionDefinition(
+                        name,
+                        BuiltinFunctionDefinition.Option.SetIntersection,
+                        new List<ITypeInfo> { this },
+                        this);
+
+                case "difference":
+                    return new BuiltinFunctionDefinition(
+                        name,
+                        BuiltinFunctionDefinition.Option.SetDifference,
+                        new List<ITypeInfo> { this },
+                        this);
+
+                case "contains":
+                    return new BuiltinFunctionDefinition(
+                        name, 
+                        BuiltinFunctionDefinition.Option.SetContains, 
+                        new List<ITypeInfo> { ItemType }, 
+                        PrimitiveTypeInfo.Bool);
+
+                case "copy":
+                    return new BuiltinFunctionDefinition(
+                        name,
+                        BuiltinFunctionDefinition.Option.SetCopy,
+                        new List<ITypeInfo> { },
+                        this);
+
                 default:
                     return base.GetMethodDefinition(name);
             }

@@ -92,6 +92,13 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<ITypeInfo> { this }, 
                         PrimitiveTypeInfo.Void);
 
+                case "copy":
+                    return new BuiltinFunctionDefinition(
+                        name,
+                        BuiltinFunctionDefinition.Option.ListCopy,
+                        new List<ITypeInfo> { },
+                        this);
+
                 default:
                     return base.GetMethodDefinition(name);
             }

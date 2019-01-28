@@ -85,10 +85,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
 
         private List<object> ConvertArguments(string[] commandLineArguments) {
-            var arguments = new List<object>();
-            foreach (var argument in commandLineArguments) {
-                arguments.Add(argument);
-            }
+            var arguments = new ListAdapter(commandLineArguments);
             return new List<object> { arguments };
         }
 
@@ -249,18 +246,10 @@ namespace Handmada.ReLang.Compilation.Runtime {
                             return primitiveLiteral.Value;
 
                         case ListLiteralExpression listLiteral:
-                            var list = new List<object>();
-                            foreach (var item in listLiteral.Items) {
-                                list.Add(EvaluateExpression(item));
-                            }
-                            return list;
+                            return new ListAdapter(listLiteral.Items.Select(item => EvaluateExpression(item)));
 
                         case SetLiteralExpression setLiteral:
-                            var set = new HashSet<object>();
-                            foreach (var item in setLiteral.Items) {
-                                set.Add(EvaluateExpression(item));
-                            }
-                            return set;
+                            return new HashSet<object>(setLiteral.Items.Select(item => EvaluateExpression(item)));
 
                         case DictionaryLiteralExpression dictionaryLiteral:
                             var pairs = dictionaryLiteral.Pairs.Select(
@@ -508,7 +497,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
                     }
 
                 case ConversionExpression.Option.Iterable2List:
-                    return new List<object>(ConvertToEnumerable(value));
+                    return new ListAdapter(ConvertToEnumerable(value));
 
                 case ConversionExpression.Option.Iterable2Set:
                     return new HashSet<object>(ConvertToEnumerable(value));
@@ -535,7 +524,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
                     return CallPrint(arguments[0]);
 
                 case BuiltinFunctionDefinition.Option.TupleGet:
-                    return CallTupleGet((TupleAdapter)arguments[0],(int)arguments[1]);
+                    return CallTupleGet((TupleAdapter)arguments[0], (int)arguments[1]);
 
                 case BuiltinFunctionDefinition.Option.TupleGetFirst:
                     return CallTupleGet((TupleAdapter)arguments[0], 0);
@@ -547,19 +536,22 @@ namespace Handmada.ReLang.Compilation.Runtime {
                     return CallTupleGet((TupleAdapter)arguments[0], 2);
 
                 case BuiltinFunctionDefinition.Option.ListGet:
-                    return CallListGet((List<object>)arguments[0], (int)arguments[1]);
+                    return CallListGet((ListAdapter)arguments[0], (int)arguments[1]);
 
                 case BuiltinFunctionDefinition.Option.ListGetLength:
-                    return CallListGetLength((List<object>)arguments[0]);
+                    return CallListGetLength((ListAdapter)arguments[0]);
 
                 case BuiltinFunctionDefinition.Option.ListSet:
-                    return CallListSet((List<object>)arguments[0], (int)arguments[1], arguments[2]);
+                    return CallListSet((ListAdapter)arguments[0], (int)arguments[1], arguments[2]);
 
                 case BuiltinFunctionDefinition.Option.ListAppend:
-                    return CallListAppend((List<object>)arguments[0], arguments[1]);
+                    return CallListAppend((ListAdapter)arguments[0], arguments[1]);
 
                 case BuiltinFunctionDefinition.Option.ListExtend:
-                    return CallListExtend((List<object>)arguments[0], (List<object>)arguments[1]);
+                    return CallListExtend((ListAdapter)arguments[0], (ListAdapter)arguments[1]);
+
+                case BuiltinFunctionDefinition.Option.ListCopy:
+                    return CallListCopy((ListAdapter)arguments[0]);
 
                 case BuiltinFunctionDefinition.Option.SetGetLength:
                     return CallSetGetLength((ISet<object>)arguments[0]);
@@ -567,11 +559,38 @@ namespace Handmada.ReLang.Compilation.Runtime {
                 case BuiltinFunctionDefinition.Option.SetAdd:
                     return CallSetAdd((ISet<object>)arguments[0], arguments[1]);
 
+                case BuiltinFunctionDefinition.Option.SetRemove:
+                    return CallSetRemove((ISet<object>)arguments[0], arguments[1]);
+
+                case BuiltinFunctionDefinition.Option.SetUnion:
+                    return CallSetUnion((ISet<object>)arguments[0], (ISet<object>)arguments[1]);
+
+                case BuiltinFunctionDefinition.Option.SetIntersection:
+                    return CallSetIntersection((ISet<object>)arguments[0], (ISet<object>)arguments[1]);
+
+                case BuiltinFunctionDefinition.Option.SetDifference:
+                    return CallSetDifference((ISet<object>)arguments[0], (ISet<object>)arguments[1]);
+
+                case BuiltinFunctionDefinition.Option.SetContains:
+                    return CallSetContains((ISet<object>)arguments[0], arguments[1]);
+
+                case BuiltinFunctionDefinition.Option.SetCopy:
+                    return CallSetCopy((ISet<object>)arguments[0]);
+
                 case BuiltinFunctionDefinition.Option.DictionaryGet:
                     return CallDictionaryGet((DictionaryAdapter)arguments[0], arguments[1]);
 
                 case BuiltinFunctionDefinition.Option.DictionaryGetLength:
                     return CallDictionaryGetLength((DictionaryAdapter)arguments[0]);
+                
+                case BuiltinFunctionDefinition.Option.DictionarySet:
+                    return CallDictionarySet((DictionaryAdapter)arguments[0], arguments[1], arguments[2]);
+
+                case BuiltinFunctionDefinition.Option.DictionaryContains:
+                    return CallDictionaryContains((DictionaryAdapter)arguments[0], arguments[1]);
+
+                case BuiltinFunctionDefinition.Option.DictionaryCopy:
+                    return CallDictionaryCopy((DictionaryAdapter)arguments[0]);
 
                 default:
                     throw new VirtualMachineException($"Unsupported built-in function call: {option}");
@@ -579,43 +598,38 @@ namespace Handmada.ReLang.Compilation.Runtime {
         }
 
 
-        private object CallListAppend(List<object> list, object item) {
+        private object CallListAppend(ListAdapter list, object item) {
             list.Add(item);
             return null;
         }
 
 
-        private object CallListExtend(List<object> listA, List<object> listB) {
-            listA.AddRange(listB);
+        private object CallListExtend(ListAdapter listA, ListAdapter listB) {
+            listA.Extend(listB);
             return null;
         }
 
 
-        private object CallSetAdd(ISet<object> set, object item) {
-            set.Add(item);
-            return null;
-        }
-
-
-        private object CallDictionaryGet(DictionaryAdapter dictionary, object key) {
-            if (dictionary.TryGetValue(key, out object value)) {
-                return value;
-            } else {
-                throw ProgramException.CreateKeyError(ObjectToString(key, true, false), null);
-            }
-        }
-
-
-        private object CallListGet(List<object> list, int index) {
+        private object CallListGet(ListAdapter list, int index) {
             var adjusted = GetAdjustedListIndex(index, list.Count);
             return list[adjusted];
         }
 
 
-        private object CallListSet(List<object> list, int index, object item) {
+        private object CallListSet(ListAdapter list, int index, object item) {
             var adjusted = GetAdjustedListIndex(index, list.Count);
             list[adjusted] = item;
             return null;
+        }
+
+
+        private object CallListGetLength(ListAdapter list) {
+            return list.Count;
+        }
+
+
+        private object CallListCopy(ListAdapter list) {
+            return list.Clone();
         }
 
 
@@ -628,8 +642,9 @@ namespace Handmada.ReLang.Compilation.Runtime {
         }
 
 
-        private object CallListGetLength(List<object> list) {
-            return list.Count;
+        private object CallSetAdd(ISet<object> set, object item) {
+            set.Add(item);
+            return null;
         }
 
 
@@ -638,8 +653,63 @@ namespace Handmada.ReLang.Compilation.Runtime {
         }
 
 
+        private object CallSetRemove(ISet<object> set, object item) {
+            return set.Remove(item);
+        }
+
+
+        private object CallSetContains(ISet<object> set, object item) {
+            return set.Contains(item);
+        }
+
+
+        private object CallSetUnion(ISet<object> a, ISet<object> b) {
+            return new HashSet<object>(a.Union(b));
+        }
+
+
+        private object CallSetIntersection(ISet<object> a, ISet<object> b) {
+            return new HashSet<object>(a.Intersect(b));
+        }
+
+
+        private object CallSetDifference(ISet<object> a, ISet<object> b) {
+            return new HashSet<object>(a.Except(b));
+        }
+
+
+        private object CallSetCopy(ISet<object> set) {
+            return new HashSet<object>(set);
+        }
+
+
+        private object CallDictionaryGet(DictionaryAdapter dictionary, object key) {
+            if (dictionary.TryGetValue(key, out object value)) {
+                return value;
+            } else {
+                throw ProgramException.CreateKeyError(ObjectToString(key, true, false), null);
+            }
+        }
+
+
+        private object CallDictionarySet(DictionaryAdapter dictionary, object key, object value) {
+            dictionary[key] = value;
+            return null;
+        }
+
+
         private object CallDictionaryGetLength(DictionaryAdapter dictionary) {
             return dictionary.Count;
+        }
+
+
+        private object CallDictionaryContains(DictionaryAdapter dictionary, object key) {
+            return dictionary.ContainsKey(key);
+        }
+
+
+        private object CallDictionaryCopy(DictionaryAdapter dictionary) {
+            return dictionary.Clone();
         }
 
 
@@ -668,7 +738,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
                 case string s:
                     return isEscaped ? $"\"{s}\"" : s;
 
-                case List<object> list:
+                case ListAdapter list:
                     return $"[{ObjectListToString(list, true, false)}]";        
 
                 case ISet<object> set:

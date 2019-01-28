@@ -10,7 +10,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
     /// <summary>
     /// VM's adapter for dictionary
     /// </summary>
-    class DictionaryAdapter : IEnumerable<object> {
+    class DictionaryAdapter : IEnumerable<object>, ICloneable {
         private Dictionary<object, object> dictionary;
 
         /// <summary>
@@ -39,6 +39,11 @@ namespace Handmada.ReLang.Compilation.Runtime {
         }
 
 
+        public bool ContainsKey(object key) {
+            return dictionary.ContainsKey(key);
+        }
+
+
         public IEnumerator<object> GetEnumerator() {
             foreach (var pair in dictionary) {
                 yield return ConvertToTuple(pair);
@@ -48,6 +53,16 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
         IEnumerator IEnumerable.GetEnumerator() {
             return GetEnumerator();
+        }
+
+
+        public object Clone() {
+            return new DictionaryAdapter(new Dictionary<object, object>(dictionary));
+        }
+
+
+        private DictionaryAdapter(Dictionary<object, object> dictionary) {
+            this.dictionary = dictionary;
         }
 
 

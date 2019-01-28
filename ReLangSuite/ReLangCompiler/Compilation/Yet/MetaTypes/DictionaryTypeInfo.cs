@@ -75,12 +75,33 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<ITypeInfo> { KeyType }, 
                         ValueType);
 
+                case "set":
+                    return new BuiltinFunctionDefinition(
+                        name, 
+                        BuiltinFunctionDefinition.Option.DictionarySet, 
+                        new List<ITypeInfo> { KeyType, ValueType }, 
+                        PrimitiveTypeInfo.Void);
+
                 case "getLength":
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.DictionaryGetLength,
                         new List<ITypeInfo> { },
                         PrimitiveTypeInfo.Int);
+
+                case "contains":
+                    return new BuiltinFunctionDefinition(
+                        name, 
+                        BuiltinFunctionDefinition.Option.DictionaryContains, 
+                        new List<ITypeInfo> { KeyType }, 
+                        PrimitiveTypeInfo.Bool);
+
+                case "copy":
+                    return new BuiltinFunctionDefinition(
+                        name, 
+                        BuiltinFunctionDefinition.Option.DictionaryCopy, 
+                        new List<ITypeInfo> { }, 
+                        this);
 
                 default:
                     return base.GetMethodDefinition(name);
