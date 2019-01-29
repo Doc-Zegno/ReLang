@@ -574,6 +574,9 @@ namespace Handmada.ReLang.Compilation.Runtime {
                 case BuiltinFunctionDefinition.Option.ListExtend:
                     return CallListExtend((ListAdapter)arguments[0], (ListAdapter)arguments[1]);
 
+                case BuiltinFunctionDefinition.Option.ListContains:
+                    return CallListContains((ListAdapter)arguments[0], arguments[1]);
+
                 case BuiltinFunctionDefinition.Option.ListCopy:
                     return CallListCopy((ListAdapter)arguments[0]);
 
@@ -616,6 +619,12 @@ namespace Handmada.ReLang.Compilation.Runtime {
                 case BuiltinFunctionDefinition.Option.DictionaryCopy:
                     return CallDictionaryCopy((DictionaryAdapter)arguments[0]);
 
+                case BuiltinFunctionDefinition.Option.RangeContains:
+                    return CallRangeContains((RangeAdapter)arguments[0], (int)arguments[1]);
+
+                case BuiltinFunctionDefinition.Option.IterableContains:
+                    return CallIterableContains((IEnumerable<object>)arguments[0], arguments[1]);
+
                 default:
                     throw new VirtualMachineException($"Unsupported built-in function call: {option}");
             }
@@ -649,6 +658,11 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
         private object CallListGetLength(ListAdapter list) {
             return list.Count;
+        }
+
+
+        private object CallListContains(ListAdapter list, object item) {
+            return list.Contains(item);
         }
 
 
@@ -739,6 +753,16 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
         private object CallTupleGet(TupleAdapter tuple, int index) {
             return tuple.Items[index];
+        }
+
+
+        private object CallRangeContains(RangeAdapter range, int value) {
+            return value >= range.Start && value < range.End;
+        }
+
+
+        private object CallIterableContains(IEnumerable<object> sequence, object item) {
+            return sequence.Contains(item);
         }
 
 

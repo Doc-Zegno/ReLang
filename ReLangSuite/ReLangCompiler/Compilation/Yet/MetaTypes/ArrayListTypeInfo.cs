@@ -61,42 +61,49 @@ namespace Handmada.ReLang.Compilation.Yet {
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.ListGet, 
-                        new List<ITypeInfo> { PrimitiveTypeInfo.Int }, 
+                        new List<ITypeInfo> { this, PrimitiveTypeInfo.Int }, 
                         ItemType);
 
                 case "getLength":
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.ListGetLength, 
-                        new List<ITypeInfo> { }, 
+                        new List<ITypeInfo> { this }, 
                         PrimitiveTypeInfo.Int);
 
                 case "set":
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.ListSet, 
-                        new List<ITypeInfo> { PrimitiveTypeInfo.Int, ItemType }, 
+                        new List<ITypeInfo> { this, PrimitiveTypeInfo.Int, ItemType }, 
                         PrimitiveTypeInfo.Void);
 
                 case "append":
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.ListAppend, 
-                        new List<ITypeInfo> { ItemType }, 
+                        new List<ITypeInfo> { this, ItemType }, 
                         PrimitiveTypeInfo.Void);
 
                 case "extend":
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.ListExtend, 
-                        new List<ITypeInfo> { this }, 
+                        new List<ITypeInfo> { this, this }, 
                         PrimitiveTypeInfo.Void);
+
+                case "contains" when ItemType is PrimitiveTypeInfo || ItemType is TupleTypeInfo:
+                    return new BuiltinFunctionDefinition(
+                        name, 
+                        BuiltinFunctionDefinition.Option.ListContains, 
+                        new List<ITypeInfo> { this, ItemType }, 
+                        PrimitiveTypeInfo.Bool);
 
                 case "copy":
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.ListCopy,
-                        new List<ITypeInfo> { },
+                        new List<ITypeInfo> { this },
                         this);
 
                 default:

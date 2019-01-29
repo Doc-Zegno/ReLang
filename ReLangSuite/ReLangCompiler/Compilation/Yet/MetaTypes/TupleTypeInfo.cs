@@ -43,21 +43,21 @@ namespace Handmada.ReLang.Compilation.Yet {
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.TupleGetFirst, 
-                        new List<ITypeInfo> { }, 
+                        new List<ITypeInfo> { this }, 
                         ItemTypes[0]);
 
                 case "getSecond" when ItemTypes.Count >= 2:
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.TupleGetSecond, 
-                        new List<ITypeInfo> { }, 
+                        new List<ITypeInfo> { this }, 
                         ItemTypes[1]);
 
                 case "getThird" when ItemTypes.Count >= 3:
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.TupleGetThird, 
-                        new List<ITypeInfo> { }, 
+                        new List<ITypeInfo> { this }, 
                         ItemTypes[2]);
 
                 default:

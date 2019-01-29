@@ -10,7 +10,7 @@ namespace Handmada.ReLang.Compilation.Yet {
     /// Type information about range object
     /// </summary>
     class RangeTypeInfo : IterableTypeInfo {
-        public override string Name => $"Range<{ItemType}>";
+        public override string Name => $"Range<{ItemType.Name}>";
 
 
         public RangeTypeInfo(ITypeInfo itemType) : base(itemType) {
@@ -33,7 +33,17 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public override IFunctionDefinition GetMethodDefinition(string name) {
-            return base.GetMethodDefinition(name);
+            switch (name) {
+                case "contains":
+                    return new BuiltinFunctionDefinition(
+                        name, 
+                        BuiltinFunctionDefinition.Option.RangeContains, 
+                        new List<ITypeInfo> { this, ItemType }, 
+                        PrimitiveTypeInfo.Bool);
+
+                default:
+                    return base.GetMethodDefinition(name);
+            }
         }
 
 

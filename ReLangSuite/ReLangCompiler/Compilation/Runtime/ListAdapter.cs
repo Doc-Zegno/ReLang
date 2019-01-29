@@ -67,6 +67,11 @@ namespace Handmada.ReLang.Compilation.Runtime {
         }
 
 
+        public bool Contains(object item) {
+            return list.Contains(item);
+        }
+
+
         public ListAdapter GetSlice(int start, int end, int step = 1) {
             return new ListAdapter(list, Start + start * Step, Start + end * Step, Step * step, true);
         }

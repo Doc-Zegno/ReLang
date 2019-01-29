@@ -15,11 +15,14 @@ namespace Handmada.ReLang.Compilation.Yet {
             TupleGetSecond,
             TupleGetThird,
 
+            IterableContains,
+
             ListGet,
             ListSet,
             ListGetLength,
             ListAppend,
             ListExtend,
+            ListContains,
             ListCopy,
 
             SetGetLength,
@@ -36,6 +39,8 @@ namespace Handmada.ReLang.Compilation.Yet {
             DictionaryGetLength,
             DictionaryContains,
             DictionaryCopy,
+
+            RangeContains,
         }
 
 

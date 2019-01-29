@@ -26,7 +26,7 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public virtual IExpression ConvertFrom(IExpression expression) {
-            switch (expression) {
+            switch (expression.TypeInfo) {
                 case IterableTypeInfo iterableType when ItemType.Equals(iterableType.ItemType):
                 case PrimitiveTypeInfo primitive
                 when primitive.TypeOption == PrimitiveTypeInfo.Option.String && ItemType.Equals(PrimitiveTypeInfo.Char):
@@ -39,7 +39,17 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public virtual IFunctionDefinition GetMethodDefinition(string name) {
-            return null;
+            switch (name) {
+                case "contains" when ItemType is PrimitiveTypeInfo || ItemType is TupleTypeInfo:
+                    return new BuiltinFunctionDefinition(
+                        name, 
+                        BuiltinFunctionDefinition.Option.IterableContains, 
+                        new List<ITypeInfo> { this, ItemType }, 
+                        PrimitiveTypeInfo.Bool);
+
+                default:
+                    return null;
+            } 
         }
     }
 }

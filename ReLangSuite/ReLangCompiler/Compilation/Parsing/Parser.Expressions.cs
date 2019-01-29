@@ -32,7 +32,10 @@ namespace Handmada.ReLang.Compilation.Parsing {
             }
 
             // Pick all the arguments
-            var arguments = GetFunctionArguments(definition.ArgumentTypes, location);
+            var arguments = GetFunctionArguments();
+
+            // Check them against expected types
+            CheckAndConvertFunctionArguments(definition.ArgumentTypes, arguments, location);
 
             // return appropriate function call expression
             return new FunctionCallExpression(definition, arguments, false, location);
@@ -40,11 +43,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
 
-        private List<IExpression> GetFunctionArguments(
-            List<ITypeInfo> expectedTypes,
-            Location location,
-            OperatorMeaning stop = OperatorMeaning.CloseParenthesis)
-        {
+        private List<IExpression> GetFunctionArguments(OperatorMeaning stop = OperatorMeaning.CloseParenthesis) {
             var arguments = new List<IExpression>();
 
             if (WhetherOperator(stop)) {
@@ -61,7 +60,6 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 CheckOperator(stop);
             }
 
-            CheckAndConvertFunctionArguments(expectedTypes, arguments, location);
             return arguments;
         }
 
@@ -182,8 +180,13 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 RaiseError($"Type '{expression.TypeInfo.Name}' doesn't implement indexing", location);
             }
 
+            // Pick arguments (including 'self')
             var arguments = new List<IExpression> { expression };
-            arguments.AddRange(GetFunctionArguments(definition.ArgumentTypes, location, OperatorMeaning.CloseBracket));
+            arguments.AddRange(GetFunctionArguments(OperatorMeaning.CloseBracket));
+
+            // Check arguments
+            CheckAndConvertFunctionArguments(definition.ArgumentTypes, arguments, location);
+        
             return new FunctionCallExpression(definition, arguments, true, location);
         }
 
@@ -207,7 +210,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 }
 
                 MoveNextLexeme();
-                arguments.AddRange(GetFunctionArguments(definition.ArgumentTypes, location));
+                arguments.AddRange(GetFunctionArguments());
 
             } else {
                 // Get property's definition
@@ -218,6 +221,9 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 }
                 isLvalue = true;
             }
+
+            // Check arguments' types
+            CheckAndConvertFunctionArguments(definition.ArgumentTypes, arguments, location);
 
             return new FunctionCallExpression(definition, arguments, isLvalue, location);
         }
@@ -576,6 +582,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     case OperatorMeaning.LessOrEqual:
                     case OperatorMeaning.More:
                     case OperatorMeaning.MoreOrEqual:
+                    case OperatorMeaning.In:
                         break;
 
                     default:
@@ -586,27 +593,43 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 MoveNextLexeme();
                 var right = GetRangeExpression();
 
-                // Try to convert to each other
-                var (x, y) = CrossConvert(left, right, locationLeft);
-
-                if (x.TypeInfo is MaybeTypeInfo maybeType) {
-                    if (x is NullLiteralExpression) {
-                        RaiseError("'null' is not allowed here", x.MainLocation);
+                if (meaning == OperatorMeaning.In) {
+                    // Resolve to .contains() call
+                    var definition = right.TypeInfo.GetMethodDefinition("contains");
+                    if (definition == null) {
+                        RaiseError($"Type '{right.TypeInfo.Name}' doesn't implement method 'contains'", right.MainLocation);
                     }
 
-                    if (!(y is NullLiteralExpression)) {
-                        RaiseError("This operand should be a 'null' literal", y.MainLocation);
+                    var arguments = new List<IExpression> { right, left };
+                    CheckAndConvertFunctionArguments(definition.ArgumentTypes, arguments, locationMiddle);
+                    left = new FunctionCallExpression(definition, arguments, false, locationMiddle);
+
+                } else if (left.TypeInfo is MaybeTypeInfo maybeType) {
+                    if (left is NullLiteralExpression) {
+                        RaiseError("'null' is not allowed here", left.MainLocation);
+                    }
+
+                    if (!(right is NullLiteralExpression)) {
+                        RaiseError("This operand should be a 'null' literal", right.MainLocation);
                     }
 
                     switch (meaning) {
                         case OperatorMeaning.Equal:
-                            left = new UnaryOperatorExpression(UnaryOperatorExpression.Option.TestNull, x,
-                                                               PrimitiveTypeInfo.Bool, locationMiddle);
+                            if (left.IsCompileTime) {
+                                left = new PrimitiveLiteralExpression(left.Value == null, PrimitiveTypeInfo.Bool, locationMiddle);
+                            } else {
+                                left = new UnaryOperatorExpression(UnaryOperatorExpression.Option.TestNull, left,
+                                                                   PrimitiveTypeInfo.Bool, locationMiddle);
+                            }
                             break;
 
                         case OperatorMeaning.NotEqual:
-                            left = new UnaryOperatorExpression(UnaryOperatorExpression.Option.TestNotNull, x,
-                                                               PrimitiveTypeInfo.Bool, locationMiddle);
+                            if (left.IsCompileTime) {
+                                left = new PrimitiveLiteralExpression(left.Value != null, PrimitiveTypeInfo.Bool, locationMiddle);
+                            } else {
+                                left = new UnaryOperatorExpression(UnaryOperatorExpression.Option.TestNotNull, left,
+                                                                   PrimitiveTypeInfo.Bool, locationMiddle);
+                            }
                             break;
 
                         default:
@@ -614,7 +637,10 @@ namespace Handmada.ReLang.Compilation.Parsing {
                             break;
                     }
 
-                } else if (x.TypeInfo is PrimitiveTypeInfo primitive) {
+                } else if (left.TypeInfo is PrimitiveTypeInfo primitive) {
+                    // Try to convert to each other
+                    var (x, y) = CrossConvert(left, right, locationLeft);
+
                     switch (primitive.TypeOption) {
                         case PrimitiveTypeInfo.Option.Bool:
                             if (x.IsCompileTime && y.IsCompileTime) {
@@ -871,7 +897,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     }
 
                 } else {
-                    RaiseError($"Unsupported type '{x.TypeInfo.Name}' for this operator", locationLeft);
+                    RaiseError($"Unsupported type '{left.TypeInfo.Name}' for this operator", locationLeft);
                 }
             }
 

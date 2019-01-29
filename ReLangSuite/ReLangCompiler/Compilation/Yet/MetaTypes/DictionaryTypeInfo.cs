@@ -72,35 +72,35 @@ namespace Handmada.ReLang.Compilation.Yet {
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.DictionaryGet, 
-                        new List<ITypeInfo> { KeyType }, 
+                        new List<ITypeInfo> { this, KeyType }, 
                         ValueType);
 
                 case "set":
                     return new BuiltinFunctionDefinition(
                         name, 
                         BuiltinFunctionDefinition.Option.DictionarySet, 
-                        new List<ITypeInfo> { KeyType, ValueType }, 
+                        new List<ITypeInfo> { this, KeyType, ValueType }, 
                         PrimitiveTypeInfo.Void);
 
                 case "getLength":
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.DictionaryGetLength,
-                        new List<ITypeInfo> { },
+                        new List<ITypeInfo> { this },
                         PrimitiveTypeInfo.Int);
 
-                case "contains":
+                case "contains" when KeyType is PrimitiveTypeInfo || KeyType is TupleTypeInfo:
                     return new BuiltinFunctionDefinition(
                         name, 
                         BuiltinFunctionDefinition.Option.DictionaryContains, 
-                        new List<ITypeInfo> { KeyType }, 
+                        new List<ITypeInfo> { this, KeyType }, 
                         PrimitiveTypeInfo.Bool);
 
                 case "copy":
                     return new BuiltinFunctionDefinition(
                         name, 
                         BuiltinFunctionDefinition.Option.DictionaryCopy, 
-                        new List<ITypeInfo> { }, 
+                        new List<ITypeInfo> { this }, 
                         this);
 
                 default:
