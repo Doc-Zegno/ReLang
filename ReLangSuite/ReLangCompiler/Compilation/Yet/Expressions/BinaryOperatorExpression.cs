@@ -55,13 +55,15 @@ namespace Handmada.ReLang.Compilation.Yet {
 
             MoreOrEqualInteger,
             MoreOrEqualFloating,
+
+            ValueOrDefault,
         }
 
 
         public bool HasSideEffect => false;
         public bool IsCompileTime => false;
         public object Value => throw new NotImplementedException();
-        public ITypeInfo TypeInfo { get; }
+        public ITypeInfo TypeInfo { get; private set; }
         public bool IsLvalue => false;
         public Location MainLocation { get; }
 
@@ -77,10 +79,19 @@ namespace Handmada.ReLang.Compilation.Yet {
 
             if ((int)operatorOption >= (int)Option.EqualBoolean && (int)operatorOption <= (int)Option.MoreOrEqualFloating) {
                 TypeInfo = PrimitiveTypeInfo.Bool;
+            } else if (operatorOption == Option.ValueOrDefault) {
+                TypeInfo = rightOperand.TypeInfo;
             } else {
                 TypeInfo = leftOperand.TypeInfo;
             }
             MainLocation = mainLocation;
+        }
+
+
+        public IExpression ChangeType(ITypeInfo newType) {
+            var copy = (BinaryOperatorExpression)MemberwiseClone();
+            copy.TypeInfo = newType;
+            return copy;
         }
     }
 }

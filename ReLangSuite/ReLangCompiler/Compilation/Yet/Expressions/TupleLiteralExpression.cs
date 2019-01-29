@@ -13,7 +13,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         public bool HasSideEffect { get; }
         public bool IsCompileTime { get; }
         public object Value => throw new NotImplementedException();
-        public ITypeInfo TypeInfo { get; }
+        public ITypeInfo TypeInfo { get; private set; }
         public bool IsLvalue { get; }
         public Location MainLocation { get; }
 
@@ -49,6 +49,13 @@ namespace Handmada.ReLang.Compilation.Yet {
             IsLvalue = isLvalue;
             TypeInfo = new TupleTypeInfo(itemTypes);
             MainLocation = items[0].MainLocation;
+        }
+
+
+        public IExpression ChangeType(ITypeInfo newType) {
+            var copy = (TupleLiteralExpression)MemberwiseClone();
+            copy.TypeInfo = newType;
+            return copy;
         }
     }
 }

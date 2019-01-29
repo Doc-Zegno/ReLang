@@ -37,7 +37,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         public IExpression ConvertFrom(IExpression expression) {
             if (TypeOption == Option.Object) {
                 // Trivial conversion
-                return expression;
+                return expression.ChangeType(this);
 
             } else if (expression.TypeInfo is PrimitiveTypeInfo primitiveSource) {
                 if (primitiveSource.TypeOption == TypeOption) {

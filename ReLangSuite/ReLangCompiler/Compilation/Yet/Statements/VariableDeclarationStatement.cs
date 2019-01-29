@@ -11,12 +11,14 @@ namespace Handmada.ReLang.Compilation.Yet {
     /// </summary>
     class VariableDeclarationStatement : IDeclarationStatement {
         public string Name { get; }
+        public ITypeInfo TypeInfo { get; }
         public IExpression Value { get; }
         public bool IsMutable { get; }
 
 
-        public VariableDeclarationStatement(string name, IExpression value, bool isMutable) {
+        public VariableDeclarationStatement(string name, ITypeInfo typeInfo, IExpression value, bool isMutable) {
             Name = name;
+            TypeInfo = typeInfo;
             Value = value;
             IsMutable = isMutable;
         }

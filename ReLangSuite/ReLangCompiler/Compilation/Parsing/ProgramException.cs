@@ -18,6 +18,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             KeyError,
             FormatError,
             ZeroDivisionError,
+            NullError,
         }
 
 
@@ -51,6 +52,12 @@ namespace Handmada.ReLang.Compilation.Parsing {
         public static ProgramException CreateKeyError(string key, Location location) {
             var message = $"Collection has no key {key}";
             return new ProgramException(Option.KeyError, message, location);
+        }
+
+
+        public static ProgramException CreateNullError(Location location) {
+            var message = "Expression is equal to 'null'";
+            return new ProgramException(Option.NullError, message, location);
         }
     }
 }

@@ -146,7 +146,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     return new IdentifierList(identifiers);
 
                 case VariableExpression variable:
-                    return new SingleIdentifier(variable.Name, variable.MainLocation);
+                    return new SingleIdentifier(variable.Name, null, variable.MainLocation);
 
                 case FunctionCallExpression functionCall:
                     var self = functionCall.Arguments[0];
@@ -379,7 +379,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
         {
             switch (identifiers) {
                 case SingleIdentifier singleIdentifier:
-                    return ForceDeclareVariable(singleIdentifier.Name, value, isMutable, singleIdentifier.StartLocation);
+                    return ForceDeclareVariable(singleIdentifier, value, isMutable);
 
                 case IdentifierList identifierList:
                     if (value.TypeInfo is TupleTypeInfo tupleType) {
@@ -458,7 +458,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
         {
             // Declare a tmp 
             var tupleVariable = DeclareTemporaryVariable(tupleType, value);
-            subStatements.Add(new VariableDeclarationStatement(tupleVariable.Name, value, false));
+            subStatements.Add(new VariableDeclarationStatement(tupleVariable.Name, value.TypeInfo, value, false));
 
             // Now it's safe to use code for VariableExpression case
             GenerateTupleDestruction(subStatements, tupleVariable, tupleType, identifierList,
@@ -521,16 +521,29 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
 
-        private IStatement ForceDeclareVariable(string name, IExpression value, bool isMutable, Location locationName) {
-            if (value.TypeInfo is TupleTypeInfo && isMutable) {
-                RaiseError($"Tuple object '{name}' must be declared as immutable", locationName);
+        private IStatement ForceDeclareVariable(SingleIdentifier identifier, IExpression value, bool isMutable) {
+            var converted = value;
+            var typeInfo = value.TypeInfo;
+            if (identifier.ExpectedType != null) {
+                converted = ForceConvertExpression(value, identifier.ExpectedType, value.MainLocation);
+                typeInfo = identifier.ExpectedType;
             }
 
-            if (!scopeStack.DeclareVariable(name, value.TypeInfo, isMutable, value)) {
-                RaiseError($"Variable '{name}' has already been declared", locationName);
+            if (typeInfo is NullTypeInfo) {
+                RaiseError("Cannot deduce type from given expression", converted.MainLocation);
             }
 
-            return new VariableDeclarationStatement(name, value, isMutable);
+            /*if (converted.TypeInfo is TupleTypeInfo && isMutable) {
+                RaiseError($"Tuple object '{identifier.Name}' must be declared as immutable", identifier.StartLocation);
+            }*/
+
+            if (!scopeStack.DeclareVariable(identifier.Name, typeInfo, isMutable, converted)) {
+                RaiseError($"Variable '{identifier.Name}' has already been declared", identifier.StartLocation);
+            }
+
+            Console.WriteLine($"Declare object '{identifier.Name}' of type '{typeInfo.Name}'");
+
+            return new VariableDeclarationStatement(identifier.Name, typeInfo, converted, isMutable);
         }
 
 
@@ -567,7 +580,14 @@ namespace Handmada.ReLang.Compilation.Parsing {
             } else {
                 var location = currentLexeme.StartLocation;
                 var name = GetSymbolText("Identifier");
-                return new SingleIdentifier(name, location);
+
+                ITypeInfo expectedType = null;
+                if (WhetherOperator(OperatorMeaning.Colon)) {
+                    MoveNextLexeme();
+                    expectedType = GetTypeInfo();
+                }
+
+                return new SingleIdentifier(name, expectedType, location);
             }
         }
 

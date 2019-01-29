@@ -13,7 +13,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         public bool HasSideEffect { get; }
         public bool IsCompileTime => false;
         public object Value => throw new NotImplementedException();
-        public ITypeInfo TypeInfo => new RangeTypeInfo(Start.TypeInfo);
+        public ITypeInfo TypeInfo { get; private set; }
         public bool IsLvalue => false;
         public Location MainLocation { get; }
 
@@ -32,8 +32,16 @@ namespace Handmada.ReLang.Compilation.Yet {
             Start = start;
             End = end;
 
+            TypeInfo = new RangeTypeInfo(Start.TypeInfo);
             MainLocation = start.MainLocation;
             HasSideEffect = start.HasSideEffect || end.HasSideEffect;
+        }
+
+
+        public IExpression ChangeType(ITypeInfo newType) {
+            var copy = (RangeLiteralExpression)MemberwiseClone();
+            copy.TypeInfo = newType;
+            return copy;
         }
     }
 }

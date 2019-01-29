@@ -30,7 +30,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                 case IterableTypeInfo iterableType when ItemType.Equals(iterableType.ItemType):
                 case PrimitiveTypeInfo primitive
                 when primitive.TypeOption == PrimitiveTypeInfo.Option.String && ItemType.Equals(PrimitiveTypeInfo.Char):
-                    return expression;
+                    return expression.ChangeType(this);
 
                 default:
                     return null;

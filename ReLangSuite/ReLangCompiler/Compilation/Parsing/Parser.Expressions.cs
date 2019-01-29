@@ -116,7 +116,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
         private IExpression GetExpression() {
-            return GetOrExpression();
+            return GetValueOrDefaultExpression();
         }
 
 
@@ -136,11 +136,38 @@ namespace Handmada.ReLang.Compilation.Parsing {
                         expression = GetIndexingExpression(expression);
                         break;
 
+                    case OperatorMeaning.ExclamationMark:
+                        expression = GetFromMaybe(expression);
+                        break;
+
                     default:
                         return expression;
                 }
             }
             return expression;
+        }
+
+
+
+        private IExpression GetFromMaybe(IExpression expression) {
+            var location = currentLexeme.StartLocation;
+            CheckOperator(OperatorMeaning.ExclamationMark);
+
+            if (expression.TypeInfo is MaybeTypeInfo maybeType) {
+                if (expression.IsCompileTime) {
+                    if (expression.Value == null) {
+                        RaiseError("Expression is equal to 'null'", expression.MainLocation);
+                    }
+                    return expression.ChangeType(maybeType.InternalType);
+                } else {
+                    return new UnaryOperatorExpression(UnaryOperatorExpression.Option.FromMaybe, expression,
+                                                       maybeType.InternalType, location);
+                }
+   
+            } else {
+                RaiseError("Expression is not a maybe", expression.MainLocation);
+                return null;
+            }
         }
 
 
@@ -216,6 +243,10 @@ namespace Handmada.ReLang.Compilation.Parsing {
                         case OperatorMeaning.OpenBrace:
                             MoveNextLexeme();
                             return GetSetOrDictionaryLiteral(location);
+
+                        case OperatorMeaning.Null:
+                            MoveNextLexeme();
+                            return new NullLiteralExpression(location);
 
                         default:
                             RaiseError($"Unexpected operator: {GetOperatorName(operatorLexeme.Meaning)}");
@@ -422,6 +453,39 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
 
+        // maybe ?? value
+        private IExpression GetValueOrDefaultExpression() {
+            var left = GetOrExpression();
+
+            if (WhetherOperator(OperatorMeaning.ValueOrDefault)) {
+                var location = currentLexeme.StartLocation;
+
+                MoveNextLexeme();
+                var right = GetOrExpression();
+
+                if (left.TypeInfo is MaybeTypeInfo maybeType) {
+                    var y = ForceConvertExpression(right, maybeType.InternalType, right.MainLocation);
+
+                    if (left.IsCompileTime) {
+                        if (left.Value != null) {
+                            left = left.ChangeType(maybeType.InternalType);
+                        } else {
+                            left = y;
+                        }
+                    } else {
+                        left = new BinaryOperatorExpression(BinaryOperatorExpression.Option.ValueOrDefault, left, y, location);
+                    }
+
+                } else {
+                    RaiseError("Left operand must have maybe type", left.MainLocation);
+                }
+            }
+
+            return left;
+        }
+
+
+
         // a || b
         private IExpression GetOrExpression() {
             var locationLeft = currentLexeme.StartLocation;
@@ -525,7 +589,32 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 // Try to convert to each other
                 var (x, y) = CrossConvert(left, right, locationLeft);
 
-                if (x.TypeInfo is PrimitiveTypeInfo primitive) {
+                if (x.TypeInfo is MaybeTypeInfo maybeType) {
+                    if (x is NullLiteralExpression) {
+                        RaiseError("'null' is not allowed here", x.MainLocation);
+                    }
+
+                    if (!(y is NullLiteralExpression)) {
+                        RaiseError("This operand should be a 'null' literal", y.MainLocation);
+                    }
+
+                    switch (meaning) {
+                        case OperatorMeaning.Equal:
+                            left = new UnaryOperatorExpression(UnaryOperatorExpression.Option.TestNull, x,
+                                                               PrimitiveTypeInfo.Bool, locationMiddle);
+                            break;
+
+                        case OperatorMeaning.NotEqual:
+                            left = new UnaryOperatorExpression(UnaryOperatorExpression.Option.TestNotNull, x,
+                                                               PrimitiveTypeInfo.Bool, locationMiddle);
+                            break;
+
+                        default:
+                            RaiseError("Maybe types don't support this operator", locationMiddle);
+                            break;
+                    }
+
+                } else if (x.TypeInfo is PrimitiveTypeInfo primitive) {
                     switch (primitive.TypeOption) {
                         case PrimitiveTypeInfo.Option.Bool:
                             if (x.IsCompileTime && y.IsCompileTime) {
@@ -1118,7 +1207,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 var mainLocation = currentLexeme.StartLocation;
                 var meaning = operatorLexeme.Meaning;
                 switch (meaning) {
-                    case OperatorMeaning.Not:
+                    case OperatorMeaning.ExclamationMark:
                     case OperatorMeaning.Minus:
                         break;
 
@@ -1133,14 +1222,15 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 IExpression converted;
 
                 switch (meaning) {
-                    case OperatorMeaning.Not:
+                    case OperatorMeaning.ExclamationMark:
                         converted = TryConvertExpression(atomic, PrimitiveTypeInfo.Bool);
                         if (converted != null) {
                             if (converted.IsCompileTime) {
                                 var a = (bool)converted.Value;
                                 return new PrimitiveLiteralExpression(!a, PrimitiveTypeInfo.Bool, mainLocation);
                             } else {
-                                return new UnaryOperatorExpression(UnaryOperatorExpression.Option.Not, converted, mainLocation);
+                                return new UnaryOperatorExpression(UnaryOperatorExpression.Option.Not, converted,
+                                                                   PrimitiveTypeInfo.Bool, mainLocation);
                             }
                         } else {
                             RaiseError($"Operand of logical Not must be a boolean expression (got '{typeName}')");
@@ -1155,7 +1245,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                 var a = (int)converted.Value;
                                 return new PrimitiveLiteralExpression(-a, PrimitiveTypeInfo.Int, mainLocation);
                             } else {
-                                return new UnaryOperatorExpression(UnaryOperatorExpression.Option.NegateInteger, converted, mainLocation);
+                                return new UnaryOperatorExpression(UnaryOperatorExpression.Option.NegateInteger, converted,
+                                                                   PrimitiveTypeInfo.Int, mainLocation);
                             }
 
                         } else {
@@ -1165,7 +1256,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                     var a = (double)converted.Value;
                                     return new PrimitiveLiteralExpression(-a, PrimitiveTypeInfo.Float, mainLocation);
                                 } else {
-                                    return new UnaryOperatorExpression(UnaryOperatorExpression.Option.NegateFloating, converted, mainLocation);
+                                    return new UnaryOperatorExpression(UnaryOperatorExpression.Option.NegateFloating, converted,
+                                                                       PrimitiveTypeInfo.Float, mainLocation);
                                 }
                             } else {
                                 RaiseError($"Operand of negation operator must be a numeric expression (got '{typeName}')");

@@ -123,7 +123,7 @@ namespace Handmada.ReLang.Compilation {
 
                 case VariableDeclarationStatement variableDeclaration:
                     var prefix = variableDeclaration.IsMutable ? "var" : "let";
-                    var typeName = variableDeclaration.Value.TypeInfo.Name;
+                    var typeName = variableDeclaration.TypeInfo.Name;
                     Console.Write($"{prefix} {variableDeclaration.Name}: {typeName} = ");
                     PrintExpression(variableDeclaration.Value);
                     Console.WriteLine("");
@@ -181,8 +181,29 @@ namespace Handmada.ReLang.Compilation {
                             break;
 
                         case UnaryOperatorExpression unary:
-                            PrintUnaryOperator(unary.OperatorOption);
-                            PrintExpression(unary.Expression);
+                            switch (unary.OperatorOption) {
+                                case UnaryOperatorExpression.Option.FromMaybe:
+                                    PrintExpression(unary.Expression);
+                                    Console.Write("!");
+                                    break;
+
+                                case UnaryOperatorExpression.Option.TestNull:
+                                    Console.Write("(");
+                                    PrintExpression(unary.Expression);
+                                    Console.Write(" == null)");
+                                    break;
+
+                                case UnaryOperatorExpression.Option.TestNotNull:
+                                    Console.Write("(");
+                                    PrintExpression(unary.Expression);
+                                    Console.Write(" != null)");
+                                    break;
+
+                                default:
+                                    PrintUnaryOperator(unary.OperatorOption);
+                                    PrintExpression(unary.Expression);
+                                    break;
+                            }
                             break;
 
                         default:
@@ -223,6 +244,10 @@ namespace Handmada.ReLang.Compilation {
                                     throw new NotImplementedException($"Unsupported literal type: {primitiveLiteral.Value.GetType().Name}");
                             }
                             Console.Write(representation);
+                            break;
+
+                        case NullLiteralExpression nullLiteral:
+                            Console.Write("null");
                             break;
 
                         case ListLiteralExpression listLiteral:
@@ -372,6 +397,10 @@ namespace Handmada.ReLang.Compilation {
                     Console.Write(">=");
                     break;
 
+                case BinaryOperatorExpression.Option.ValueOrDefault:
+                    Console.Write("??");
+                    break;
+
                 default:
                     throw new NotImplementedException();
             }
@@ -381,6 +410,7 @@ namespace Handmada.ReLang.Compilation {
         private static void PrintUnaryOperator(UnaryOperatorExpression.Option option) {
             switch (option) {
                 case UnaryOperatorExpression.Option.Not:
+                case UnaryOperatorExpression.Option.FromMaybe:
                     Console.Write("!");
                     break;
 

@@ -39,5 +39,12 @@ namespace Handmada.ReLang.Compilation.Yet {
         /// Location of the expression's main token
         /// </summary>
         Location MainLocation { get; }
+
+        /// <summary>
+        /// Change expression's type
+        /// </summary>
+        /// <param name="newType">New expression's type</param>
+        /// <returns>Copy of this expression of new type</returns>
+        IExpression ChangeType(ITypeInfo newType);
     }
 }

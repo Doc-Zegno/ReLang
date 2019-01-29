@@ -135,6 +135,29 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
         // Int, [Int], {Int}, [{Int}]
         private ITypeInfo GetTypeInfo() {
+            var typeInfo = GetPrimitiveTypeInfo();
+            while (true) {
+                if (currentLexeme is OperatorLexeme operatorLexeme) {
+                    switch (operatorLexeme.Meaning) {
+                        case OperatorMeaning.BitwiseAnd:
+                            MoveNextLexeme();
+                            typeInfo = new IterableTypeInfo(typeInfo);
+                            break;
+
+                        case OperatorMeaning.QuestionMark:
+                            MoveNextLexeme();
+                            typeInfo = new MaybeTypeInfo(typeInfo);
+                            break;
+
+                        default:
+                            return typeInfo;
+                    }
+                }
+            }
+        }
+
+
+        private ITypeInfo GetPrimitiveTypeInfo() {
             var location = currentLexeme.StartLocation;
             switch (currentLexeme) {
                 case SymbolLexeme symbol:
@@ -456,7 +479,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 case OperatorMeaning.Or:
                     return "Logical Or operator";
 
-                case OperatorMeaning.Not:
+                case OperatorMeaning.ExclamationMark:
                     return "Logical Not operator";
 
                 case OperatorMeaning.Else:

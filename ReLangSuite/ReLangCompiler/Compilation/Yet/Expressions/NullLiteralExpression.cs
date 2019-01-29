@@ -7,25 +7,25 @@ using System.Threading.Tasks;
 
 namespace Handmada.ReLang.Compilation.Yet {
     /// <summary>
-    /// Expression representing a type literal (Int, [Bool])
+    /// Expression representing a null literal
     /// </summary>
-    class TypeLiteralExpression : ILiteralExpression {
+    class NullLiteralExpression : ILiteralExpression {
         public bool HasSideEffect => false;
         public bool IsCompileTime => true;
-        public object Value => throw new NotImplementedException();
+        public object Value => null;
         public ITypeInfo TypeInfo { get; private set; }
         public bool IsLvalue => false;
         public Location MainLocation { get; }
 
-
-        public TypeLiteralExpression(ITypeInfo typeInfo, Location mainLocation) {
-            TypeInfo = typeInfo;
+        
+        public NullLiteralExpression(Location mainLocation) {
+            TypeInfo = new NullTypeInfo();
             MainLocation = mainLocation;
         }
 
 
         public IExpression ChangeType(ITypeInfo newType) {
-            var copy = (TypeLiteralExpression)MemberwiseClone();
+            var copy = (NullLiteralExpression)MemberwiseClone();
             copy.TypeInfo = newType;
             return copy;
         }

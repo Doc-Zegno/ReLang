@@ -13,7 +13,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         public bool HasSideEffect => true;
         public bool IsCompileTime => false;
         public object Value => throw new NotImplementedException();
-        public ITypeInfo TypeInfo { get; }
+        public ITypeInfo TypeInfo { get; private set; }
         public bool IsLvalue { get; }
         public Location MainLocation { get; }
 
@@ -36,6 +36,13 @@ namespace Handmada.ReLang.Compilation.Yet {
             TypeInfo = FunctionDefinition.ResultType;
             IsLvalue = isLvalue;
             MainLocation = mainLocation;
+        }
+
+
+        public IExpression ChangeType(ITypeInfo newType) {
+            var copy = (FunctionCallExpression)MemberwiseClone();
+            copy.TypeInfo = newType;
+            return copy;
         }
     }
 }

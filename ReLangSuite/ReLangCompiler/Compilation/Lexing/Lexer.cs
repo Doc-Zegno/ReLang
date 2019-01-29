@@ -158,7 +158,7 @@ namespace Handmada.ReLang.Compilation.Lexing {
                     break;
 
                 case '!':
-                    meaning = ScanDoubleOperator(OperatorMeaning.Not, OperatorMeaning.NotEqual, '=');
+                    meaning = ScanDoubleOperator(OperatorMeaning.ExclamationMark, OperatorMeaning.NotEqual, '=');
                     break;
 
                 case '<':
@@ -171,6 +171,10 @@ namespace Handmada.ReLang.Compilation.Lexing {
 
                 case '%':
                     meaning = OperatorMeaning.Modulo;
+                    break;
+
+                case '?':
+                    meaning = ScanDoubleOperator(OperatorMeaning.QuestionMark, OperatorMeaning.ValueOrDefault);
                     break;
 
                 default:
@@ -247,6 +251,9 @@ namespace Handmada.ReLang.Compilation.Lexing {
 
                 case "return":
                     return new OperatorLexeme(OperatorMeaning.Return, location);
+
+                case "null":
+                    return new OperatorLexeme(OperatorMeaning.Null, location);
 
                 default:
                     return new SymbolLexeme(text, location);

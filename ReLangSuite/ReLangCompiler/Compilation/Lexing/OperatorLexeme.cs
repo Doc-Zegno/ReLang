@@ -35,7 +35,7 @@ namespace Handmada.ReLang.Compilation.Lexing {
         And,                  // &&
         BitwiseOr,            // |
         Or,                   // ||
-        Not,                  // !
+        ExclamationMark,      // !
         ThinRightArrow,       // ->
         NotEqual,             // !=
         Less,                 // <
@@ -44,6 +44,8 @@ namespace Handmada.ReLang.Compilation.Lexing {
         MoreOrEqual,          // >=
         Range,                // ..
         Modulo,               // %
+        QuestionMark,         // ?
+        ValueOrDefault,       // ??
 
         // Textual
         Var,
@@ -54,6 +56,7 @@ namespace Handmada.ReLang.Compilation.Lexing {
         For,
         In,
         Return,
+        Null,
     }
 
 

@@ -17,13 +17,16 @@ namespace Handmada.ReLang.Compilation.Yet {
             NegateInteger,
             NegateFloating,
             Not,
+            FromMaybe,
+            TestNull,
+            TestNotNull,
         }
 
 
         public bool HasSideEffect => false;
         public bool IsCompileTime => false;
         public object Value => throw new NotImplementedException();
-        public ITypeInfo TypeInfo { get; }
+        public ITypeInfo TypeInfo { get; private set; }
         public bool IsLvalue => false;
         public Location MainLocation { get; }
 
@@ -31,12 +34,19 @@ namespace Handmada.ReLang.Compilation.Yet {
         public IExpression Expression { get; }
 
 
-        public UnaryOperatorExpression(Option operatorOption, IExpression expression, Location mainLocation) {
+        public UnaryOperatorExpression(Option operatorOption, IExpression expression, ITypeInfo resultType, Location mainLocation) {
             OperatorOption = operatorOption;
             Expression = expression;
 
-            TypeInfo = expression.TypeInfo;
+            TypeInfo = resultType;
             MainLocation = mainLocation;
+        }
+
+
+        public IExpression ChangeType(ITypeInfo newType) {
+            var copy = (UnaryOperatorExpression)MemberwiseClone();
+            copy.TypeInfo = newType;
+            return copy;
         }
     }
 }

@@ -29,7 +29,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         public bool HasSideEffect => false;
         public bool IsCompileTime { get; }
         public object Value { get; }
-        public ITypeInfo TypeInfo { get; }
+        public ITypeInfo TypeInfo { get; private set; }
         public bool IsLvalue => true;
         public Location MainLocation { get; }
 
@@ -44,6 +44,13 @@ namespace Handmada.ReLang.Compilation.Yet {
             TypeInfo = typeInfo;
             MainLocation = mainLocation;
             Value = value;
+        }
+
+
+        public IExpression ChangeType(ITypeInfo newType) {
+            var copy = (VariableExpression)MemberwiseClone();
+            copy.TypeInfo = newType;
+            return copy;
         }
     }
 }

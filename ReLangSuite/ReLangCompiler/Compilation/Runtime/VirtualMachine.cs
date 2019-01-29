@@ -245,6 +245,9 @@ namespace Handmada.ReLang.Compilation.Runtime {
                         case PrimitiveLiteralExpression primitiveLiteral:
                             return primitiveLiteral.Value;
 
+                        case NullLiteralExpression nullLiteral:
+                            return null;
+
                         case ListLiteralExpression listLiteral:
                             return new ListAdapter(listLiteral.Items.Select(item => EvaluateExpression(item)));
 
@@ -297,25 +300,33 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
 
         private object EvaluateBinaryOperator(BinaryOperatorExpression binary) {
-            // Short-circuit evaluation for booleans
+            // Short-circuit evaluation for booleans and maybes
+            var left = EvaluateExpression(binary.LeftOperand);
+
             switch (binary.OperatorOption) {
                 case BinaryOperatorExpression.Option.Or:
-                    if ((bool)EvaluateExpression(binary.LeftOperand)) {
+                    if ((bool)left) {
                         return true;
                     } else {
                         return (bool)EvaluateExpression(binary.RightOperang);
                     }
 
                 case BinaryOperatorExpression.Option.And:
-                    if (!(bool)EvaluateExpression(binary.LeftOperand)) {
+                    if (!(bool)left) {
                         return false;
                     } else {
                         return (bool)EvaluateExpression(binary.RightOperang);
                     }
+
+                case BinaryOperatorExpression.Option.ValueOrDefault:
+                    if (left != null) {
+                        return left;
+                    } else {
+                        return EvaluateExpression(binary.RightOperang);
+                    }
             }
 
             // Long-circuit for other types
-            var left = EvaluateExpression(binary.LeftOperand);
             var right = EvaluateExpression(binary.RightOperang);
 
             switch (binary.OperatorOption) {
@@ -418,6 +429,19 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
                 case UnaryOperatorExpression.Option.NegateFloating:
                     return -(double)value;
+
+                case UnaryOperatorExpression.Option.FromMaybe:
+                    if (value != null) {
+                        return value;
+                    } else {
+                        throw ProgramException.CreateNullError(unary.MainLocation);
+                    }
+
+                case UnaryOperatorExpression.Option.TestNull:
+                    return value == null;
+
+                case UnaryOperatorExpression.Option.TestNotNull:
+                    return value != null;
 
                 default:
                     throw new VirtualMachineException($"Unsupported unary operator: {unary.OperatorOption}");
@@ -725,6 +749,10 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
 
         private string ObjectToString(object obj, bool isEscaped, bool isTuplePair) {
+            if (obj == null) {
+                return isEscaped ? "null" : "";
+            }
+
             switch (obj) {
                 case bool b:
                     return b ? "true" : "false";

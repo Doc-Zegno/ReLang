@@ -13,7 +13,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         public bool HasSideEffect { get; }
         public bool IsCompileTime => false;
         public object Value => throw new NotImplementedException();
-        public ITypeInfo TypeInfo { get; }
+        public ITypeInfo TypeInfo { get; private set; }
         public bool IsLvalue => false;
         public Location MainLocation { get; }
 
@@ -37,6 +37,13 @@ namespace Handmada.ReLang.Compilation.Yet {
                     break;
                 }
             }
+        }
+
+
+        public IExpression ChangeType(ITypeInfo newType) {
+            var copy = (DictionaryLiteralExpression)MemberwiseClone();
+            copy.TypeInfo = newType;
+            return copy;
         }
     }
 }
