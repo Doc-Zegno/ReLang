@@ -100,6 +100,7 @@
     <Compile Include="Compilation\Yet\Statements\CompoundStatement.cs" />
     <Compile Include="Compilation\Yet\Statements\ConditionalStatement.cs" />
     <Compile Include="Compilation\Yet\Expressions\ConversionExpression.cs" />
+    <Compile Include="Compilation\Yet\Statements\DoWhileStatement.cs" />
     <Compile Include="Compilation\Yet\Statements\ExpressionStatement.cs" />
     <Compile Include="Compilation\Yet\Statements\ForEachStatement.cs" />
     <Compile Include="Compilation\Parsing\FunctionTree.cs" />
@@ -137,6 +138,7 @@
     <Compile Include="Compilation\Runtime\RangeAdapter.cs" />
     <Compile Include="Compilation\Runtime\VirtualMachine.cs" />
     <Compile Include="Compilation\Runtime\VirtualMachineException.cs" />
+    <Compile Include="Compilation\Yet\Statements\WhileStatement.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

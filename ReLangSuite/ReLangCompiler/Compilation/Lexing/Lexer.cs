@@ -75,7 +75,15 @@ namespace Handmada.ReLang.Compilation.Lexing {
 
                 } else {
                     // Character
-                    return ScanOperator();
+                    var op = ScanOperator();
+                    if (op is OperatorLexeme operatorLexeme && operatorLexeme.Meaning == OperatorMeaning.Commentary) {
+                        while (currentCharacter != '\n') {
+                            if (!MoveNextCharacter()) {
+                                break;
+                            }
+                        }
+                    }
+                    return op;
                 }
 
             } else {
@@ -240,11 +248,20 @@ namespace Handmada.ReLang.Compilation.Lexing {
                 case "if":
                     return new OperatorLexeme(OperatorMeaning.If, location);
 
+                case "elif":
+                    return new OperatorLexeme(OperatorMeaning.Elif, location);
+
                 case "else":
                     return new OperatorLexeme(OperatorMeaning.Else, location);
 
                 case "for":
                     return new OperatorLexeme(OperatorMeaning.For, location);
+
+                case "while":
+                    return new OperatorLexeme(OperatorMeaning.While, location);
+
+                case "do":
+                    return new OperatorLexeme(OperatorMeaning.Do, location);
 
                 case "in":
                     return new OperatorLexeme(OperatorMeaning.In, location);

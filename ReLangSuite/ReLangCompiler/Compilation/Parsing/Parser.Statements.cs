@@ -19,7 +19,11 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     break;
                 }
 
-                if (WhetherOperator(OperatorMeaning.NewLine)) {
+                if (WhetherOperator(OperatorMeaning.Commentary)) {
+                    do {
+                        MoveNextLexeme();
+                    } while (!WhetherOperator(OperatorMeaning.NewLine) && currentLexeme != null);
+                } else if (WhetherOperator(OperatorMeaning.NewLine)) {
                     MoveNextLexeme();
                 } else if (WhetherOperator(OperatorMeaning.Func)) {
                     if (isScopeStrong && isTop) {
@@ -65,6 +69,14 @@ namespace Handmada.ReLang.Compilation.Parsing {
                             MoveNextLexeme();
                             return GetForLoop();
 
+                        case OperatorMeaning.While:
+                            MoveNextLexeme();
+                            return GetWhileLoop();
+
+                        case OperatorMeaning.Do:
+                            MoveNextLexeme();
+                            return GetDoWhileLoop();
+
                         case OperatorMeaning.Return:
                             MoveNextLexeme();
                             return GetReturn();
@@ -80,31 +92,42 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                 default:
                     return GetFunctionCallOrAssignment();
-
-                /*case SymbolLexeme symbolLexeme:
-                    if (currentLexeme is OperatorLexeme op) {
-                        switch (op.Meaning) {
-                            case OperatorMeaning.OpenParenthesis:
-                                return new ExpressionStatement(GetFunctionCall(symbolLexeme.Text, location));
-
-                            default:
-                                // Assignment
-                                PutBack();
-                                return GetAssignment();
-                                //RaiseError($"Unexpected operator: {GetOperatorName(op.Meaning)}");
-                                //return null;
-                        }
-                    } else {
-                        RaiseError("Unexpected lexeme");
-                        return null;
-                    }
-
-                default:
-                    RaiseError("Statement was expected", location);
-                    break;*/
             }
 
             return null;
+        }
+
+
+
+        // [while] condition { statements }
+        private IStatement GetWhileLoop() {
+            scopeStack.EnterScope(false);
+            var condition = GetExpression();
+            CheckCondition(condition, true, false);
+
+            CheckOperator(OperatorMeaning.OpenBrace);
+            var statements = GetStatementList(false);
+            CheckOperator(OperatorMeaning.CloseBrace);
+            scopeStack.LeaveScope();
+
+            return new WhileStatement(condition, statements);
+        }
+
+
+
+        // [do] { statements } while condition
+        private IStatement GetDoWhileLoop() {
+            scopeStack.EnterScope(false);
+            CheckOperator(OperatorMeaning.OpenBrace);
+            var statements = GetStatementList(false);
+            CheckOperator(OperatorMeaning.CloseBrace);
+            CheckOperator(OperatorMeaning.While);
+
+            var condition = GetExpression();
+            CheckCondition(condition, true, false);
+            scopeStack.LeaveScope();
+
+            return new DoWhileStatement(condition, statements);
         }
 
 
@@ -593,13 +616,96 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
 
+        // if let number = maybe { ... }
+        private IStatement GetConditional() {
+            bool isMutable;
+
+            if (WhetherOperator(OperatorMeaning.Var)) {
+                isMutable = true;
+            } else if (WhetherOperator(OperatorMeaning.Let)) {
+                isMutable = false;
+            } else {
+                return GetRawConditional();
+            }
+
+            // Parse variable binding
+            MoveNextLexeme();
+            var identifiers = GetIdentifierList();
+            CheckOperator(OperatorMeaning.Assignment);
+            var value = GetExpression();  // Multiple expression is a tuple literal and thus can't be a maybe
+
+            // Check if it's a maybe and unwrap construction
+            var statements = new List<IStatement>();
+            if (value.TypeInfo is MaybeTypeInfo maybeType) {
+                if (value.IsCompileTime) {
+                    if (value.Value == null) {
+                        RaiseError("Right-hand expression is always null", value.MainLocation, true);
+                    } else {
+                        RaiseError("Right-hand expression is always not null", value.MainLocation, true);
+                    }
+                }
+
+                VariableExpression variable = null;
+                if (value is VariableExpression variableExpression) {
+                    variable = variableExpression;
+                } else {
+                    variable = DeclareTemporaryVariable(value.TypeInfo, value);
+                    statements.Add(new VariableDeclarationStatement(variable.Name, value.TypeInfo, value, false));
+                    value = variable;
+                }
+
+                var condition = new UnaryOperatorExpression(UnaryOperatorExpression.Option.TestNotNull, variable,
+                                                            PrimitiveTypeInfo.Bool, variable.MainLocation);
+
+                scopeStack.EnterScope(false);
+                CheckOperator(OperatorMeaning.OpenBrace);
+
+                // Adjust variable expression on scope enter
+                variable = new VariableExpression(variable.Name, variable.Number, variable.FrameOffset - 1,
+                                                  variable.IsCompileTime, variable.TypeInfo, variable.MainLocation);
+
+                // Declare binded variables on scope enter
+                List<IStatement> ifStatements = null;
+                var unwrapped = new UnaryOperatorExpression(UnaryOperatorExpression.Option.FromMaybe, variable,
+                                                            maybeType.InternalType, variable.MainLocation);
+                var declaration = ForceDeclareVariableList(identifiers, unwrapped, isMutable, unwrapped.MainLocation);
+                if (declaration is CompoundStatement compound) {
+                    ifStatements = compound.Statements;
+                } else {
+                    ifStatements = new List<IStatement> { declaration };
+                }
+
+                ifStatements.AddRange(GetStatementList(false));
+                CheckOperator(OperatorMeaning.CloseBrace);
+                scopeStack.LeaveScope();
+
+                var elseStatements = GetElseStatements();
+                statements.Add(new ConditionalStatement(condition, ifStatements, elseStatements));
+                
+                if (statements.Count > 1) {
+                    return new CompoundStatement(statements);
+                } else {
+                    return statements[0];
+                }
+
+            } else {
+                RaiseError("Right-hand expression must have a maybe type", value.MainLocation);
+                return null;
+            }
+        }
+
+
+
         // if condition {
         //     if-statements
+        // } elif condition {
+        //     elif-statements
         // } else {
         //     else-statements
         // }
-        private IStatement GetConditional() {
+        private IStatement GetRawConditional() {
             var condition = GetExpression();
+            CheckCondition(condition, false, false);
 
             // if-clause
             CheckOperator(OperatorMeaning.OpenBrace);
@@ -609,8 +715,29 @@ namespace Handmada.ReLang.Compilation.Parsing {
             CheckOperator(OperatorMeaning.CloseBrace);
 
             // else-clause
+            var elseStatements = GetElseStatements();
+
+            return new ConditionalStatement(condition, ifStatements, elseStatements);
+        }
+
+
+
+        private List<IStatement> GetElseStatements() {
             List<IStatement> elseStatements = null;
-            if (WhetherOperator(OperatorMeaning.Else)) {
+            if (WhetherOperator(OperatorMeaning.Elif)) {
+                MoveNextLexeme();
+                scopeStack.EnterScope(false);
+
+                var nested = GetConditional();
+                if (nested is CompoundStatement compound) {
+                    elseStatements = compound.Statements;
+                } else {
+                    elseStatements = new List<IStatement> { nested };
+                }
+                
+                scopeStack.LeaveScope();
+
+            } else if (WhetherOperator(OperatorMeaning.Else)) {
                 MoveNextLexeme();
                 CheckOperator(OperatorMeaning.OpenBrace);
                 scopeStack.EnterScope(isStrong: false);
@@ -618,8 +745,25 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 scopeStack.LeaveScope();
                 CheckOperator(OperatorMeaning.CloseBrace);
             }
+            return elseStatements;
+        }
 
-            return new ConditionalStatement(condition, ifStatements, elseStatements);
+
+
+        private void CheckCondition(IExpression condition, bool isTrueAllowed, bool isFalseAllowed) {
+            if (!WhetherPrimitiveType(condition, PrimitiveTypeInfo.Option.Bool)) {
+                RaiseError("Condition must be a boolean expression", condition.MainLocation);
+            }
+
+            if (condition.IsCompileTime) {
+                var boolean = (bool)condition.Value;
+                if (boolean && !isTrueAllowed) {
+                    RaiseError("Condition is always true", condition.MainLocation, true);
+                }
+                if (!boolean && !isFalseAllowed) {
+                    RaiseError("Condition is always false", condition.MainLocation, true);
+                }
+            }
         }
     }
 }

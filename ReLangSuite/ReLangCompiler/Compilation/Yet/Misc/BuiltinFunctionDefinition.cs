@@ -36,6 +36,7 @@ namespace Handmada.ReLang.Compilation.Yet {
 
             DictionaryGet,
             DictionarySet,
+            DictionaryTryGet,
             DictionaryGetLength,
             DictionaryContains,
             DictionaryCopy,

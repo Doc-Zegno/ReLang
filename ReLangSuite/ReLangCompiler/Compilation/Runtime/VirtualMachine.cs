@@ -165,6 +165,32 @@ namespace Handmada.ReLang.Compilation.Runtime {
                     }
                     break;
 
+                case WhileStatement whileStatement:
+                    statements = whileStatement.Statements;
+                    EnterFrame();
+                    try {
+                        while ((bool)EvaluateExpression(whileStatement.Condition)) {
+                            ClearFrame();
+                            ExecuteStatementList(statements);
+                        }
+                    } finally {
+                        LeaveFrame();
+                    }
+                    break;
+
+                case DoWhileStatement doWhileStatement:
+                    statements = doWhileStatement.Statements;
+                    EnterFrame();
+                    try {
+                        do {
+                            ClearFrame();
+                            ExecuteStatementList(statements);
+                        } while ((bool)EvaluateExpression(doWhileStatement.Condition));
+                    } finally {
+                        LeaveFrame();
+                    }
+                    break;
+
                 case ExpressionStatement expression:
                     EvaluateExpression(expression.Expression);
                     break;
@@ -613,6 +639,9 @@ namespace Handmada.ReLang.Compilation.Runtime {
                 case BuiltinFunctionDefinition.Option.DictionarySet:
                     return CallDictionarySet((DictionaryAdapter)arguments[0], arguments[1], arguments[2]);
 
+                case BuiltinFunctionDefinition.Option.DictionaryTryGet:
+                    return CallDictionaryTryGet((DictionaryAdapter)arguments[0], arguments[1]);
+
                 case BuiltinFunctionDefinition.Option.DictionaryContains:
                     return CallDictionaryContains((DictionaryAdapter)arguments[0], arguments[1]);
 
@@ -726,6 +755,15 @@ namespace Handmada.ReLang.Compilation.Runtime {
                 return value;
             } else {
                 throw ProgramException.CreateKeyError(ObjectToString(key, true, false), null);
+            }
+        }
+
+
+        private object CallDictionaryTryGet(DictionaryAdapter dictionary, object key) {
+            if (dictionary.TryGetValue(key, out object value)) {
+                return value;
+            } else {
+                return null;
             }
         }
 

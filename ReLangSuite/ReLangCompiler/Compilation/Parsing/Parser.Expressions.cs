@@ -926,7 +926,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     var b = (int)y.Value;
 
                     if (a >= b) {
-                        RaiseError($"Empty range: start index (got {a}) must be smaller than end one (got {b})", locationLeft);
+                        RaiseError($"Empty range: start index (got {a}) must be smaller than end one (got {b})", locationLeft, true);
                     }
                 }
 

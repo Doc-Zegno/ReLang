@@ -17,25 +17,28 @@ namespace Handmada.ReLang.Compilation.Parsing {
         /// <summary>
         /// Code line containing error
         /// </summary>
-        public string Line;
+        public string Line { get; }
 
         /// <summary>
         /// Number of code line containing error
         /// </summary>
-        public int LineNumber;
+        public int LineNumber { get; }
 
         /// <summary>
         /// Number of code column containing error
         /// </summary>
-        public int ColumnNumber;
+        public int ColumnNumber { get; }
+
+        public bool IsSemantic { get; }
 
 
-        public ParserException(string message, string line, int lineNumber, int columnNumber)
+        public ParserException(string message, string line, int lineNumber, int columnNumber, bool isSemantic)
             : base(message)
         {
             Line = line;
             LineNumber = lineNumber;
             ColumnNumber = columnNumber;
+            IsSemantic = isSemantic;
         }
 
 

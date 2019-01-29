@@ -82,6 +82,13 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<ITypeInfo> { this, KeyType, ValueType }, 
                         PrimitiveTypeInfo.Void);
 
+                case "tryGet":
+                    return new BuiltinFunctionDefinition(
+                        name, 
+                        BuiltinFunctionDefinition.Option.DictionaryTryGet, 
+                        new List<ITypeInfo> { this, KeyType }, 
+                        new MaybeTypeInfo(ValueType));
+
                 case "getLength":
                     return new BuiltinFunctionDefinition(
                         name,

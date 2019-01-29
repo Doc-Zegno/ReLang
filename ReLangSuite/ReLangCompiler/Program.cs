@@ -121,6 +121,26 @@ namespace Handmada.ReLang.Compilation {
                     Console.WriteLine(padding + "}");
                     break;
 
+                case WhileStatement whileStatement:
+                    Console.Write("while ");
+                    PrintExpression(whileStatement.Condition);
+                    Console.WriteLine(" {");
+                    foreach (var s in whileStatement.Statements) {
+                        PrintStatement(s, shiftLevel + 1);
+                    }
+                    Console.WriteLine(padding + "}");
+                    break;
+
+                case DoWhileStatement doWhileStatement:
+                    Console.WriteLine("do {");
+                    foreach (var s in doWhileStatement.Statements) {
+                        PrintStatement(s, shiftLevel + 1);
+                    }
+                    Console.Write(padding + "} while ");
+                    PrintExpression(doWhileStatement.Condition);
+                    Console.WriteLine();
+                    break;
+
                 case VariableDeclarationStatement variableDeclaration:
                     var prefix = variableDeclaration.IsMutable ? "var" : "let";
                     var typeName = variableDeclaration.TypeInfo.Name;

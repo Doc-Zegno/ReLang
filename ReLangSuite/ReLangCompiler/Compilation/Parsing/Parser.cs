@@ -242,13 +242,16 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
         private void Parse() {
             do {
-                if (WhetherOperator(OperatorMeaning.NewLine)) {
+                if (WhetherOperator(OperatorMeaning.Commentary)) {
+                    do {
+                        MoveNextLexeme();
+                    } while (!WhetherOperator(OperatorMeaning.NewLine) && currentLexeme != null);
+                } else if (WhetherOperator(OperatorMeaning.NewLine)) {
                     MoveNextLexeme();
-                    continue;
+                } else {
+                    CheckOperator(OperatorMeaning.Func);
+                    ParseFunction();
                 }
-
-                CheckOperator(OperatorMeaning.Func);
-                ParseFunction();
             } while (currentLexeme != null);
         }
 
@@ -498,9 +501,9 @@ namespace Handmada.ReLang.Compilation.Parsing {
         }
 
 
-        private void RaiseError(string message, Location location = null) {
+        private void RaiseError(string message, Location location = null, bool isSemantic = false) {
             var loc = location ?? currentLexeme.StartLocation;
-            throw new ParserException(message, loc.Line, loc.LineNumber, loc.ColumnNumber);
+            throw new ParserException(message, loc.Line, loc.LineNumber, loc.ColumnNumber, isSemantic);
         }
 
 
