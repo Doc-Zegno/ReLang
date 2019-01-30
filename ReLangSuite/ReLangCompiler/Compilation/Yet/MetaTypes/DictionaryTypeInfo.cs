@@ -72,6 +72,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.DictionaryGet, 
+                        new List<string> { "self", "key" },
                         new List<ITypeInfo> { this, KeyType }, 
                         new List<bool> { false, false },
                         ValueType);
@@ -79,7 +80,8 @@ namespace Handmada.ReLang.Compilation.Yet {
                 case "set":
                     return new BuiltinFunctionDefinition(
                         name, 
-                        BuiltinFunctionDefinition.Option.DictionarySet, 
+                        BuiltinFunctionDefinition.Option.DictionarySet,
+                        new List<string> { "self", "key", "value" },
                         new List<ITypeInfo> { this, KeyType, ValueType },
                         new List<bool> { true, false, false },
                         PrimitiveTypeInfo.Void);
@@ -87,7 +89,8 @@ namespace Handmada.ReLang.Compilation.Yet {
                 case "tryGet":
                     return new BuiltinFunctionDefinition(
                         name, 
-                        BuiltinFunctionDefinition.Option.DictionaryTryGet, 
+                        BuiltinFunctionDefinition.Option.DictionaryTryGet,
+                        new List<string> { "self", "key" },
                         new List<ITypeInfo> { this, KeyType },
                         new List<bool> { false, false },
                         new MaybeTypeInfo(ValueType));
@@ -96,6 +99,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.DictionaryGetLength,
+                        new List<string> { "self" },
                         new List<ITypeInfo> { this },
                         new List<bool> { false },
                         PrimitiveTypeInfo.Int);
@@ -103,7 +107,8 @@ namespace Handmada.ReLang.Compilation.Yet {
                 case "contains" when KeyType is PrimitiveTypeInfo || KeyType is TupleTypeInfo:
                     return new BuiltinFunctionDefinition(
                         name, 
-                        BuiltinFunctionDefinition.Option.DictionaryContains, 
+                        BuiltinFunctionDefinition.Option.DictionaryContains,
+                        new List<string> { "self", "key" },
                         new List<ITypeInfo> { this, KeyType },
                         new List<bool> { false, false },
                         PrimitiveTypeInfo.Bool);
@@ -111,7 +116,8 @@ namespace Handmada.ReLang.Compilation.Yet {
                 case "copy":
                     return new BuiltinFunctionDefinition(
                         name, 
-                        BuiltinFunctionDefinition.Option.DictionaryCopy, 
+                        BuiltinFunctionDefinition.Option.DictionaryCopy,
+                        new List<string> { "self" },
                         new List<ITypeInfo> { this }, 
                         new List<bool> { false },
                         this);

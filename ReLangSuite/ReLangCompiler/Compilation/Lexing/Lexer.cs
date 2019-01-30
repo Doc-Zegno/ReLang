@@ -275,6 +275,9 @@ namespace Handmada.ReLang.Compilation.Lexing {
                 case "mutable":
                     return new OperatorLexeme(OperatorMeaning.Mutable, location);
 
+                case "const":
+                    return new OperatorLexeme(OperatorMeaning.Const, location);
+
                 default:
                     return new SymbolLexeme(text, location);
             }

@@ -61,6 +61,7 @@ namespace Handmada.ReLang.Compilation.Lexing {
         Return,
         Null,
         Mutable,
+        Const,
     }
 
 

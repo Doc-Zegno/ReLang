@@ -35,7 +35,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             var arguments = GetFunctionArguments();
 
             // Check them against expected types
-            CheckAndConvertFunctionArguments(definition.ArgumentTypes, definition.ArgumentMutabilities, arguments, location);
+            CheckAndConvertFunctionArguments(definition.Signature, arguments, location);
 
             // return appropriate function call expression
             return new FunctionCallExpression(definition, arguments, false, location);
@@ -65,25 +65,25 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
 
-        private void CheckAndConvertFunctionArguments(
-            List<ITypeInfo> expectedTypes,
-            List<bool> expectedMutabilities,
-            List<IExpression> arguments,
-            Location location)
-        {
+        private void CheckAndConvertFunctionArguments(FunctionSignature signature, List<IExpression> arguments, Location location) {
+            var names = signature.ArgumentNames;
+            var expectedTypes = signature.ArgumentTypes;
+            var expectedMutabilities = signature.ArgumentMutabilities;
+
             if (arguments.Count != expectedTypes.Count) {
                 RaiseError($"Wrong number of arguments for this function call (expected {expectedTypes.Count}"
                            + $" but got {arguments.Count})", location);
             }
 
             for (var index = 0; index < arguments.Count; index++) {
+                var name = names[index];
                 var argument = arguments[index];
                 var expectedType = expectedTypes[index];
 
                 // Type checks (and conversions if necessary)
                 var converted = TryConvertExpression(argument, expectedType);
                 if (converted == null) {
-                    RaiseError($"Cannot convert given argument to target type (expected '{expectedType.Name}'"
+                    RaiseError($"Cannot convert expression to type of argument '{name}' (expected '{expectedType.Name}'"
                                + $" but got '{argument.TypeInfo.Name}')", argument.MainLocation);
                 }
 
@@ -189,7 +189,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             arguments.AddRange(GetFunctionArguments(OperatorMeaning.CloseBracket));
 
             // Check arguments
-            CheckAndConvertFunctionArguments(definition.ArgumentTypes, definition.ArgumentMutabilities, arguments, location);
+            CheckAndConvertFunctionArguments(definition.Signature, arguments, location);
         
             return new FunctionCallExpression(definition, arguments, true, location);
         }
@@ -227,7 +227,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             }
 
             // Check arguments' types
-            CheckAndConvertFunctionArguments(definition.ArgumentTypes, definition.ArgumentMutabilities, arguments, location);
+            CheckAndConvertFunctionArguments(definition.Signature, arguments, location);
 
             return new FunctionCallExpression(definition, arguments, isLvalue, location);
         }
@@ -605,7 +605,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     }
 
                     var arguments = new List<IExpression> { right, left };
-                    CheckAndConvertFunctionArguments(definition.ArgumentTypes, definition.ArgumentMutabilities, arguments, locationMiddle);
+                    CheckAndConvertFunctionArguments(definition.Signature, arguments, locationMiddle);
                     left = new FunctionCallExpression(definition, arguments, false, locationMiddle);
 
                 } else if (left.TypeInfo is MaybeTypeInfo maybeType) {

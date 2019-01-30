@@ -65,14 +65,17 @@ namespace Handmada.ReLang.Compilation {
         private static void PrintFunction(FunctionData function, int number) {
             var argumentStrings = new List<string>();
             var definition = function.Definition;
-            for (var i = 0; i < definition.ArgumentTypes.Count; i++) {
-                var mutability = definition.ArgumentMutabilities[i] ? " mutable " : " ";
-                argumentStrings.Add($"{function.ArgumentNames[i]}:{mutability}{definition.ArgumentTypes[i].Name}");
+            var signature = definition.Signature;
+
+            for (var i = 0; i < signature.ArgumentTypes.Count; i++) {
+                var mutability = signature.ArgumentMutabilities[i] ? " mutable " : " ";
+                argumentStrings.Add($"{signature.ArgumentNames[i]}:{mutability}{signature.ArgumentTypes[i].Name}");
             }
             var arguments = string.Join(", ", argumentStrings);
 
-            Console.WriteLine($"func {definition.FullQualification}.{definition.FullName}<#{number}>"
-                              + $"({arguments}) -> {definition.ResultType.Name} {{");
+            var constantness = signature.ResultMutability ? " " : " const ";
+            Console.WriteLine($"func {definition.FullQualification}.{signature.Name}<#{number}>"
+                              + $"({arguments}) ->{constantness}{signature.ResultType.Name} {{");
             foreach (var s in function.Body) {
                 PrintStatement(s, 1);
             }
@@ -191,7 +194,7 @@ namespace Handmada.ReLang.Compilation {
 
                 case FunctionCallExpression functionCall:
                     var definition = functionCall.FunctionDefinition;
-                    Console.Write($"{definition.FullQualification}.{definition.FullName}(");
+                    Console.Write($"{definition.FullQualification}.{definition.Signature.Name}(");
                     PrintExpressionList(functionCall.Arguments);
                     Console.Write(")");
                     break;

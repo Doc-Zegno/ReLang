@@ -28,13 +28,12 @@ namespace Handmada.ReLang.Compilation.Parsing {
             }
 
 
-            public Scope DeclareFunction(string name, ITypeInfo resultType,
-                                         List<ITypeInfo> argumentTypes, List<bool> argumentMutabilities)
+            public Scope DeclareFunction(FunctionSignature signature)
             {
+                var name = signature.Name;
                 if (name != Name && !table.ContainsKey(name)) {
                     var scope = new Scope(name, this, false, tree);
-                    var definition = new CustomFunctionDefinition(argumentTypes, argumentMutabilities, resultType, name,
-                                                                  GetFullQualification(), tree.Count, IsGlobal);
+                    var definition = new CustomFunctionDefinition(signature, GetFullQualification(), tree.Count, IsGlobal);
                     table[name] = (definition, scope);
                     tree.Count++;
                     return scope;
@@ -83,7 +82,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 foreach (var pair in table) {
                     var name = pair.Key;
                     var (definition, scope) = pair.Value;
-                    Console.WriteLine($"{padding}func {definition.FullQualification}.{name}<{definition.Number}>() -> {definition.ResultType.Name} {{");
+                    Console.WriteLine($"{padding}func {definition.FullQualification}.{name}<{definition.Number}>() -> {definition.Signature.ResultType.Name} {{");
                     scope.PrintScope(shift + 1);
                     Console.WriteLine(padding + "}");
                 }
@@ -101,10 +100,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
         }
 
 
-        public bool DeclareFunction(string name, ITypeInfo resultType,
-                                    List<ITypeInfo> argumentTypes, List<bool> argumentMutabilities)
-        {
-            var scope = top.DeclareFunction(name, resultType, argumentTypes, argumentMutabilities);
+        public bool DeclareFunction(FunctionSignature signature) {
+            var scope = top.DeclareFunction(signature);
             if (scope != null) {
                 top = scope;
                 return true;

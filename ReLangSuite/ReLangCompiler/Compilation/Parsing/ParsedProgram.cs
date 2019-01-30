@@ -10,14 +10,21 @@ using Handmada.ReLang.Compilation.Yet;
 namespace Handmada.ReLang.Compilation.Parsing {
     public class FunctionData {
         public IFunctionDefinition Definition { get; }
-        public List<string> ArgumentNames { get; }
         public List<IStatement> Body { get; }
+        public bool IsProcedure { get; }
 
 
-        public FunctionData(IFunctionDefinition definition, List<string> argumentNames, List<IStatement> body) {
+        public FunctionData(IFunctionDefinition definition, List<IStatement> body) {
             Definition = definition;
-            ArgumentNames = argumentNames;
             Body = body;
+
+            if (definition.Signature.ResultType is PrimitiveTypeInfo primitive
+                && primitive.TypeOption == PrimitiveTypeInfo.Option.Void)
+            {
+                IsProcedure = true;
+            } else {
+                IsProcedure = false;
+            }
         }
     }
 

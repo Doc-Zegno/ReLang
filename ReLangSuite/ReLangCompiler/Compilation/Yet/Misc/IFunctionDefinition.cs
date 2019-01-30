@@ -7,10 +7,7 @@ using System.Threading.Tasks;
 
 namespace Handmada.ReLang.Compilation.Yet {
     public interface IFunctionDefinition {
-        List<ITypeInfo> ArgumentTypes { get; }
-        List<bool> ArgumentMutabilities { get; }
-        ITypeInfo ResultType { get; }
-        string FullName { get; }
+        FunctionSignature Signature { get; }
         string ShortName { get; }
         string FullQualification { get; }
     }

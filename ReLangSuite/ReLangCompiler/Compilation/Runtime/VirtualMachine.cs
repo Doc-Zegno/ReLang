@@ -14,6 +14,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
         private List<List<object>> frames;
         private List<FunctionData> functions;
         private object functionValue;
+        private bool wasReturnValueSet;
         private bool needReturn;
 
         //public System.IO.TextWriter VmOut { get; }
@@ -100,19 +101,29 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
             // Execute body
             functionValue = null;
+            wasReturnValueSet = false;
             needReturn = false;
             var function = functions[number];
+            object result = null;
+            bool wasSet = false;
 
             try {
                 ExecuteStatementList(function.Body);
             } finally {
+                // Leave frame and return function value
                 LeaveFrame();
+                needReturn = false;
+                wasSet = wasReturnValueSet;
+                wasReturnValueSet = false;
+                result = functionValue;
+                functionValue = null;  // No one will see this value outside evaluation anymore
             }
 
-            // Leave frame and return function value
-            needReturn = false;
-            var result = functionValue;
-            functionValue = null;  // No one will see this value outside evaluation anymore
+            if (!function.IsProcedure && !wasSet) {
+                var fullName = $"{function.Definition.FullQualification}.{function.Definition.ShortName}";
+                throw ProgramException.CreateNoReturnValueError(fullName);
+            }
+
             return result;
         }
 
@@ -207,6 +218,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
                 case ReturnStatement returnStatement:
                     functionValue = EvaluateExpression(returnStatement.Operand);
+                    wasReturnValueSet = true;
                     needReturn = true;
                     break;
 

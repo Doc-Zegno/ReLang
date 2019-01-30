@@ -215,8 +215,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 case SetterIdentifier setter:
                     var definition = setter.FunctionDefinition;
                     setter.Arguments.Add(value);
-                    CheckAndConvertFunctionArguments(definition.ArgumentTypes, definition.ArgumentMutabilities,
-                                                     setter.Arguments, setter.StartLocation);
+                    CheckAndConvertFunctionArguments(definition.Signature, setter.Arguments, setter.StartLocation);
 
                     //var lastType = definition.ArgumentTypes.Last();
                     //var converted = ForceConvertExpression(value, lastType, value.MainLocation);
@@ -314,6 +313,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
             }
             
             var converted = ForceConvertExpression(value, definition.TypeInfo, right);
+            CheckMutability(converted, true);
+
             return new AssignmentStatement(name, definition.Number, frameOffset, converted);
         }
 
@@ -325,7 +326,9 @@ namespace Handmada.ReLang.Compilation.Parsing {
             var operand = GetMultipleExpression();
             var definition = functionTree.GetCurrentFunctionDefinition();
 
-            var converted = ForceConvertExpression(operand, definition.ResultType, location);
+            var converted = ForceConvertExpression(operand, definition.Signature.ResultType, location);
+            CheckMutability(converted, definition.Signature.ResultMutability);
+
             return new ReturnStatement(converted);
         }
 
@@ -556,6 +559,10 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 typeInfo = identifier.ExpectedType;
             }
 
+            if (WhetherPrimitiveType(typeInfo, PrimitiveTypeInfo.Option.Void)) {
+                RaiseError("Cannot declare variable of type 'Void'", converted.MainLocation);
+            }
+
             if (typeInfo is NullTypeInfo) {
                 RaiseError("Cannot deduce type from given expression", converted.MainLocation);
             }
@@ -583,6 +590,13 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 //Console.WriteLine($"Checking variable '{variable.Name}' (expected: {mustBeMutable}, got: {definition.IsMutable})");
                 if (definition.TypeInfo.IsReferential && !definition.IsMutable && mustBeMutable) {
                     RaiseError("This object was declared as immutable", expression.MainLocation);
+                }
+
+            } else if (expression is FunctionCallExpression functionCall) {
+                var definition = functionCall.FunctionDefinition;
+                var signature = definition.Signature;
+                if (signature.ResultType.IsReferential && !signature.ResultMutability && mustBeMutable) {
+                    RaiseError("Result of this function call is immutable", expression.MainLocation);
                 }
             }
         }
@@ -769,7 +783,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
         private void CheckCondition(IExpression condition, bool isTrueAllowed, bool isFalseAllowed) {
-            if (!WhetherPrimitiveType(condition, PrimitiveTypeInfo.Option.Bool)) {
+            if (!WhetherPrimitiveType(condition.TypeInfo, PrimitiveTypeInfo.Option.Bool)) {
                 RaiseError("Condition must be a boolean expression", condition.MainLocation);
             }
 

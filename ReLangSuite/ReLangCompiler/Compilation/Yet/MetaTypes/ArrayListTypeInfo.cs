@@ -61,6 +61,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.ListGet, 
+                        new List<string> { "self", "index" },
                         new List<ITypeInfo> { this, PrimitiveTypeInfo.Int }, 
                         new List<bool> { false, false },
                         ItemType);
@@ -68,15 +69,36 @@ namespace Handmada.ReLang.Compilation.Yet {
                 case "getLength":
                     return new BuiltinFunctionDefinition(
                         name,
-                        BuiltinFunctionDefinition.Option.ListGetLength, 
+                        BuiltinFunctionDefinition.Option.ListGetLength,
+                        new List<string> { "self" },
                         new List<ITypeInfo> { this }, 
                         new List<bool> { false },
                         PrimitiveTypeInfo.Int);
+
+                case "getSlice":
+                    return new BuiltinFunctionDefinition(
+                        name,
+                        BuiltinFunctionDefinition.Option.ListGetSlice,
+                        new List<string> { "self", "start", "end", "step" },
+                        new List<ITypeInfo> { this, PrimitiveTypeInfo.Int, new MaybeTypeInfo(PrimitiveTypeInfo.Int), PrimitiveTypeInfo.Int },
+                        new List<bool> { false, false, false, false },
+                        this);
+
+                case "getConstSlice":
+                    return new BuiltinFunctionDefinition(
+                        name,
+                        BuiltinFunctionDefinition.Option.ListGetSlice,
+                        new List<string> { "self", "start", "end", "step" },
+                        new List<ITypeInfo> { this, PrimitiveTypeInfo.Int, new MaybeTypeInfo(PrimitiveTypeInfo.Int), PrimitiveTypeInfo.Int },
+                        new List<bool> { false, false, false, false },
+                        this,
+                        false);
 
                 case "set":
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.ListSet, 
+                        new List<string> { "self", "index", "value" },
                         new List<ITypeInfo> { this, PrimitiveTypeInfo.Int, ItemType },
                         new List<bool> { true, false, false },
                         PrimitiveTypeInfo.Void);
@@ -85,6 +107,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.ListAppend, 
+                        new List<string> { "self", "value" },
                         new List<ITypeInfo> { this, ItemType },
                         new List<bool> { true, false },
                         PrimitiveTypeInfo.Void);
@@ -92,7 +115,8 @@ namespace Handmada.ReLang.Compilation.Yet {
                 case "extend":
                     return new BuiltinFunctionDefinition(
                         name,
-                        BuiltinFunctionDefinition.Option.ListExtend, 
+                        BuiltinFunctionDefinition.Option.ListExtend,
+                        new List<string> { "self", "list" },
                         new List<ITypeInfo> { this, this },
                         new List<bool> { true, false },
                         PrimitiveTypeInfo.Void);
@@ -100,7 +124,8 @@ namespace Handmada.ReLang.Compilation.Yet {
                 case "contains" when ItemType is PrimitiveTypeInfo || ItemType is TupleTypeInfo:
                     return new BuiltinFunctionDefinition(
                         name, 
-                        BuiltinFunctionDefinition.Option.ListContains, 
+                        BuiltinFunctionDefinition.Option.ListContains,
+                        new List<string> { "self", "value" },
                         new List<ITypeInfo> { this, ItemType },
                         new List<bool> { false, false },
                         PrimitiveTypeInfo.Bool);
@@ -109,6 +134,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.ListCopy,
+                        new List<string> { "self" },
                         new List<ITypeInfo> { this },
                         new List<bool> { false },
                         this);

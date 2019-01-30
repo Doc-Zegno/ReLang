@@ -61,6 +61,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.SetGetLength,
+                        new List<string> { "self" },
                         new List<ITypeInfo> { this },
                         new List<bool> { false },
                         PrimitiveTypeInfo.Int);
@@ -68,7 +69,8 @@ namespace Handmada.ReLang.Compilation.Yet {
                 case "add":
                     return new BuiltinFunctionDefinition(
                         name,
-                        BuiltinFunctionDefinition.Option.SetAdd, 
+                        BuiltinFunctionDefinition.Option.SetAdd,
+                        new List<string> { "self", "value" },
                         new List<ITypeInfo> { this, ItemType },
                         new List<bool> { true, false },
                         PrimitiveTypeInfo.Void);
@@ -76,7 +78,8 @@ namespace Handmada.ReLang.Compilation.Yet {
                 case "remove":
                     return new BuiltinFunctionDefinition(
                         name, 
-                        BuiltinFunctionDefinition.Option.SetRemove, 
+                        BuiltinFunctionDefinition.Option.SetRemove,
+                        new List<string> { "self", "value" },
                         new List<ITypeInfo> { this, ItemType },
                         new List<bool> { true, false },
                         PrimitiveTypeInfo.Bool);
@@ -84,7 +87,8 @@ namespace Handmada.ReLang.Compilation.Yet {
                 case "union":
                     return new BuiltinFunctionDefinition(
                         name, 
-                        BuiltinFunctionDefinition.Option.SetUnion, 
+                        BuiltinFunctionDefinition.Option.SetUnion,
+                        new List<string> { "self", "set" },
                         new List<ITypeInfo> { this, this },
                         new List<bool> { false, false },
                         this);
@@ -93,6 +97,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.SetIntersection,
+                        new List<string> { "self", "set" },
                         new List<ITypeInfo> { this, this },
                         new List<bool> { false, false },
                         this);
@@ -101,6 +106,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.SetDifference,
+                        new List<string> { "self", "set" },
                         new List<ITypeInfo> { this, this },
                         new List<bool> { false, false },
                         this);
@@ -108,7 +114,8 @@ namespace Handmada.ReLang.Compilation.Yet {
                 case "contains" when ItemType is PrimitiveTypeInfo || ItemType is TupleTypeInfo:
                     return new BuiltinFunctionDefinition(
                         name, 
-                        BuiltinFunctionDefinition.Option.SetContains, 
+                        BuiltinFunctionDefinition.Option.SetContains,
+                        new List<string> { "self", "value" },
                         new List<ITypeInfo> { this, ItemType },
                         new List<bool> { false, false },
                         PrimitiveTypeInfo.Bool);
@@ -117,6 +124,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.SetCopy,
+                        new List<string> { "self" },
                         new List<ITypeInfo> { this },
                         new List<bool> { false },
                         this);

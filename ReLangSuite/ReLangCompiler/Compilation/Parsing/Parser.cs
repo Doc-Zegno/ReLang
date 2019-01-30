@@ -82,12 +82,12 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
         private void StepInFunction() {
             var location = currentLexeme.StartLocation;
-            var (name, _, argumentTypes, argumentMutabilities, resultType) = GetFunctionSignature();
+            var signature = GetFunctionSignature();
             CheckOperator(OperatorMeaning.OpenBrace);
 
             // Register function
-            if (!functionTree.DeclareFunction(name, resultType, argumentTypes, argumentMutabilities)) {
-                RaiseError($"Declaration of function '{name}' interferes with another declaration", location);
+            if (!functionTree.DeclareFunction(signature)) {
+                RaiseError($"Declaration of function '{signature.Name}' interferes with another declaration", location);
             }
 
             // Entered a function scope
@@ -99,7 +99,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
         }
 
 
-        private (string, List<string>, List<ITypeInfo>, List<bool>, ITypeInfo) GetFunctionSignature() {
+        private FunctionSignature GetFunctionSignature() {
             var name = GetSymbolText("Function name");
             CheckOperator(OperatorMeaning.OpenParenthesis);
 
@@ -146,12 +146,42 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
             // Parse return type
             var resultType = (ITypeInfo)PrimitiveTypeInfo.Void;
+            var resultMutability = true;
             if (WhetherOperator(OperatorMeaning.ThinRightArrow)) {
                 MoveNextLexeme();
-                resultType = GetTypeInfo();
+
+                var location = currentLexeme.StartLocation;
+                if (WhetherOperator(OperatorMeaning.Const)) {
+                    MoveNextLexeme();
+                    resultMutability = false;
+                }
+
+                resultType = GetTypeInfoOrVoid();
+
+                if (!resultType.IsReferential && !resultMutability) {
+                    RaiseError("'const' qualifier has no effect for non-referential types", location, true);
+                }
+                if (resultType is PrimitiveTypeInfo primitive
+                    && primitive.TypeOption == PrimitiveTypeInfo.Option.String
+                    && !resultMutability)
+                {
+                    RaiseError("Strings are immutable, this qualifier is useless", location, true);
+                }
+
             }
 
-            return (name, argumentNames, argumentTypes, argumentMutabilities, resultType);
+            return new FunctionSignature(name, argumentNames, argumentTypes, argumentMutabilities, resultType, resultMutability);
+        }
+
+
+
+        private ITypeInfo GetTypeInfoOrVoid() {
+            if (currentLexeme is SymbolLexeme symbol && symbol.Text == "Void") {
+                MoveNextLexeme();
+                return PrimitiveTypeInfo.Void;
+            } else {
+                return GetTypeInfo();
+            }
         }
 
 
@@ -186,8 +216,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 case SymbolLexeme symbol:
                     MoveNextLexeme();
                     switch (symbol.Text) {
-                        case "Void":
-                            return PrimitiveTypeInfo.Void;
+                        /*case "Void":
+                            return PrimitiveTypeInfo.Void;*/
 
                         case "Bool":
                             return PrimitiveTypeInfo.Bool;
@@ -281,22 +311,25 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
         private void ParseFunction() {
             var location = currentLexeme.StartLocation;
-            var (name, argumentNames, argumentTypes, argumentMutabilities, resultType) = GetFunctionSignature();
+            var signature = GetFunctionSignature();
             CheckOperator(OperatorMeaning.OpenBrace);
 
             // Reserve place for function data
             var number = functions.Count;
             functions.Add(null);
 
-            Console.WriteLine($"parsing function '{name}'...");
+            Console.WriteLine($"parsing function '{signature.Name}'...");
 
             // Parse body
-            functionTree.EnterScope(name);
+            functionTree.EnterScope(signature.Name);
             scopeStack.EnterScope(isStrong: true);
 
             // Place all arguments inside frame
-            for (var i = 0; i < argumentNames.Count; i++) {
-                scopeStack.DeclareVariable(argumentNames[i], argumentTypes[i], true, argumentMutabilities[i], null);
+            for (var i = 0; i < signature.ArgumentNames.Count; i++) {
+                var argumentName = signature.ArgumentNames[i];
+                var argumentType = signature.ArgumentTypes[i];
+                var argumentMutability = signature.ArgumentMutabilities[i];
+                scopeStack.DeclareVariable(argumentName, argumentType, true, argumentMutability, null);
             }
 
             var body = GetStatementList(true);
@@ -305,26 +338,27 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
             CheckOperator(OperatorMeaning.CloseBrace);
 
-            Console.WriteLine($"stopped parsing function '{name}'");
+            Console.WriteLine($"stopped parsing function '{signature.Name}'");
 
             // Add function to list
-            var definition = functionTree.GetFunctionDefinition(name);
-            functions[number] = new FunctionData(definition, argumentNames, body);
+            var definition = functionTree.GetFunctionDefinition(signature.Name);
+            functions[number] = new FunctionData(definition, body);
 
             // Check for main
-            if (definition.IsGlobal && name == "main") {
-                if (argumentTypes.Count == 1
-                    && argumentTypes[0] is ArrayListTypeInfo arrayListType
+            if (definition.IsGlobal && signature.Name == "main") {
+                if (signature.ArgumentTypes.Count == 1
+                    && signature.ArgumentTypes[0] is ArrayListTypeInfo arrayListType
                     && arrayListType.ItemType is PrimitiveTypeInfo primitiveType
                     && primitiveType.TypeOption == PrimitiveTypeInfo.Option.String)
                 {
-                    if (resultType is PrimitiveTypeInfo primitive
+                    if (signature.ResultType is PrimitiveTypeInfo primitive
                         && (primitive.TypeOption == PrimitiveTypeInfo.Option.Int
                             || primitive.TypeOption == PrimitiveTypeInfo.Option.Void)) 
                     {
                         mainFunctionNumber = definition.Number;
                     } else {
-                        RaiseError($"Result type of main function must be either 'Int' or 'Void' (got '{resultType.Name}')", location);
+                        RaiseError($"Result type of main function must be either 'Int' or 'Void'"
+                                   + " (got '{signature.ResultType.Name}')", location);
                     }
                 } else {
                     RaiseError("Main function must have one argument of type '[String]'", location);
@@ -412,8 +446,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
         }
 
 
-        private bool WhetherPrimitiveType(IExpression expression, PrimitiveTypeInfo.Option option) {
-            if (expression.TypeInfo is PrimitiveTypeInfo primitiveType && primitiveType.TypeOption == option) {
+        private bool WhetherPrimitiveType(ITypeInfo typeInfo, PrimitiveTypeInfo.Option option) {
+            if (typeInfo is PrimitiveTypeInfo primitiveType && primitiveType.TypeOption == option) {
                 return true;
             } else {
                 return false;

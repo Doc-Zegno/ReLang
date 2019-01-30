@@ -93,6 +93,7 @@
     <Compile Include="Compilation\Yet\MetaTypes\TupleTypeInfo.cs" />
     <Compile Include="Compilation\Yet\Misc\BuiltinFunctionDefinition.cs" />
     <Compile Include="Compilation\Yet\Misc\CustomFunctionDefinition.cs" />
+    <Compile Include="Compilation\Yet\Misc\FunctionSignature.cs" />
     <Compile Include="Compilation\Yet\Misc\IFunctionDefinition.cs" />
     <Compile Include="Compilation\Yet\Statements\AssignmentStatement.cs" />
     <Compile Include="Compilation\Yet\Expressions\BinaryOperatorExpression.cs" />

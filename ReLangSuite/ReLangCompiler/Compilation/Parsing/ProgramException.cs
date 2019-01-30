@@ -19,6 +19,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             FormatError,
             ZeroDivisionError,
             NullError,
+            NoReturnValueError,
         }
 
 
@@ -58,6 +59,12 @@ namespace Handmada.ReLang.Compilation.Parsing {
         public static ProgramException CreateNullError(Location location) {
             var message = "Expression is equal to 'null'";
             return new ProgramException(Option.NullError, message, location);
+        }
+
+
+        public static ProgramException CreateNoReturnValueError(string name) {
+            var message = $"Control flow reached the end of '{name}' but return value is undefined";
+            return new ProgramException(Option.NoReturnValueError, message, null);
         }
     }
 }

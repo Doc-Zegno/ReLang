@@ -45,6 +45,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                     return new BuiltinFunctionDefinition(
                         name, 
                         BuiltinFunctionDefinition.Option.IterableContains, 
+                        new List<string> { "self", "value" },
                         new List<ITypeInfo> { this, ItemType }, 
                         new List<bool> { false, false },
                         PrimitiveTypeInfo.Bool);

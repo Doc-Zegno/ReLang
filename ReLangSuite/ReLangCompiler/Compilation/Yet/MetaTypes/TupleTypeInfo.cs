@@ -44,6 +44,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.TupleGetFirst, 
+                        new List<string> { "self" },
                         new List<ITypeInfo> { this }, 
                         new List<bool> { false },
                         ItemTypes[0]);
@@ -51,7 +52,8 @@ namespace Handmada.ReLang.Compilation.Yet {
                 case "getSecond" when ItemTypes.Count >= 2:
                     return new BuiltinFunctionDefinition(
                         name,
-                        BuiltinFunctionDefinition.Option.TupleGetSecond, 
+                        BuiltinFunctionDefinition.Option.TupleGetSecond,
+                        new List<string> { "self" },
                         new List<ITypeInfo> { this },
                         new List<bool> { false },
                         ItemTypes[1]);
@@ -59,7 +61,8 @@ namespace Handmada.ReLang.Compilation.Yet {
                 case "getThird" when ItemTypes.Count >= 3:
                     return new BuiltinFunctionDefinition(
                         name,
-                        BuiltinFunctionDefinition.Option.TupleGetThird, 
+                        BuiltinFunctionDefinition.Option.TupleGetThird,
+                        new List<string> { "self" },
                         new List<ITypeInfo> { this },
                         new List<bool> { false },
                         ItemTypes[2]);
@@ -74,6 +77,7 @@ namespace Handmada.ReLang.Compilation.Yet {
             new BuiltinFunctionDefinition(
                 "get",
                 BuiltinFunctionDefinition.Option.TupleGet,
+                new List<string> { "self", "index" },
                 new List<ITypeInfo> { this, PrimitiveTypeInfo.Int },
                 new List<bool> { false, false },
                 ItemTypes[index]);

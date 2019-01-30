@@ -20,6 +20,7 @@ namespace Handmada.ReLang.Compilation.Yet {
             ListGet,
             ListSet,
             ListGetLength,
+            ListGetSlice,
             ListAppend,
             ListExtend,
             ListContains,
@@ -45,26 +46,26 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public List<ITypeInfo> ArgumentTypes { get; }
-        public List<bool> ArgumentMutabilities { get; }
-        public ITypeInfo ResultType { get; }
-        public string FullName { get; }
+        public FunctionSignature Signature { get; }
         public string ShortName { get; }
         public string FullQualification => "ReLang";
         
         public Option BuiltinOption { get; }
 
 
-        public BuiltinFunctionDefinition(string shortName, Option builtinOption, List<ITypeInfo> argumentTypes,
-                                         List<bool> argumentMutabilities, ITypeInfo resultType)
+        public BuiltinFunctionDefinition(
+            string shortName, 
+            Option builtinOption, 
+            List<string> argumentNames, 
+            List<ITypeInfo> argumentTypes,
+            List<bool> argumentMutabilities, 
+            ITypeInfo resultType, 
+            bool resultMutability = true)
         {
-            BuiltinOption = builtinOption;
-            ArgumentTypes = argumentTypes;
-            ArgumentMutabilities = argumentMutabilities;
-            ResultType = resultType;
-
             var name = builtinOption.ToString();
-            FullName = char.ToLower(name[0]) + name.Substring(1);
+            var fullName = char.ToLower(name[0]) + name.Substring(1);
+            Signature = new FunctionSignature(fullName, argumentNames, argumentTypes, argumentMutabilities, resultType, resultMutability);
+            BuiltinOption = builtinOption;
             ShortName = shortName;
         }
 
@@ -73,6 +74,7 @@ namespace Handmada.ReLang.Compilation.Yet {
             new BuiltinFunctionDefinition(
                 "print",
                 Option.Print, 
+                new List<string> { "object" },
                 new List<ITypeInfo> { PrimitiveTypeInfo.Object },
                 new List<bool> { false },
                 PrimitiveTypeInfo.Void);

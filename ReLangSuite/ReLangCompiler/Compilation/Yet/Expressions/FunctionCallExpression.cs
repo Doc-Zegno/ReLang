@@ -33,7 +33,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         {
             FunctionDefinition = functionDefinition;
             Arguments = arguments;
-            TypeInfo = FunctionDefinition.ResultType;
+            TypeInfo = FunctionDefinition.Signature.ResultType;
             IsLvalue = isLvalue;
             MainLocation = mainLocation;
         }
