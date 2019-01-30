@@ -12,11 +12,16 @@ Compiler and interpreter for Re:Lang
 - [x] `Char` data type (and iterating over string)
 - [ ] Shorthand operators (`+=`, `++`)
 - [x] `for-each`-style loop
-- [ ] `do-while`, `while` and C-style `for` loops
+- [x] `do-while` and `while` loops
+- [ ] C-style `for` loop
 - [x] Tuples and tuple unpacking
 - [x] Collections (lists, sets and dictionaries)
+- [x] Maybes, conditional unwrapping
+- [x] Checks for immutable objects
 - [ ] Built-in high-order functions (`filter`, `map`, `reduce`, `zip`)
-- [ ] Built-in methods for collections (including indexing)
+- [x] Built-in methods for collections (including indexing)
+- [ ] Slices for lists
+- [ ] Built-in methods and slices for strings
 - [ ] Files and managable disposables (`use f = open("input.txt")`)
 - [ ] Namespaces with util functions
 - [x] Runtime! 

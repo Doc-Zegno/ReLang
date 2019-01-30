@@ -17,12 +17,12 @@ namespace Handmada.ReLang.Compilation.Runtime {
         public int End { get; private set; }
         public int Step { get; }
         public bool IsSlice { get; }
-        public int Count => (End - Start) / Step;
+        public int Count => (End - Start + Step - 1) / Step;
 
         public object this[int index] {
-            get => list[index];
+            get => list[Start + Step * index];
             set {
-                list[index] = value;
+                list[Start + Step * index] = value;
             }
         }
 
@@ -68,7 +68,12 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
 
         public bool Contains(object item) {
-            return list.Contains(item);
+            for (var i = Start; i < End; i += Step) {
+                if (list[i].Equals(item)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
 

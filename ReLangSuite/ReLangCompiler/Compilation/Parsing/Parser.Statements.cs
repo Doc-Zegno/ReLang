@@ -585,20 +585,32 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
         private void CheckMutability(IExpression expression, bool mustBeMutable) {
-            if (expression is VariableExpression variable) {
+            if (mustBeMutable && !WhetherExpressionMutable(expression)) {
+                RaiseError("Expression's result is not mutable", expression.MainLocation);
+            }
+        }
+
+
+
+        private bool WhetherExpressionMutable(IExpression expression) {
+            if (expression.TypeInfo is TupleTypeInfo) {
+                return false;
+
+            } else if (expression is VariableExpression variable) {
                 var definition = scopeStack.GetDefinition(variable.Name);
-                //Console.WriteLine($"Checking variable '{variable.Name}' (expected: {mustBeMutable}, got: {definition.IsMutable})");
-                if (definition.TypeInfo.IsReferential && !definition.IsMutable && mustBeMutable) {
-                    RaiseError("This object was declared as immutable", expression.MainLocation);
+                if (definition.TypeInfo.IsReferential && !definition.IsMutable) {
+                    return false;
                 }
 
             } else if (expression is FunctionCallExpression functionCall) {
                 var definition = functionCall.FunctionDefinition;
                 var signature = definition.Signature;
-                if (signature.ResultType.IsReferential && !signature.ResultMutability && mustBeMutable) {
-                    RaiseError("Result of this function call is immutable", expression.MainLocation);
+                if (signature.ResultType.IsReferential && !signature.ResultMutability) {
+                    return false;
                 }
             }
+
+            return true;
         }
 
 

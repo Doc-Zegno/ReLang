@@ -603,6 +603,9 @@ namespace Handmada.ReLang.Compilation.Runtime {
                 case BuiltinFunctionDefinition.Option.ListGetLength:
                     return CallListGetLength((ListAdapter)arguments[0]);
 
+                case BuiltinFunctionDefinition.Option.ListGetSlice:
+                    return CallListGetSlice((ListAdapter)arguments[0], (int)arguments[1], (int?)arguments[2], (int)arguments[3]);
+
                 case BuiltinFunctionDefinition.Option.ListSet:
                     return CallListSet((ListAdapter)arguments[0], (int)arguments[1], arguments[2]);
 
@@ -673,14 +676,22 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
 
         private object CallListAppend(ListAdapter list, object item) {
-            list.Add(item);
-            return null;
+            if (!list.IsSlice) {
+                list.Add(item);
+                return null;
+            } else {
+                throw ProgramException.CreateNotSupportedError("Slice", "append", null);
+            }
         }
 
 
         private object CallListExtend(ListAdapter listA, ListAdapter listB) {
-            listA.Extend(listB);
-            return null;
+            if (!listA.IsSlice) {
+                listA.Extend(listB);
+                return null;
+            } else {
+                throw ProgramException.CreateNotSupportedError("Slice", "extend", null);
+            }
         }
 
 
@@ -699,6 +710,19 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
         private object CallListGetLength(ListAdapter list) {
             return list.Count;
+        }
+
+
+        private object CallListGetSlice(ListAdapter list, int start, int? end, int step) {
+            var maximum = list.Count;
+            var startAdjusted = GetAdjustedListIndex(start, maximum);
+
+            var endAdjusted = maximum;
+            if (end != null && end.Value != maximum) {
+                endAdjusted = GetAdjustedListIndex(end.Value, maximum);
+            }
+
+            return list.GetSlice(startAdjusted, endAdjusted, step);
         }
 
 

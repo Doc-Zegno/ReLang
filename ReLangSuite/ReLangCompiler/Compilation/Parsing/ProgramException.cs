@@ -20,6 +20,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             ZeroDivisionError,
             NullError,
             NoReturnValueError,
+            NotSupportedError,
         }
 
 
@@ -66,5 +67,11 @@ namespace Handmada.ReLang.Compilation.Parsing {
             var message = $"Control flow reached the end of '{name}' but return value is undefined";
             return new ProgramException(Option.NoReturnValueError, message, null);
         }
+
+
+        public static ProgramException CreateNotSupportedError(string typeName, string methodName, Location location) {
+            var message = $"{typeName} doesn't support '{methodName}'";
+            return new ProgramException(Option.NotSupportedError, message, location);
+        } 
     }
 }

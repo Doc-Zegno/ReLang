@@ -175,23 +175,88 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
         // [i]
-        private IExpression GetIndexingExpression(IExpression expression) {
+        private IExpression GetIndexingExpression(IExpression self) {
             var location = currentLexeme.StartLocation;
             CheckOperator(OperatorMeaning.OpenBracket);
-            var definition = expression.TypeInfo.GetMethodDefinition("get");
 
-            if (definition == null) {
-                RaiseError($"Type '{expression.TypeInfo.Name}' doesn't implement indexing", location);
+            // Decide whether it's slicing or just indexing
+            var arguments = new List<IExpression> { self };  // self
+            if (WhetherOperator(OperatorMeaning.Colon)) {
+                // Slicing with start = 0
+                var start = new PrimitiveLiteralExpression(0, PrimitiveTypeInfo.Int, currentLexeme.StartLocation);
+                return GetSliceExpression(self, location, start);
+
+            } else {
+                var argument = GetExpression();
+                if (WhetherOperator(OperatorMeaning.Colon)) {
+                    // Slicing with specified start
+                    return GetSliceExpression(self, location, argument);
+                }
+
+                // Indexing
+                CheckOperator(OperatorMeaning.CloseBracket);
+                arguments.Add(argument);
+
+                // Get definition of "get" and make function call
+                var definition = self.TypeInfo.GetMethodDefinition("get");
+
+                if (definition == null) {
+                    RaiseError($"Type '{self.TypeInfo.Name}' doesn't implement indexing", location);
+                }
+                
+                CheckAndConvertFunctionArguments(definition.Signature, arguments, location);
+                return new FunctionCallExpression(definition, arguments, true, location);
+            }
+        }
+
+
+
+        // {[start}:end:step]
+        private IExpression GetSliceExpression(IExpression self, Location locationBracket, IExpression start) {
+            // Default values for 'end' and 'step'
+            IExpression end = new NullLiteralExpression(currentLexeme.StartLocation)
+                                  .ChangeType(new MaybeTypeInfo(PrimitiveTypeInfo.Int));
+            IExpression step = new PrimitiveLiteralExpression(1, PrimitiveTypeInfo.Int, currentLexeme.StartLocation);
+
+            CheckOperator(OperatorMeaning.Colon);
+            // Possible options:
+            // [start:]
+            // [start::step]
+            // [start:end]
+            // [start:end:step]
+            if (WhetherOperator(OperatorMeaning.CloseBracket)) {
+                // 'end' and 'step' were skipped
+                // Do nothing
+
+            } else if (WhetherOperator(OperatorMeaning.Colon)) {
+                // 'end' was skipped
+                // 'step' is still there
+                MoveNextLexeme();
+                step = GetExpression();
+
+            } else {
+                // 'end' is still there
+                end = GetExpression();
+                if (WhetherOperator(OperatorMeaning.Colon)) {
+                    // 'step' is still there
+                    MoveNextLexeme();
+                    step = GetExpression();
+                }
             }
 
-            // Pick arguments (including 'self')
-            var arguments = new List<IExpression> { expression };
-            arguments.AddRange(GetFunctionArguments(OperatorMeaning.CloseBracket));
+            CheckOperator(OperatorMeaning.CloseBracket);
 
-            // Check arguments
-            CheckAndConvertFunctionArguments(definition.Signature, arguments, location);
-        
-            return new FunctionCallExpression(definition, arguments, true, location);
+            // Depending on mutability of 'self' call either 'getSlice' or 'getConstSlice'
+            var name = WhetherExpressionMutable(self) ? "getSlice" : "getConstSlice";
+            var definition = self.TypeInfo.GetMethodDefinition(name);
+
+            if (definition == null) {
+                RaiseError($"This object doesn't support method '{name}'", locationBracket);
+            }
+
+            var arguments = new List<IExpression> { self, start, end, step };
+            CheckAndConvertFunctionArguments(definition.Signature, arguments, locationBracket);
+            return new FunctionCallExpression(definition, arguments, false, locationBracket);
         }
 
 
