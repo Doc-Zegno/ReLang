@@ -11,6 +11,7 @@ namespace Handmada.ReLang.Compilation.Yet {
     /// </summary>
     class MaybeTypeInfo : ITypeInfo {
         public string Name => $"{InternalType.Name}?";
+        public bool IsReferential => true;
 
         /// <summary>
         /// Type of object within this maybe

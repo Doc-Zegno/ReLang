@@ -214,9 +214,13 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                 case SetterIdentifier setter:
                     var definition = setter.FunctionDefinition;
-                    var lastType = definition.ArgumentTypes.Last();
-                    var converted = ForceConvertExpression(value, lastType, value.MainLocation);
-                    setter.Arguments.Add(converted);
+                    setter.Arguments.Add(value);
+                    CheckAndConvertFunctionArguments(definition.ArgumentTypes, definition.ArgumentMutabilities,
+                                                     setter.Arguments, setter.StartLocation);
+
+                    //var lastType = definition.ArgumentTypes.Last();
+                    //var converted = ForceConvertExpression(value, lastType, value.MainLocation);
+                    //setter.Arguments.Add(converted);
                     return new ExpressionStatement(
                         new FunctionCallExpression(definition, setter.Arguments, false, setter.StartLocation)
                     );
@@ -305,8 +309,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
             var frameOffset = definition.ScopeNumber - (scopeStack.Count - 1);
 
             // Check if it's mutable
-            if (!definition.IsMutable) {
-                RaiseError($"Object '{name}' was declared as immutable, assignment is impossible", identifier.StartLocation);
+            if (definition.IsFinal) {
+                RaiseError($"Object '{name}' was declared as final, assignment is impossible", identifier.StartLocation);
             }
             
             var converted = ForceConvertExpression(value, definition.TypeInfo, right);
@@ -345,7 +349,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 var name = "";
                 switch (identifiers) {
                     case SingleIdentifier single:
-                        scopeStack.DeclareVariable(single.Name, itemType, true, null);
+                        scopeStack.DeclareVariable(single.Name, itemType, true, true, null);
                         name = single.Name;
                         break;
 
@@ -493,7 +497,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
         private VariableExpression DeclareTemporaryVariable(ITypeInfo typeInfo, IExpression value) {
             // Declare a tmp 
             var tmpName = GetNextTmpName();
-            if (!scopeStack.DeclareVariable(tmpName, typeInfo, false, value)) {
+            if (!scopeStack.DeclareVariable(tmpName, typeInfo, true, false, value)) {
                 RaiseError($"I wasn't able to declare a temporary '{tmpName}'. WTF???");
             }
 
@@ -556,17 +560,31 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 RaiseError("Cannot deduce type from given expression", converted.MainLocation);
             }
 
-            /*if (converted.TypeInfo is TupleTypeInfo && isMutable) {
+            if (typeInfo is TupleTypeInfo && isMutable) {
                 RaiseError($"Tuple object '{identifier.Name}' must be declared as immutable", identifier.StartLocation);
-            }*/
+            }
 
-            if (!scopeStack.DeclareVariable(identifier.Name, typeInfo, isMutable, converted)) {
+            CheckMutability(converted, isMutable);
+
+            if (!scopeStack.DeclareVariable(identifier.Name, typeInfo, !isMutable, isMutable, converted)) {
                 RaiseError($"Variable '{identifier.Name}' has already been declared", identifier.StartLocation);
             }
 
-            Console.WriteLine($"Declare object '{identifier.Name}' of type '{typeInfo.Name}'");
+            Console.WriteLine($"Declared object '{identifier.Name}' of type '{typeInfo.Name}'");
 
             return new VariableDeclarationStatement(identifier.Name, typeInfo, converted, isMutable);
+        }
+
+
+
+        private void CheckMutability(IExpression expression, bool mustBeMutable) {
+            if (expression is VariableExpression variable) {
+                var definition = scopeStack.GetDefinition(variable.Name);
+                //Console.WriteLine($"Checking variable '{variable.Name}' (expected: {mustBeMutable}, got: {definition.IsMutable})");
+                if (definition.TypeInfo.IsReferential && !definition.IsMutable && mustBeMutable) {
+                    RaiseError("This object was declared as immutable", expression.MainLocation);
+                }
+            }
         }
 
 

@@ -11,6 +11,7 @@ namespace Handmada.ReLang.Compilation.Yet {
     /// </summary>
     class FunctionTypeInfo : ITypeInfo {
         public string Name => $"({string.Join(", ", ArgumentTypes.Select(type => type.Name))}) -> {ResultType.Name}";
+        public bool IsReferential => true;
 
         /// <summary>
         /// Types of function's arguments

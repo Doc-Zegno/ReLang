@@ -44,27 +44,35 @@ namespace Handmada.ReLang.Compilation {
             } catch (LexerException e) {
                 PrintError("Lexical", e.Message, e.Line, e.LineNumber, e.ColumnNumber);
             } catch (ParserException e) {
-                PrintError("Syntax", e.Message, e.Line, e.LineNumber, e.ColumnNumber);
+                var kind = e.IsSemantic ? "Semantic" : "Syntax";
+                PrintError(kind, e.Message, e.Line, e.LineNumber, e.ColumnNumber);
             }
         }
 
 
         private static void PrintError(string prefix, string message, string line, int row, int column) {
+            var oldForeground = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Red;
+
             Console.WriteLine($"{prefix} error ({row}:{column}): {message}");
             Console.Write($">>> {line}");
             Console.WriteLine($"{new string(' ', column + 4)}^");
+
+            Console.ForegroundColor = oldForeground;
         }
 
 
         private static void PrintFunction(FunctionData function, int number) {
             var argumentStrings = new List<string>();
-            for (var i = 0; i < function.ArgumentTypes.Count; i++) {
-                argumentStrings.Add($"{function.ArgumentNames[i]}: {function.ArgumentTypes[i].Name}");
+            var definition = function.Definition;
+            for (var i = 0; i < definition.ArgumentTypes.Count; i++) {
+                var mutability = definition.ArgumentMutabilities[i] ? " mutable " : " ";
+                argumentStrings.Add($"{function.ArgumentNames[i]}:{mutability}{definition.ArgumentTypes[i].Name}");
             }
             var arguments = string.Join(", ", argumentStrings);
 
-            Console.WriteLine($"func {function.FullQualification}.{function.Name}<#{number}>"
-                              + $"({arguments}) -> {function.ResultType.Name} {{");
+            Console.WriteLine($"func {definition.FullQualification}.{definition.FullName}<#{number}>"
+                              + $"({arguments}) -> {definition.ResultType.Name} {{");
             foreach (var s in function.Body) {
                 PrintStatement(s, 1);
             }

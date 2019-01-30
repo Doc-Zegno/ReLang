@@ -9,22 +9,14 @@ using Handmada.ReLang.Compilation.Yet;
 
 namespace Handmada.ReLang.Compilation.Parsing {
     public class FunctionData {
-        public string Name { get; }
-        public string FullQualification { get; }
-        public ITypeInfo ResultType { get; }
+        public IFunctionDefinition Definition { get; }
         public List<string> ArgumentNames { get; }
-        public List<ITypeInfo> ArgumentTypes { get; }
         public List<IStatement> Body { get; }
 
 
-        public FunctionData(string name, string fullQualification, ITypeInfo resultType, 
-                            List<string> argumentNames, List<ITypeInfo> argumentTypes, List<IStatement> body)
-        {
-            Name = name;
-            FullQualification = fullQualification;
-            ResultType = resultType;
+        public FunctionData(IFunctionDefinition definition, List<string> argumentNames, List<IStatement> body) {
+            Definition = definition;
             ArgumentNames = argumentNames;
-            ArgumentTypes = argumentTypes;
             Body = body;
         }
     }

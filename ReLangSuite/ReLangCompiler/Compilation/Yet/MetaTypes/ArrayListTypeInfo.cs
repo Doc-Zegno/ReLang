@@ -62,6 +62,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         name,
                         BuiltinFunctionDefinition.Option.ListGet, 
                         new List<ITypeInfo> { this, PrimitiveTypeInfo.Int }, 
+                        new List<bool> { false, false },
                         ItemType);
 
                 case "getLength":
@@ -69,34 +70,39 @@ namespace Handmada.ReLang.Compilation.Yet {
                         name,
                         BuiltinFunctionDefinition.Option.ListGetLength, 
                         new List<ITypeInfo> { this }, 
+                        new List<bool> { false },
                         PrimitiveTypeInfo.Int);
 
                 case "set":
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.ListSet, 
-                        new List<ITypeInfo> { this, PrimitiveTypeInfo.Int, ItemType }, 
+                        new List<ITypeInfo> { this, PrimitiveTypeInfo.Int, ItemType },
+                        new List<bool> { true, false, false },
                         PrimitiveTypeInfo.Void);
 
                 case "append":
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.ListAppend, 
-                        new List<ITypeInfo> { this, ItemType }, 
+                        new List<ITypeInfo> { this, ItemType },
+                        new List<bool> { true, false },
                         PrimitiveTypeInfo.Void);
 
                 case "extend":
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.ListExtend, 
-                        new List<ITypeInfo> { this, this }, 
+                        new List<ITypeInfo> { this, this },
+                        new List<bool> { true, false },
                         PrimitiveTypeInfo.Void);
 
                 case "contains" when ItemType is PrimitiveTypeInfo || ItemType is TupleTypeInfo:
                     return new BuiltinFunctionDefinition(
                         name, 
                         BuiltinFunctionDefinition.Option.ListContains, 
-                        new List<ITypeInfo> { this, ItemType }, 
+                        new List<ITypeInfo> { this, ItemType },
+                        new List<bool> { false, false },
                         PrimitiveTypeInfo.Bool);
 
                 case "copy":
@@ -104,6 +110,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         name,
                         BuiltinFunctionDefinition.Option.ListCopy,
                         new List<ITypeInfo> { this },
+                        new List<bool> { false },
                         this);
 
                 default:

@@ -39,6 +39,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         name, 
                         BuiltinFunctionDefinition.Option.RangeContains, 
                         new List<ITypeInfo> { this, ItemType }, 
+                        new List<bool> { false, false },
                         PrimitiveTypeInfo.Bool);
 
                 default:

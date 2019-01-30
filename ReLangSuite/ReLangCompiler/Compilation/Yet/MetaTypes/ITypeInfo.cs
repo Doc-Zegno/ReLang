@@ -16,6 +16,11 @@ namespace Handmada.ReLang.Compilation.Yet {
         string Name { get; }
 
         /// <summary>
+        /// Whether this type is referential or a value one
+        /// </summary>
+        bool IsReferential { get; }
+
+        /// <summary>
         /// Get expression of this type converted from given source expression
         /// </summary>
         /// <param name="expression">Source expression</param>

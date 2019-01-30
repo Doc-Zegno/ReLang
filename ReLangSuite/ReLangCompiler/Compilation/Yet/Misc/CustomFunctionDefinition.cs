@@ -9,6 +9,7 @@ namespace Handmada.ReLang.Compilation.Yet {
     class CustomFunctionDefinition : IFunctionDefinition {
         public ITypeInfo ResultType { get; }
         public List<ITypeInfo> ArgumentTypes { get; }
+        public List<bool> ArgumentMutabilities { get; }
         public string FullName { get; }
         public string ShortName => FullName;
         public string FullQualification { get; }
@@ -17,10 +18,11 @@ namespace Handmada.ReLang.Compilation.Yet {
         public bool IsGlobal { get; }
 
 
-        public CustomFunctionDefinition(List<ITypeInfo> argumentTypes, ITypeInfo resultType, string name,
-                                        string fullQualification, int number, bool isGlobal)
+        public CustomFunctionDefinition(List<ITypeInfo> argumentTypes, List<bool> argumentMutabilities, ITypeInfo resultType,
+                                        string name, string fullQualification, int number, bool isGlobal)
         {
             ArgumentTypes = argumentTypes;
+            ArgumentMutabilities = argumentMutabilities;
             ResultType = resultType;
             FullName = name;
             FullQualification = fullQualification;

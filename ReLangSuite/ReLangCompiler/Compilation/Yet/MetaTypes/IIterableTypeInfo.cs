@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 namespace Handmada.ReLang.Compilation.Yet {
     class IterableTypeInfo : ITypeInfo {
         public virtual string Name => $"{ItemType.Name}&";
+        public virtual bool IsReferential => true;
 
         /// <summary>
         /// Type of items obtained from this iterable
@@ -45,6 +46,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         name, 
                         BuiltinFunctionDefinition.Option.IterableContains, 
                         new List<ITypeInfo> { this, ItemType }, 
+                        new List<bool> { false, false },
                         PrimitiveTypeInfo.Bool);
 
                 default:

@@ -46,6 +46,7 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public List<ITypeInfo> ArgumentTypes { get; }
+        public List<bool> ArgumentMutabilities { get; }
         public ITypeInfo ResultType { get; }
         public string FullName { get; }
         public string ShortName { get; }
@@ -54,9 +55,12 @@ namespace Handmada.ReLang.Compilation.Yet {
         public Option BuiltinOption { get; }
 
 
-        public BuiltinFunctionDefinition(string shortName, Option builtinOption, List<ITypeInfo> argumentTypes, ITypeInfo resultType) {
+        public BuiltinFunctionDefinition(string shortName, Option builtinOption, List<ITypeInfo> argumentTypes,
+                                         List<bool> argumentMutabilities, ITypeInfo resultType)
+        {
             BuiltinOption = builtinOption;
             ArgumentTypes = argumentTypes;
+            ArgumentMutabilities = argumentMutabilities;
             ResultType = resultType;
 
             var name = builtinOption.ToString();
@@ -69,7 +73,8 @@ namespace Handmada.ReLang.Compilation.Yet {
             new BuiltinFunctionDefinition(
                 "print",
                 Option.Print, 
-                new List<ITypeInfo> { PrimitiveTypeInfo.Object }, 
+                new List<ITypeInfo> { PrimitiveTypeInfo.Object },
+                new List<bool> { false },
                 PrimitiveTypeInfo.Void);
     }
 }

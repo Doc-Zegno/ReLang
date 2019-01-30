@@ -28,10 +28,12 @@ namespace Handmada.ReLang.Compilation.Parsing {
             }
 
 
-            public Scope DeclareFunction(string name, ITypeInfo resultType, List<ITypeInfo> argumentTypes) {
+            public Scope DeclareFunction(string name, ITypeInfo resultType,
+                                         List<ITypeInfo> argumentTypes, List<bool> argumentMutabilities)
+            {
                 if (name != Name && !table.ContainsKey(name)) {
                     var scope = new Scope(name, this, false, tree);
-                    var definition = new CustomFunctionDefinition(argumentTypes, resultType, name,
+                    var definition = new CustomFunctionDefinition(argumentTypes, argumentMutabilities, resultType, name,
                                                                   GetFullQualification(), tree.Count, IsGlobal);
                     table[name] = (definition, scope);
                     tree.Count++;
@@ -99,8 +101,10 @@ namespace Handmada.ReLang.Compilation.Parsing {
         }
 
 
-        public bool DeclareFunction(string name, ITypeInfo resultType, List<ITypeInfo> argumentTypes) {
-            var scope = top.DeclareFunction(name, resultType, argumentTypes);
+        public bool DeclareFunction(string name, ITypeInfo resultType,
+                                    List<ITypeInfo> argumentTypes, List<bool> argumentMutabilities)
+        {
+            var scope = top.DeclareFunction(name, resultType, argumentTypes, argumentMutabilities);
             if (scope != null) {
                 top = scope;
                 return true;

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 namespace Handmada.ReLang.Compilation.Yet {
     class NullTypeInfo : ITypeInfo {
         public string Name => "Null";
+        public bool IsReferential => true;
 
 
         public IExpression ConstructFrom(IExpression expression, Location location) {

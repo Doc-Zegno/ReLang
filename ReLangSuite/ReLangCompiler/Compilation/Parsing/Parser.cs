@@ -82,11 +82,11 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
         private void StepInFunction() {
             var location = currentLexeme.StartLocation;
-            var (name, _, argumentTypes, resultType) = GetFunctionSignature();
+            var (name, _, argumentTypes, argumentMutabilities, resultType) = GetFunctionSignature();
             CheckOperator(OperatorMeaning.OpenBrace);
 
             // Register function
-            if (!functionTree.DeclareFunction(name, resultType, argumentTypes)) {
+            if (!functionTree.DeclareFunction(name, resultType, argumentTypes, argumentMutabilities)) {
                 RaiseError($"Declaration of function '{name}' interferes with another declaration", location);
             }
 
@@ -99,18 +99,41 @@ namespace Handmada.ReLang.Compilation.Parsing {
         }
 
 
-        private (string, List<string>, List<ITypeInfo>, ITypeInfo) GetFunctionSignature() {
+        private (string, List<string>, List<ITypeInfo>, List<bool>, ITypeInfo) GetFunctionSignature() {
             var name = GetSymbolText("Function name");
             CheckOperator(OperatorMeaning.OpenParenthesis);
 
             // Parse parameter list
             var argumentNames = new List<string>();
             var argumentTypes = new List<ITypeInfo>();
+            var argumentMutabilities = new List<bool>();
             if (!WhetherOperator(OperatorMeaning.CloseParenthesis)) {
                 while (true) {
+                    // Name
                     argumentNames.Add(GetSymbolText("Argument name"));
                     CheckOperator(OperatorMeaning.Colon);
-                    argumentTypes.Add(GetTypeInfo());
+
+                    // Mutability
+                    var location = currentLexeme.StartLocation;
+                    var isMutable = false;
+                    if (WhetherOperator(OperatorMeaning.Mutable)) {
+                        MoveNextLexeme();
+                        isMutable = true;
+                    }
+                    argumentMutabilities.Add(isMutable);
+
+                    // Type
+                    var argumentType = GetTypeInfo();
+                    if (!argumentType.IsReferential && isMutable) {
+                        RaiseError("'mutable' qualifier has no effect for non-referential types", location, true);
+                    }
+                    if (argumentType is PrimitiveTypeInfo primitive
+                        && primitive.TypeOption == PrimitiveTypeInfo.Option.String
+                        && isMutable)
+                    {
+                        RaiseError("Strings are immutable, this qualifier is useless", location, true);
+                    }
+                    argumentTypes.Add(argumentType);
 
                     if (WhetherOperator(OperatorMeaning.Comma)) {
                         MoveNextLexeme();
@@ -128,7 +151,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 resultType = GetTypeInfo();
             }
 
-            return (name, argumentNames, argumentTypes, resultType);
+            return (name, argumentNames, argumentTypes, argumentMutabilities, resultType);
         }
 
 
@@ -258,7 +281,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
         private void ParseFunction() {
             var location = currentLexeme.StartLocation;
-            var (name, argumentNames, argumentTypes, resultType) = GetFunctionSignature();
+            var (name, argumentNames, argumentTypes, argumentMutabilities, resultType) = GetFunctionSignature();
             CheckOperator(OperatorMeaning.OpenBrace);
 
             // Reserve place for function data
@@ -273,7 +296,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
             // Place all arguments inside frame
             for (var i = 0; i < argumentNames.Count; i++) {
-                scopeStack.DeclareVariable(argumentNames[i], argumentTypes[i], true, null);
+                scopeStack.DeclareVariable(argumentNames[i], argumentTypes[i], true, argumentMutabilities[i], null);
             }
 
             var body = GetStatementList(true);
@@ -286,8 +309,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
             // Add function to list
             var definition = functionTree.GetFunctionDefinition(name);
-            functions[number] = new FunctionData(name, definition.FullQualification, resultType,
-                                                 argumentNames, argumentTypes, body);
+            functions[number] = new FunctionData(definition, argumentNames, body);
 
             // Check for main
             if (definition.IsGlobal && name == "main") {

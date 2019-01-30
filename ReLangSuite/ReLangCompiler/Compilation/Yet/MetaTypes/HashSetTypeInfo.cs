@@ -62,27 +62,31 @@ namespace Handmada.ReLang.Compilation.Yet {
                         name,
                         BuiltinFunctionDefinition.Option.SetGetLength,
                         new List<ITypeInfo> { this },
+                        new List<bool> { false },
                         PrimitiveTypeInfo.Int);
 
                 case "add":
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.SetAdd, 
-                        new List<ITypeInfo> { this, ItemType }, 
+                        new List<ITypeInfo> { this, ItemType },
+                        new List<bool> { true, false },
                         PrimitiveTypeInfo.Void);
 
                 case "remove":
                     return new BuiltinFunctionDefinition(
                         name, 
                         BuiltinFunctionDefinition.Option.SetRemove, 
-                        new List<ITypeInfo> { this, ItemType }, 
+                        new List<ITypeInfo> { this, ItemType },
+                        new List<bool> { true, false },
                         PrimitiveTypeInfo.Bool);
 
                 case "union":
                     return new BuiltinFunctionDefinition(
                         name, 
                         BuiltinFunctionDefinition.Option.SetUnion, 
-                        new List<ITypeInfo> { this, this }, 
+                        new List<ITypeInfo> { this, this },
+                        new List<bool> { false, false },
                         this);
 
                 case "intersection":
@@ -90,6 +94,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         name,
                         BuiltinFunctionDefinition.Option.SetIntersection,
                         new List<ITypeInfo> { this, this },
+                        new List<bool> { false, false },
                         this);
 
                 case "difference":
@@ -97,13 +102,15 @@ namespace Handmada.ReLang.Compilation.Yet {
                         name,
                         BuiltinFunctionDefinition.Option.SetDifference,
                         new List<ITypeInfo> { this, this },
+                        new List<bool> { false, false },
                         this);
 
                 case "contains" when ItemType is PrimitiveTypeInfo || ItemType is TupleTypeInfo:
                     return new BuiltinFunctionDefinition(
                         name, 
                         BuiltinFunctionDefinition.Option.SetContains, 
-                        new List<ITypeInfo> { this, ItemType }, 
+                        new List<ITypeInfo> { this, ItemType },
+                        new List<bool> { false, false },
                         PrimitiveTypeInfo.Bool);
 
                 case "copy":
@@ -111,6 +118,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         name,
                         BuiltinFunctionDefinition.Option.SetCopy,
                         new List<ITypeInfo> { this },
+                        new List<bool> { false },
                         this);
 
                 default:

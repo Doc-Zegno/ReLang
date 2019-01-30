@@ -27,10 +27,22 @@ namespace Handmada.ReLang.Compilation.Yet {
 
         public Option TypeOption { get; }
         public string Name => TypeOption.ToString();
+        public bool IsReferential { get; }
 
 
         public PrimitiveTypeInfo(Option typeOption) {
             TypeOption = typeOption;
+
+            switch (typeOption) {
+                case Option.String:
+                case Option.Object:
+                    IsReferential = true;
+                    break;
+
+                default:
+                    IsReferential = false;
+                    break;
+            }
         }
 
 

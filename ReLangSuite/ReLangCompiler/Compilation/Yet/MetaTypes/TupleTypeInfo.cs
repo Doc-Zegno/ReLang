@@ -11,6 +11,7 @@ namespace Handmada.ReLang.Compilation.Yet {
     /// </summary>
     class TupleTypeInfo : ITypeInfo {
         public string Name => $"({string.Join(", ", ItemTypes.Select(itemType => itemType.Name))})";
+        public bool IsReferential => false;
 
         /// <summary>
         /// Types of tuple's items
@@ -44,20 +45,23 @@ namespace Handmada.ReLang.Compilation.Yet {
                         name,
                         BuiltinFunctionDefinition.Option.TupleGetFirst, 
                         new List<ITypeInfo> { this }, 
+                        new List<bool> { false },
                         ItemTypes[0]);
 
                 case "getSecond" when ItemTypes.Count >= 2:
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.TupleGetSecond, 
-                        new List<ITypeInfo> { this }, 
+                        new List<ITypeInfo> { this },
+                        new List<bool> { false },
                         ItemTypes[1]);
 
                 case "getThird" when ItemTypes.Count >= 3:
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.TupleGetThird, 
-                        new List<ITypeInfo> { this }, 
+                        new List<ITypeInfo> { this },
+                        new List<bool> { false },
                         ItemTypes[2]);
 
                 default:
@@ -71,6 +75,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                 "get",
                 BuiltinFunctionDefinition.Option.TupleGet,
                 new List<ITypeInfo> { this, PrimitiveTypeInfo.Int },
+                new List<bool> { false, false },
                 ItemTypes[index]);
 
 

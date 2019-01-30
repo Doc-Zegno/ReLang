@@ -10,14 +10,16 @@ using Handmada.ReLang.Compilation.Yet;
 namespace Handmada.ReLang.Compilation.Parsing {
     class VariableDefinition {
         public ITypeInfo TypeInfo { get; }
+        public bool IsFinal { get; }
         public bool IsMutable { get; }
         public int Number { get; }
         public int ScopeNumber { get; }
         public IExpression Value { get; }
 
 
-        public VariableDefinition(ITypeInfo typeInfo, bool isMutable, int number, int scopeNumber, IExpression value) {
+        public VariableDefinition(ITypeInfo typeInfo, bool isFinal, bool isMutable, int number, int scopeNumber, IExpression value) {
             TypeInfo = typeInfo;
+            IsFinal = isFinal;
             IsMutable = isMutable;
             Number = number;
             ScopeNumber = scopeNumber;
@@ -43,7 +45,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             }
 
 
-            public bool DeclareVariable(string name, ITypeInfo typeInfo, bool isMutable, IExpression value) {
+            public bool DeclareVariable(string name, ITypeInfo typeInfo, bool isFinal, bool isMutable, IExpression value) {
                 var scope = this;
                 while (scope != null) {
                     if (scope.table.ContainsKey(name)) {
@@ -59,7 +61,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                 // OK! No collisions
                 var number = table.Count;
-                table[name] = new VariableDefinition(typeInfo, isMutable, number, Number, value);
+                table[name] = new VariableDefinition(typeInfo, isFinal, isMutable, number, Number, value);
                 return true;
             }
 
@@ -106,8 +108,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
         }
 
 
-        public bool DeclareVariable(string name, ITypeInfo typeInfo, bool isMutable, IExpression value) {
-            return top.DeclareVariable(name, typeInfo, isMutable, value);
+        public bool DeclareVariable(string name, ITypeInfo typeInfo, bool isFinal, bool isMutable, IExpression value) {
+            return top.DeclareVariable(name, typeInfo, isFinal, isMutable, value);
         }
 
 
