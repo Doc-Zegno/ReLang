@@ -183,6 +183,10 @@ namespace Handmada.ReLang.Compilation {
                     Console.WriteLine();
                     break;
 
+                case BreakStatement breakStatement:
+                    Console.WriteLine(breakStatement.IsContinue ? "continue" : "break");
+                    break;
+
                 default:
                     Console.WriteLine("<!> Unknown statement <!>");
                     break;

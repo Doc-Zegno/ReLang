@@ -11,11 +11,19 @@ using Handmada.ReLang.Compilation.Yet;
 
 namespace Handmada.ReLang.Compilation.Runtime {
     public class VirtualMachine {
+        enum ReturnOption {
+            None,
+            Continue,
+            Break,
+            Return,
+        }
+
+
         private List<List<object>> frames;
         private List<FunctionData> functions;
         private object functionValue;
         private bool wasReturnValueSet;
-        private bool needReturn;
+        private ReturnOption returnOption;
 
         //public System.IO.TextWriter VmOut { get; }
         public System.IO.TextWriter ProgramOut { get; }
@@ -102,7 +110,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
             // Execute body
             functionValue = null;
             wasReturnValueSet = false;
-            needReturn = false;
+            returnOption = ReturnOption.None;
             var function = functions[number];
             object result = null;
             bool wasSet = false;
@@ -112,7 +120,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
             } finally {
                 // Leave frame and return function value
                 LeaveFrame();
-                needReturn = false;
+                returnOption = ReturnOption.None;
                 wasSet = wasReturnValueSet;
                 wasReturnValueSet = false;
                 result = functionValue;
@@ -130,7 +138,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
         private void ExecuteStatementList(List<IStatement> statements) {
             foreach (var statement in statements) {
-                if (!needReturn) {
+                if (returnOption == ReturnOption.None) {
                     ExecuteStatement(statement);
                 } else {
                     break;
@@ -170,6 +178,15 @@ namespace Handmada.ReLang.Compilation.Runtime {
                             ClearFrame();
                             CreateVariable(item);
                             ExecuteStatementList(statements);
+
+                            if (returnOption <= ReturnOption.Continue) {
+                                returnOption = ReturnOption.None;
+                            } else if (returnOption == ReturnOption.Break) {
+                                returnOption = ReturnOption.None;
+                                break;
+                            } else {
+                                break;
+                            }
                         }
                     } finally {
                         LeaveFrame();
@@ -183,6 +200,15 @@ namespace Handmada.ReLang.Compilation.Runtime {
                         while ((bool)EvaluateExpression(whileStatement.Condition)) {
                             ClearFrame();
                             ExecuteStatementList(statements);
+
+                            if (returnOption <= ReturnOption.Continue) {
+                                returnOption = ReturnOption.None;
+                            } else if (returnOption == ReturnOption.Break) {
+                                returnOption = ReturnOption.None;
+                                break;
+                            } else {
+                                break;
+                            }
                         }
                     } finally {
                         LeaveFrame();
@@ -196,6 +222,15 @@ namespace Handmada.ReLang.Compilation.Runtime {
                         do {
                             ClearFrame();
                             ExecuteStatementList(statements);
+
+                            if (returnOption <= ReturnOption.Continue) {
+                                returnOption = ReturnOption.None;
+                            } else if (returnOption == ReturnOption.Break) {
+                                returnOption = ReturnOption.None;
+                                break;
+                            } else {
+                                break;
+                            }
                         } while ((bool)EvaluateExpression(doWhileStatement.Condition));
                     } finally {
                         LeaveFrame();
@@ -219,7 +254,15 @@ namespace Handmada.ReLang.Compilation.Runtime {
                 case ReturnStatement returnStatement:
                     functionValue = EvaluateExpression(returnStatement.Operand);
                     wasReturnValueSet = true;
-                    needReturn = true;
+                    returnOption = ReturnOption.Return;
+                    break;
+
+                case BreakStatement breakStatement:
+                    if (breakStatement.IsContinue) {
+                        returnOption = ReturnOption.Continue;
+                    } else {
+                        returnOption = ReturnOption.Break;
+                    }
                     break;
 
                 case CompoundStatement compound:

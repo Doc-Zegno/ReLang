@@ -98,6 +98,7 @@
     <Compile Include="Compilation\Yet\Statements\AssignmentStatement.cs" />
     <Compile Include="Compilation\Yet\Expressions\BinaryOperatorExpression.cs" />
     <Compile Include="Compilation\Parsing\Builtins.cs" />
+    <Compile Include="Compilation\Yet\Statements\BreakStatement.cs" />
     <Compile Include="Compilation\Yet\Statements\CompoundStatement.cs" />
     <Compile Include="Compilation\Yet\Statements\ConditionalStatement.cs" />
     <Compile Include="Compilation\Yet\Expressions\ConversionExpression.cs" />

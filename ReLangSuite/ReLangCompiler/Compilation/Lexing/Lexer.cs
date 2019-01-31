@@ -269,6 +269,12 @@ namespace Handmada.ReLang.Compilation.Lexing {
                 case "return":
                     return new OperatorLexeme(OperatorMeaning.Return, location);
 
+                case "break":
+                    return new OperatorLexeme(OperatorMeaning.Break, location);
+
+                case "continue":
+                    return new OperatorLexeme(OperatorMeaning.Continue, location);
+
                 case "null":
                     return new OperatorLexeme(OperatorMeaning.Null, location);
 

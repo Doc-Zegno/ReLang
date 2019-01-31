@@ -322,7 +322,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
             // Parse body
             functionTree.EnterScope(signature.Name);
-            scopeStack.EnterScope(isStrong: true);
+            scopeStack.EnterScope(true, false);
 
             // Place all arguments inside frame
             for (var i = 0; i < signature.ArgumentNames.Count; i++) {

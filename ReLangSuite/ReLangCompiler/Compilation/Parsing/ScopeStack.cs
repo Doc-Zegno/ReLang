@@ -34,14 +34,34 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
             public int Number { get; }
             public Scope Parent { get; }
-            public bool IsStrong { get; }
+            public bool IsFunction { get; }
+            public bool IsLoop { get; }
+
+            public bool IsInsideLoop {
+                get {
+                    var scope = this;
+                    while (scope != null) {
+                        if (scope.IsLoop) {
+                            return true;
+                        }
+
+                        if (!scope.IsFunction) {
+                            scope = scope.Parent;
+                        } else {
+                            break;
+                        }
+                    }
+                    return false;
+                }
+            }    
 
 
-            public Scope(int number, Scope parent, bool isStrong) {
+            public Scope(int number, Scope parent, bool isFunction, bool isLoop) {
                 table = new Dictionary<string, VariableDefinition>();
                 Number = number;
                 Parent = parent;
-                IsStrong = isStrong;
+                IsFunction = isFunction;
+                IsLoop = isLoop;
             }
 
 
@@ -52,7 +72,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                         return false;
                     }
 
-                    if (!scope.IsStrong) {
+                    if (!scope.IsFunction) {
                         scope = scope.Parent;
                     } else {
                         break;
@@ -72,7 +92,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     if (scope.table.TryGetValue(name, out VariableDefinition definition)) {
                         return definition;
                     } else {
-                        if (!scope.IsStrong) {
+                        if (!scope.IsFunction) {
                             scope = scope.Parent;
                         } else {
                             return null;
@@ -86,17 +106,18 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
         private Scope top;
 
-        public int Count { get; private set; }  
+        public int Count { get; private set; }
+        public bool IsInsideLoop => top.IsInsideLoop;
 
 
         public ScopeStack() {
-            top = new Scope(0, null, true);
+            top = new Scope(0, null, true, false);
             Count = 1;
         }
 
 
-        public void EnterScope(bool isStrong) {
-            var scope = new Scope(Count, top, isStrong);
+        public void EnterScope(bool isFunction, bool isLoop) {
+            var scope = new Scope(Count, top, isFunction, isLoop);
             top = scope;
             Count++;
         }

@@ -20,7 +20,7 @@ Compiler and interpreter for Re:Lang
 - [x] Checks for immutable objects
 - [ ] Built-in high-order functions (`filter`, `map`, `reduce`, `zip`)
 - [x] Built-in methods for collections (including indexing)
-- [ ] Slices for lists
+- [x] Slices for lists
 - [ ] Built-in methods and slices for strings
 - [ ] Files and managable disposables (`use f = open("input.txt")`)
 - [ ] Namespaces with util functions

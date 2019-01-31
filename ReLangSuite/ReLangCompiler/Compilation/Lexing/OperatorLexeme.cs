@@ -59,6 +59,8 @@ namespace Handmada.ReLang.Compilation.Lexing {
         Do,
         In,
         Return,
+        Break,
+        Continue,
         Null,
         Mutable,
         Const,

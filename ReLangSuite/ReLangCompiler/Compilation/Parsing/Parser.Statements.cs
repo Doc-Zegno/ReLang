@@ -81,6 +81,14 @@ namespace Handmada.ReLang.Compilation.Parsing {
                             MoveNextLexeme();
                             return GetReturn();
 
+                        case OperatorMeaning.Break:
+                            MoveNextLexeme();
+                            return GetBreak(location);
+
+                        case OperatorMeaning.Continue:
+                            MoveNextLexeme();
+                            return GetContinue(location);
+
                         case OperatorMeaning.OpenParenthesis:
                             return GetFunctionCallOrAssignment();
 
@@ -99,9 +107,29 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
 
+        // [break]
+        private IStatement GetBreak(Location location) {
+            if (!scopeStack.IsInsideLoop) {
+                RaiseError("Break statement is not placed inside loop", location);
+            }
+            return new BreakStatement(false);
+        }
+
+
+
+        // [continue]
+        private IStatement GetContinue(Location location) {
+            if (!scopeStack.IsInsideLoop) {
+                RaiseError("Continue statement is not placed inside loop", location);
+            }
+            return new BreakStatement(true);
+        }
+
+
+
         // [while] condition { statements }
         private IStatement GetWhileLoop() {
-            scopeStack.EnterScope(false);
+            scopeStack.EnterScope(false, true);
             var condition = GetExpression();
             CheckCondition(condition, true, false);
 
@@ -117,7 +145,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
         // [do] { statements } while condition
         private IStatement GetDoWhileLoop() {
-            scopeStack.EnterScope(false);
+            scopeStack.EnterScope(false, true);
             CheckOperator(OperatorMeaning.OpenBrace);
             var statements = GetStatementList(false);
             CheckOperator(OperatorMeaning.CloseBrace);
@@ -350,7 +378,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             if (itemType != null) {
                 // Enter scope and add item variable
                 CheckOperator(OperatorMeaning.OpenBrace);
-                scopeStack.EnterScope(isStrong: false);
+                scopeStack.EnterScope(false, true);
 
                 // Either declare an item variable or create a temporary and deconstruct it
                 var statements = new List<IStatement>();
@@ -728,7 +756,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 var condition = new UnaryOperatorExpression(UnaryOperatorExpression.Option.TestNotNull, variable,
                                                             PrimitiveTypeInfo.Bool, variable.MainLocation);
 
-                scopeStack.EnterScope(false);
+                scopeStack.EnterScope(false, false);
                 CheckOperator(OperatorMeaning.OpenBrace);
 
                 // Adjust variable expression on scope enter
@@ -780,7 +808,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
             // if-clause
             CheckOperator(OperatorMeaning.OpenBrace);
-            scopeStack.EnterScope(isStrong: false);
+            scopeStack.EnterScope(false, false);
             var ifStatements = GetStatementList(false);
             scopeStack.LeaveScope();
             CheckOperator(OperatorMeaning.CloseBrace);
@@ -797,7 +825,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             List<IStatement> elseStatements = null;
             if (WhetherOperator(OperatorMeaning.Elif)) {
                 MoveNextLexeme();
-                scopeStack.EnterScope(false);
+                scopeStack.EnterScope(false, false);
 
                 var nested = GetConditional();
                 if (nested is CompoundStatement compound) {
@@ -811,7 +839,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             } else if (WhetherOperator(OperatorMeaning.Else)) {
                 MoveNextLexeme();
                 CheckOperator(OperatorMeaning.OpenBrace);
-                scopeStack.EnterScope(isStrong: false);
+                scopeStack.EnterScope(false, false);
                 elseStatements = GetStatementList(false);
                 scopeStack.LeaveScope();
                 CheckOperator(OperatorMeaning.CloseBrace);
