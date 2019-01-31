@@ -39,7 +39,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public virtual IFunctionDefinition GetMethodDefinition(string name) {
+        public virtual IFunctionDefinition GetMethodDefinition(string name, bool isSelfMutable) {
             switch (name) {
                 case "contains" when ItemType is PrimitiveTypeInfo || ItemType is TupleTypeInfo:
                     return new BuiltinFunctionDefinition(

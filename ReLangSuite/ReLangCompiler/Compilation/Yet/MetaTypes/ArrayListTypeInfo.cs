@@ -55,7 +55,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public override IFunctionDefinition GetMethodDefinition(string name) {
+        public override IFunctionDefinition GetMethodDefinition(string name, bool isSelfMutable) {
             switch (name) {
                 case "get":
                     return new BuiltinFunctionDefinition(
@@ -64,7 +64,8 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self", "index" },
                         new List<ITypeInfo> { this, PrimitiveTypeInfo.Int }, 
                         new List<bool> { false, false },
-                        ItemType);
+                        ItemType,
+                        isSelfMutable);
 
                 case "getLength":
                     return new BuiltinFunctionDefinition(
@@ -82,9 +83,10 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self", "start", "end", "step" },
                         new List<ITypeInfo> { this, PrimitiveTypeInfo.Int, new MaybeTypeInfo(PrimitiveTypeInfo.Int), PrimitiveTypeInfo.Int },
                         new List<bool> { false, false, false, false },
-                        this);
+                        this,
+                        isSelfMutable);
 
-                case "getConstSlice":
+                /*case "getConstSlice":
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.ListGetSlice,
@@ -92,7 +94,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<ITypeInfo> { this, PrimitiveTypeInfo.Int, new MaybeTypeInfo(PrimitiveTypeInfo.Int), PrimitiveTypeInfo.Int },
                         new List<bool> { false, false, false, false },
                         this,
-                        false);
+                        false);*/
 
                 case "set":
                     return new BuiltinFunctionDefinition(
@@ -140,7 +142,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         this);
 
                 default:
-                    return base.GetMethodDefinition(name);
+                    return base.GetMethodDefinition(name, isSelfMutable);
             }
         }
     }

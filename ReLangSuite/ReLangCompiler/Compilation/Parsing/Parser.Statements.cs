@@ -173,8 +173,9 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                 case FunctionCallExpression functionCall:
                     var self = functionCall.Arguments[0];
+                    var isSelfMutable = WhetherExpressionMutable(self);
                     var methodName = functionCall.FunctionDefinition.ShortName;
-                    var definition = self.TypeInfo.GetMethodDefinition("s" + methodName.Substring(1));
+                    var definition = self.TypeInfo.GetMethodDefinition("s" + methodName.Substring(1), isSelfMutable);
 
                     Console.WriteLine($"Type of 'self' is '{self.TypeInfo.Name}'");
                     Console.WriteLine($"Method name is '{methodName}'");
@@ -207,6 +208,9 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
         private IStatement ForceAssignVariableList(IIdentifier identifiers, IExpression value, Location right) {
+            // Check if value is mutable
+            CheckMutability(value, true);
+
             switch (identifiers) {
                 case SingleIdentifier single:
                     return ForceAssignVariable(single, value, right);
@@ -341,6 +345,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             var location = currentLexeme.StartLocation;
             var iterable = GetExpression();
             var itemType = TryGetItemType(iterable.TypeInfo);
+            var isItemMutable = WhetherExpressionMutable(iterable);
 
             if (itemType != null) {
                 // Enter scope and add item variable
@@ -352,7 +357,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 var name = "";
                 switch (identifiers) {
                     case SingleIdentifier single:
-                        scopeStack.DeclareVariable(single.Name, itemType, true, true, null);
+                        scopeStack.DeclareVariable(single.Name, itemType, true, isItemMutable, null);
                         name = single.Name;
                         break;
 
@@ -362,12 +367,12 @@ namespace Handmada.ReLang.Compilation.Parsing {
                             CheckNumberOfUnpackedValues(identifierList, tupleType);
 
                             // Declare a temporary to store iterable's item
-                            var tupleVariable = DeclareTemporaryVariable(tupleType, null);
+                            var tupleVariable = DeclareTemporaryVariable(tupleType, null, isItemMutable);
                             name = tupleVariable.Name;
 
                             // Unpack tuple
                             GenerateTupleDestruction(statements, tupleVariable, tupleType, identifierList,
-                                                     true, location, ForceDeclareVariableList);
+                                                     isItemMutable, location, ForceDeclareVariableList);
 
                         } else {
                             RaiseError($"Type of iterable's item is not tuple (got '{itemType.Name}')", location);
@@ -407,6 +412,9 @@ namespace Handmada.ReLang.Compilation.Parsing {
         private IStatement ForceDeclareVariableList(IIdentifier identifiers, IExpression value,
                                                     bool isMutable, Location right)
         {
+            // Check if value is mutable
+            CheckMutability(value, isMutable);
+
             switch (identifiers) {
                 case SingleIdentifier singleIdentifier:
                     return ForceDeclareVariable(singleIdentifier, value, isMutable);
@@ -487,8 +495,9 @@ namespace Handmada.ReLang.Compilation.Parsing {
             Func<IIdentifier, IExpression, bool, Location, IStatement> func)
         {
             // Declare a tmp 
-            var tupleVariable = DeclareTemporaryVariable(tupleType, value);
-            subStatements.Add(new VariableDeclarationStatement(tupleVariable.Name, value.TypeInfo, value, false));
+            var isTmpMutable = WhetherExpressionMutable(value);
+            var tupleVariable = DeclareTemporaryVariable(tupleType, value, isTmpMutable);
+            subStatements.Add(new VariableDeclarationStatement(tupleVariable.Name, value.TypeInfo, value, true, isTmpMutable));
 
             // Now it's safe to use code for VariableExpression case
             GenerateTupleDestruction(subStatements, tupleVariable, tupleType, identifierList,
@@ -497,10 +506,10 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
 
-        private VariableExpression DeclareTemporaryVariable(ITypeInfo typeInfo, IExpression value) {
+        private VariableExpression DeclareTemporaryVariable(ITypeInfo typeInfo, IExpression value, bool isMutable) {
             // Declare a tmp 
             var tmpName = GetNextTmpName();
-            if (!scopeStack.DeclareVariable(tmpName, typeInfo, true, false, value)) {
+            if (!scopeStack.DeclareVariable(tmpName, typeInfo, true, isMutable, value)) {
                 RaiseError($"I wasn't able to declare a temporary '{tmpName}'. WTF???");
             }
 
@@ -513,7 +522,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 frameOffset,
                 false,
                 typeInfo,
-                null
+                value?.MainLocation
             );
         }
 
@@ -528,6 +537,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             Location right,
             Func<IIdentifier, IExpression, bool, Location, IStatement> func)
         {
+            var isTupleMutable = WhetherExpressionMutable(tupleVariable);
             var actualCount = tupleType.ItemTypes.Count;
             for (var i = 0; i < actualCount; i++) {
                 // Generate a call of built-in function `tupleGet(tuple, index)`
@@ -536,7 +546,10 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                         new PrimitiveLiteralExpression(i, PrimitiveTypeInfo.Int, null),
                                     };
 
-                var expression = new FunctionCallExpression(tupleType.GetTupleAccessorDefinition(i), arguments, false, null);
+                var definition = tupleType.GetTupleAccessorDefinition(i, isTupleMutable);
+                CheckAndConvertFunctionArguments(definition.Signature, arguments, tupleVariable.MainLocation);
+
+                var expression = new FunctionCallExpression(definition, arguments, false, null);
 
                 /*var expression = new BuiltinFunctionCallExpression(
                     tupleType.ItemTypes[i],
@@ -567,9 +580,9 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 RaiseError("Cannot deduce type from given expression", converted.MainLocation);
             }
 
-            if (typeInfo is TupleTypeInfo && isMutable) {
+            /*if (typeInfo is TupleTypeInfo && isMutable) {
                 RaiseError($"Tuple object '{identifier.Name}' must be declared as immutable", identifier.StartLocation);
-            }
+            }*/
 
             CheckMutability(converted, isMutable);
 
@@ -579,7 +592,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
             Console.WriteLine($"Declared object '{identifier.Name}' of type '{typeInfo.Name}'");
 
-            return new VariableDeclarationStatement(identifier.Name, typeInfo, converted, isMutable);
+            return new VariableDeclarationStatement(identifier.Name, typeInfo, converted, !isMutable, isMutable);
         }
 
 
@@ -593,12 +606,11 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
         private bool WhetherExpressionMutable(IExpression expression) {
-            if (expression.TypeInfo is TupleTypeInfo) {
-                return false;
-
-            } else if (expression is VariableExpression variable) {
+            if (expression is VariableExpression variable) {
                 var definition = scopeStack.GetDefinition(variable.Name);
-                if (definition.TypeInfo.IsReferential && !definition.IsMutable) {
+                var typeInfo = definition.TypeInfo;
+                Console.WriteLine($"Checking mutability of '{variable.Name}': {definition.IsMutable}");
+                if ((typeInfo.IsReferential || typeInfo is TupleTypeInfo) && !definition.IsMutable) {
                     return false;
                 }
 
@@ -606,6 +618,20 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 var definition = functionCall.FunctionDefinition;
                 var signature = definition.Signature;
                 if (signature.ResultType.IsReferential && !signature.ResultMutability) {
+                    return false;
+                }
+
+            } else if (expression is UnaryOperatorExpression unary
+                       && unary.OperatorOption == UnaryOperatorExpression.Option.FromMaybe)
+            {
+                if (!WhetherExpressionMutable(unary.Expression)) {
+                    return false;
+                }
+
+            } else if (expression is BinaryOperatorExpression binary
+                       && binary.OperatorOption == BinaryOperatorExpression.Option.ValueOrDefault)
+            {
+                if (!WhetherExpressionMutable(binary.LeftOperand)) {
                     return false;
                 }
             }
@@ -693,8 +719,9 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 if (value is VariableExpression variableExpression) {
                     variable = variableExpression;
                 } else {
-                    variable = DeclareTemporaryVariable(value.TypeInfo, value);
-                    statements.Add(new VariableDeclarationStatement(variable.Name, value.TypeInfo, value, false));
+                    var isTmpMutable = WhetherExpressionMutable(value);
+                    variable = DeclareTemporaryVariable(value.TypeInfo, value, isTmpMutable);
+                    statements.Add(new VariableDeclarationStatement(variable.Name, value.TypeInfo, value, true, isTmpMutable));
                     value = variable;
                 }
 

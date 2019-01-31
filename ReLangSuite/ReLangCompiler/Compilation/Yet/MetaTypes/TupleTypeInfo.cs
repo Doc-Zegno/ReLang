@@ -38,7 +38,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public IFunctionDefinition GetMethodDefinition(string name) {
+        public IFunctionDefinition GetMethodDefinition(string name, bool isSelfMutable) {
             switch (name) {
                 case "getFirst" when ItemTypes.Count >= 1:
                     return new BuiltinFunctionDefinition(
@@ -47,7 +47,8 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self" },
                         new List<ITypeInfo> { this }, 
                         new List<bool> { false },
-                        ItemTypes[0]);
+                        ItemTypes[0],
+                        isSelfMutable);
 
                 case "getSecond" when ItemTypes.Count >= 2:
                     return new BuiltinFunctionDefinition(
@@ -56,7 +57,8 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self" },
                         new List<ITypeInfo> { this },
                         new List<bool> { false },
-                        ItemTypes[1]);
+                        ItemTypes[1],
+                        isSelfMutable);
 
                 case "getThird" when ItemTypes.Count >= 3:
                     return new BuiltinFunctionDefinition(
@@ -65,7 +67,8 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self" },
                         new List<ITypeInfo> { this },
                         new List<bool> { false },
-                        ItemTypes[2]);
+                        ItemTypes[2],
+                        isSelfMutable);
 
                 default:
                     return null;
@@ -73,14 +76,15 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public IFunctionDefinition GetTupleAccessorDefinition(int index) =>
+        public IFunctionDefinition GetTupleAccessorDefinition(int index, bool isSelfMutable) =>
             new BuiltinFunctionDefinition(
                 "get",
                 BuiltinFunctionDefinition.Option.TupleGet,
                 new List<string> { "self", "index" },
                 new List<ITypeInfo> { this, PrimitiveTypeInfo.Int },
                 new List<bool> { false, false },
-                ItemTypes[index]);
+                ItemTypes[index],
+                isSelfMutable);
 
 
         public override bool Equals(object obj) {

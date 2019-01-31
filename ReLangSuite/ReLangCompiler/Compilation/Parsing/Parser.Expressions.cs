@@ -198,7 +198,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 arguments.Add(argument);
 
                 // Get definition of "get" and make function call
-                var definition = self.TypeInfo.GetMethodDefinition("get");
+                var isSelfMutable = WhetherExpressionMutable(self);
+                var definition = self.TypeInfo.GetMethodDefinition("get", isSelfMutable);
 
                 if (definition == null) {
                     RaiseError($"Type '{self.TypeInfo.Name}' doesn't implement indexing", location);
@@ -247,8 +248,9 @@ namespace Handmada.ReLang.Compilation.Parsing {
             CheckOperator(OperatorMeaning.CloseBracket);
 
             // Depending on mutability of 'self' call either 'getSlice' or 'getConstSlice'
-            var name = WhetherExpressionMutable(self) ? "getSlice" : "getConstSlice";
-            var definition = self.TypeInfo.GetMethodDefinition(name);
+            var name = "getSlice";
+            var isSelfMutable = WhetherExpressionMutable(self);
+            var definition = self.TypeInfo.GetMethodDefinition(name, isSelfMutable);
 
             if (definition == null) {
                 RaiseError($"This object doesn't support method '{name}'", locationBracket);
@@ -262,20 +264,22 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
         // .append(d)
-        private IExpression GetMemberAccessExpression(IExpression expression) {
+        private IExpression GetMemberAccessExpression(IExpression self) {
             CheckOperator(OperatorMeaning.Dot);
             var location = currentLexeme.StartLocation;
             var name = GetSymbolText("Member's name");
 
-            var arguments = new List<IExpression> { expression };
+            var arguments = new List<IExpression> { self };
             IFunctionDefinition definition = null;
             var isLvalue = false;
 
+            var isSelfMutable = WhetherExpressionMutable(self);
+
             if (WhetherOperator(OperatorMeaning.OpenParenthesis)) {
                 // Get method's definition
-                definition = expression.TypeInfo.GetMethodDefinition(name);
+                definition = self.TypeInfo.GetMethodDefinition(name, isSelfMutable);
                 if (definition == null) {
-                    RaiseError($"Type '{expression.TypeInfo.Name}' doesn't implement method '{name}'", location);
+                    RaiseError($"Type '{self.TypeInfo.Name}' doesn't implement method '{name}'", location);
                 }
 
                 MoveNextLexeme();
@@ -284,9 +288,9 @@ namespace Handmada.ReLang.Compilation.Parsing {
             } else {
                 // Get property's definition
                 var fullName = "get" + char.ToUpper(name[0]) + name.Substring(1);
-                definition = expression.TypeInfo.GetMethodDefinition(fullName);
+                definition = self.TypeInfo.GetMethodDefinition(fullName, isSelfMutable);
                 if (definition == null) {
-                    RaiseError($"Type '{expression.TypeInfo.Name}' doesn't have property '{name}'", location);
+                    RaiseError($"Type '{self.TypeInfo.Name}' doesn't have property '{name}'", location);
                 }
                 isLvalue = true;
             }
@@ -664,7 +668,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                 if (meaning == OperatorMeaning.In) {
                     // Resolve to .contains() call
-                    var definition = right.TypeInfo.GetMethodDefinition("contains");
+                    var definition = right.TypeInfo.GetMethodDefinition("contains", false);
                     if (definition == null) {
                         RaiseError($"Type '{right.TypeInfo.Name}' doesn't implement method 'contains'", right.MainLocation);
                     }

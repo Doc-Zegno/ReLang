@@ -41,6 +41,6 @@ namespace Handmada.ReLang.Compilation.Yet {
         /// </summary>
         /// <param name="name">Name of method</param>
         /// <returns>Definition of requested method</returns>
-        IFunctionDefinition GetMethodDefinition(string name);
+        IFunctionDefinition GetMethodDefinition(string name, bool isSelfMutable);
     }
 }

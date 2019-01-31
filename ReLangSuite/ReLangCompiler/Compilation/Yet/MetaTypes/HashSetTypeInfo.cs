@@ -55,7 +55,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public override IFunctionDefinition GetMethodDefinition(string name) {
+        public override IFunctionDefinition GetMethodDefinition(string name, bool isSelfMutable) {
             switch (name) {
                 case "getLength":
                     return new BuiltinFunctionDefinition(
@@ -130,7 +130,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         this);
 
                 default:
-                    return base.GetMethodDefinition(name);
+                    return base.GetMethodDefinition(name, isSelfMutable);
             }
         }
     }

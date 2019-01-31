@@ -32,7 +32,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public override IFunctionDefinition GetMethodDefinition(string name) {
+        public override IFunctionDefinition GetMethodDefinition(string name, bool isSelfMutable) {
             switch (name) {
                 case "contains":
                     return new BuiltinFunctionDefinition(
@@ -44,7 +44,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         PrimitiveTypeInfo.Bool);
 
                 default:
-                    return base.GetMethodDefinition(name);
+                    return base.GetMethodDefinition(name, isSelfMutable);
             }
         }
 

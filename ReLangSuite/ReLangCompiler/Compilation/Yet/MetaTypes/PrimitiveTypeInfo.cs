@@ -237,7 +237,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public IFunctionDefinition GetMethodDefinition(string name) {
+        public IFunctionDefinition GetMethodDefinition(string name, bool isSelfMutable) {
             return null;
         }
 
