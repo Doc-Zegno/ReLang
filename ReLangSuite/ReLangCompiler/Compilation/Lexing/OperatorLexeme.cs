@@ -46,6 +46,8 @@ namespace Handmada.ReLang.Compilation.Lexing {
         Modulo,               // %
         QuestionMark,         // ?
         ValueOrDefault,       // ??
+        Increment,            // ++
+        Decrement,            // --
 
         // Textual
         Var,

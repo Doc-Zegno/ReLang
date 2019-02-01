@@ -17,6 +17,7 @@ namespace Handmada.ReLang.Compilation.Yet {
             AddInteger,
             AddFloating,
             AddString,
+            AddList,
 
             SubtractInteger,
             SubtractFloating,

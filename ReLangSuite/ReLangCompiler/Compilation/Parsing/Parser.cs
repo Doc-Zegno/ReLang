@@ -396,6 +396,20 @@ namespace Handmada.ReLang.Compilation.Parsing {
         }
 
 
+        private VariableExpression CreateVariableExpression(SingleIdentifier identifier) {
+            var name = identifier.Name;
+            var location = identifier.StartLocation;
+            var definition = scopeStack.GetDefinition(name);
+
+            if (definition == null) {
+                RaiseError($"Undeclared variable '{name}'", location);
+            }
+
+            var frameOffset = definition.ScopeNumber - (scopeStack.Count - 1);
+            return new VariableExpression(name, definition.Number, frameOffset, false, definition.TypeInfo, location);
+        }
+
+
         private IExpression TryConvertExpression(IExpression expression, ITypeInfo targetType) {
             return targetType.ConvertFrom(expression);
         }

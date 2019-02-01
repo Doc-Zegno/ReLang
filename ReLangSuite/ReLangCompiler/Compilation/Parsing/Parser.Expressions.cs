@@ -1023,6 +1023,12 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     switch (meaning) {
                         case OperatorMeaning.Plus:
                         case OperatorMeaning.Minus:
+                            MoveNextLexeme();
+                            if (WhetherOperator(OperatorMeaning.Assignment)) {
+                                PutBack();
+                                return left;
+                            }
+                            PutBack();
                             break;
 
                         default:
@@ -1033,107 +1039,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     MoveNextLexeme();
                     var right = GetProductExpression();
 
-                    // Try to convert to each other
-                    var (x, y) = CrossConvert(left, right, locationLeft);
-
-                    if (x.TypeInfo is PrimitiveTypeInfo primitive) {
-                        switch (primitive.TypeOption) {
-                            case PrimitiveTypeInfo.Option.Int:
-                                if (x.IsCompileTime && y.IsCompileTime) {
-                                    var a = (int)x.Value;
-                                    var b = (int)y.Value;
-                                    var result = 0;
-
-                                    if (meaning == OperatorMeaning.Plus) {
-                                        result = a + b;
-                                    } else if (meaning == OperatorMeaning.Minus) {
-                                        result = a - b;
-                                    } else {
-                                        RaiseError("Integer operands don't support this operator", locationMiddle);
-                                        return null;
-                                    }
-                                    left = new PrimitiveLiteralExpression(result, PrimitiveTypeInfo.Int, locationLeft);
-
-                                } else {
-                                    BinaryOperatorExpression.Option option;
-                                    if (meaning == OperatorMeaning.Plus) {
-                                        option = BinaryOperatorExpression.Option.AddInteger;
-                                    } else if (meaning == OperatorMeaning.Minus) {
-                                        option = BinaryOperatorExpression.Option.SubtractInteger;
-                                    } else {
-                                        RaiseError("Integer operands don't support this operator", locationMiddle);
-                                        return null;
-                                    }
-                                    left = new BinaryOperatorExpression(option, x, y, locationMiddle);
-                                }
-                                break;
-
-
-                            case PrimitiveTypeInfo.Option.Float:
-                                if (x.IsCompileTime && y.IsCompileTime) {
-                                    var a = (double)x.Value;
-                                    var b = (double)y.Value;
-                                    var result = 0.0;
-
-                                    if (meaning == OperatorMeaning.Plus) {
-                                        result = a + b;
-                                    } else if (meaning == OperatorMeaning.Minus) {
-                                        result = a - b;
-                                    } else {
-                                        RaiseError("Floating operands don't support this operator", locationMiddle);
-                                        return null;
-                                    }
-                                    left = new PrimitiveLiteralExpression(result, PrimitiveTypeInfo.Float, locationLeft);
-
-                                } else {
-                                    BinaryOperatorExpression.Option option;
-                                    if (meaning == OperatorMeaning.Plus) {
-                                        option = BinaryOperatorExpression.Option.AddFloating;
-                                    } else if (meaning == OperatorMeaning.Minus) {
-                                        option = BinaryOperatorExpression.Option.SubtractFloating;
-                                    } else {
-                                        RaiseError("Floating operands don't support this operator", locationMiddle);
-                                        return null;
-                                    }
-                                    left = new BinaryOperatorExpression(option, x, y, locationMiddle);
-                                }
-                                break;
-
-
-                            case PrimitiveTypeInfo.Option.String:
-                                if (x.IsCompileTime && y.IsCompileTime) {
-                                    var a = (string)x.Value;
-                                    var b = (string)y.Value;
-                                    var result = "";
-
-                                    if (meaning == OperatorMeaning.Plus) {
-                                        result = a + b;
-                                    } else {
-                                        RaiseError("String operands don't support this operator", locationMiddle);
-                                        return null;
-                                    }
-                                    left = new PrimitiveLiteralExpression(result, PrimitiveTypeInfo.String, locationLeft);
-
-                                } else {
-                                    BinaryOperatorExpression.Option option;
-                                    if (meaning == OperatorMeaning.Plus) {
-                                        option = BinaryOperatorExpression.Option.AddString;
-                                    } else {
-                                        RaiseError("String operands don't support this operator", locationMiddle);
-                                        return null;
-                                    }
-                                    left = new BinaryOperatorExpression(option, x, y, locationMiddle);
-                                }
-                                break;
-
-
-                            default:
-                                RaiseError($"Unsupported type '{primitive.Name}' for this operator", locationLeft);
-                                break;
-                        }
-                    } else {
-                        RaiseError($"Unsupported type '{x.TypeInfo.Name}' for this operator", locationLeft);
-                    }
+                    // Force create binary expression
+                    left = CreateBinaryExpression(meaning, left, right, locationMiddle);
 
                 } else {
                     return left;
@@ -1174,6 +1081,12 @@ namespace Handmada.ReLang.Compilation.Parsing {
                         case OperatorMeaning.ForwardSlash:
                         case OperatorMeaning.BackSlash:
                         case OperatorMeaning.Modulo:
+                            MoveNextLexeme();
+                            if (WhetherOperator(OperatorMeaning.Assignment)) {
+                                PutBack();
+                                return left;
+                            }
+                            PutBack();
                             break;
 
                         default:
@@ -1185,113 +1098,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     var locationRight = currentLexeme.StartLocation;
                     var right = GetNegateExpression();
 
-                    // Try to convert to each other
-                    var (x, y) = CrossConvert(left, right, locationLeft);
-
-                    if (x.TypeInfo is PrimitiveTypeInfo primitive) {
-                        switch (primitive.TypeOption) {
-                            case PrimitiveTypeInfo.Option.Int:
-                                if (x.IsCompileTime && y.IsCompileTime) {
-                                    var a = (int)x.Value;
-                                    var b = (int)y.Value;
-                                    var typeInfo = PrimitiveTypeInfo.Int;
-                                    object result;
-
-                                    switch (meaning) {
-                                        case OperatorMeaning.Asterisk:
-                                            result = a * b;
-                                            break;
-
-                                        case OperatorMeaning.BackSlash:
-                                            result = a / b;
-                                            break;
-
-                                        case OperatorMeaning.ForwardSlash:
-                                            result = (double)a / b;
-                                            typeInfo = PrimitiveTypeInfo.Float;
-                                            break;
-
-                                        case OperatorMeaning.Modulo:
-                                            result = a % b;
-                                            break;
-
-                                        default:
-                                            RaiseError("Integer operands don't support this operator", locationMiddle);
-                                            return null;
-                                    }
-
-                                    left = new PrimitiveLiteralExpression(result, typeInfo, locationLeft);
-
-                                } else {
-                                    BinaryOperatorExpression.Option option;
-                                    switch (meaning) {
-                                        case OperatorMeaning.Asterisk:
-                                            option = BinaryOperatorExpression.Option.MultiplyInteger;
-                                            break;
-
-                                        case OperatorMeaning.BackSlash:
-                                            option = BinaryOperatorExpression.Option.DivideInteger;
-                                            break;
-
-                                        case OperatorMeaning.ForwardSlash:
-                                            option = BinaryOperatorExpression.Option.DivideFloating;
-                                            x = ForceConvertExpression(x, PrimitiveTypeInfo.Float, locationLeft);
-                                            y = ForceConvertExpression(y, PrimitiveTypeInfo.Float, locationRight);
-                                            break;
-
-                                        case OperatorMeaning.Modulo:
-                                            option = BinaryOperatorExpression.Option.Modulo;
-                                            break;
-
-                                        default:
-                                            RaiseError("Integer operands don't support this operator", locationMiddle);
-                                            return null;
-                                    }
-                                    left = new BinaryOperatorExpression(option, x, y, locationMiddle);
-                                }
-                                break;
-
-
-                            case PrimitiveTypeInfo.Option.Float:
-                                if (x.IsCompileTime && y.IsCompileTime) {
-                                    var a = (double)x.Value;
-                                    var b = (double)y.Value;
-                                    var result = 0.0;
-
-                                    if (meaning == OperatorMeaning.Asterisk) {
-                                        result = a * b;
-                                    } else if (meaning == OperatorMeaning.ForwardSlash) {
-                                        result = a / b;
-                                    } else {
-                                        RaiseError("Floating operands don't support this operator", locationMiddle);
-                                        return null;
-                                    }
-
-                                    left = new PrimitiveLiteralExpression(result, PrimitiveTypeInfo.Float, locationLeft);
-
-                                } else {
-                                    BinaryOperatorExpression.Option option;
-                                    if (meaning == OperatorMeaning.Asterisk) {
-                                        option = BinaryOperatorExpression.Option.MultiplyFloating;
-                                    } else if (meaning == OperatorMeaning.ForwardSlash) {
-                                        option = BinaryOperatorExpression.Option.DivideFloating;
-                                    } else {
-                                        RaiseError("Floating operands don't support this operator", locationMiddle);
-                                        return null;
-                                    }
-                                    left = new BinaryOperatorExpression(option, x, y, locationMiddle);
-                                }
-                                break;
-
-
-                            default:
-                                RaiseError($"Unsupported type '{primitive.Name}' for this operator", locationLeft);
-                                return null;
-                        }
-
-                    } else {
-                        RaiseError($"Unsupported type '{x.TypeInfo.Name}' for this operator", locationLeft);
-                    }
+                    // Force create binary expression
+                    left = CreateBinaryExpression(meaning, left, right, locationMiddle);
 
                 } else {
                     return left;
@@ -1370,6 +1178,191 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 }
             } else {
                 return GetAtomicExpression();
+            }
+        }
+
+
+
+        private IExpression CreateBinaryExpression(OperatorMeaning meaning, IExpression left, IExpression right, Location middle) {
+            // Try to convert to each other
+            var (x, y) = CrossConvert(left, right, left.MainLocation);
+
+            if (x.TypeInfo is ArrayListTypeInfo arrayList) {
+                if (meaning == OperatorMeaning.Plus) {
+                    return new BinaryOperatorExpression(BinaryOperatorExpression.Option.AddList, x, y, middle);
+                } else {
+                    RaiseError($"Type '{x.TypeInfo.Name}' doesn't support this operator", middle);
+                    return null;
+                }
+
+            } else if (x.TypeInfo is PrimitiveTypeInfo primitive) {
+                switch (primitive.TypeOption) {
+                    case PrimitiveTypeInfo.Option.Int:
+                        if (x.IsCompileTime && y.IsCompileTime) {
+                            var a = (int)x.Value;
+                            var b = (int)y.Value;
+                            var typeInfo = PrimitiveTypeInfo.Int;
+                            object result;
+
+                            switch (meaning) {
+                                case OperatorMeaning.Plus:
+                                    result = a + b;
+                                    break;
+
+                                case OperatorMeaning.Minus:
+                                    result = a - b;
+                                    break;
+
+                                case OperatorMeaning.Asterisk:
+                                    result = a * b;
+                                    break;
+
+                                case OperatorMeaning.BackSlash:
+                                    result = a / b;
+                                    break;
+
+                                case OperatorMeaning.ForwardSlash:
+                                    result = (double)a / b;
+                                    typeInfo = PrimitiveTypeInfo.Float;
+                                    break;
+
+                                case OperatorMeaning.Modulo:
+                                    result = a % b;
+                                    break;
+
+                                default:
+                                    RaiseError("Integer operands don't support this operator", middle);
+                                    return null;
+                            }
+                            return new PrimitiveLiteralExpression(result, typeInfo, left.MainLocation);
+
+                        } else {
+                            BinaryOperatorExpression.Option option;
+                            switch (meaning) {
+                                case OperatorMeaning.Plus:
+                                    option = BinaryOperatorExpression.Option.AddInteger;
+                                    break;
+
+                                case OperatorMeaning.Minus:
+                                    option = BinaryOperatorExpression.Option.SubtractInteger;
+                                    break;
+
+                                case OperatorMeaning.Asterisk:
+                                    option = BinaryOperatorExpression.Option.MultiplyInteger;
+                                    break;
+
+                                case OperatorMeaning.BackSlash:
+                                    option = BinaryOperatorExpression.Option.DivideInteger;
+                                    break;
+
+                                case OperatorMeaning.ForwardSlash:
+                                    option = BinaryOperatorExpression.Option.DivideFloating;
+                                    x = ForceConvertExpression(x, PrimitiveTypeInfo.Float, left.MainLocation);
+                                    y = ForceConvertExpression(y, PrimitiveTypeInfo.Float, right.MainLocation);
+                                    break;
+
+                                case OperatorMeaning.Modulo:
+                                    option = BinaryOperatorExpression.Option.Modulo;
+                                    break;
+
+                                default:
+                                    RaiseError("Integer operands don't support this operator", middle);
+                                    return null;
+                            }
+                            return new BinaryOperatorExpression(option, x, y, middle);
+                        }
+
+
+                    case PrimitiveTypeInfo.Option.Float:
+                        if (x.IsCompileTime && y.IsCompileTime) {
+                            var a = (double)x.Value;
+                            var b = (double)y.Value;
+                            var result = 0.0;
+
+                            switch (meaning) {
+                                case OperatorMeaning.Plus:
+                                    result = a + b;
+                                    break;
+
+                                case OperatorMeaning.Minus:
+                                    result = a - b;
+                                    break;
+
+                                case OperatorMeaning.Asterisk:
+                                    result = a * b;
+                                    break;
+
+                                case OperatorMeaning.ForwardSlash:
+                                    result = a / b;
+                                    break;
+
+                                default:
+                                    RaiseError("Floating operands don't support this operator", middle);
+                                    return null;
+                            }
+                            return new PrimitiveLiteralExpression(result, PrimitiveTypeInfo.Float, left.MainLocation);
+
+                        } else {
+                            BinaryOperatorExpression.Option option;
+                            switch (meaning) {
+                                case OperatorMeaning.Plus:
+                                    option = BinaryOperatorExpression.Option.AddFloating;
+                                    break;
+
+                                case OperatorMeaning.Minus:
+                                    option = BinaryOperatorExpression.Option.SubtractFloating;
+                                    break;
+
+                                case OperatorMeaning.Asterisk:
+                                    option = BinaryOperatorExpression.Option.MultiplyFloating;
+                                    break;
+
+                                case OperatorMeaning.ForwardSlash:
+                                    option = BinaryOperatorExpression.Option.DivideFloating;
+                                    break;
+
+                                default:
+                                    RaiseError("Floating operands don't support this operator", middle);
+                                    return null;
+                            }
+                            return new BinaryOperatorExpression(option, x, y, middle);
+                        }
+
+
+                    case PrimitiveTypeInfo.Option.String:
+                        if (x.IsCompileTime && y.IsCompileTime) {
+                            var a = (string)x.Value;
+                            var b = (string)y.Value;
+                            var result = "";
+
+                            if (meaning == OperatorMeaning.Plus) {
+                                result = a + b;
+                            } else {
+                                RaiseError("String operands don't support this operator", middle);
+                                return null;
+                            }
+                            return new PrimitiveLiteralExpression(result, PrimitiveTypeInfo.String, left.MainLocation);
+
+                        } else {
+                            BinaryOperatorExpression.Option option;
+                            if (meaning == OperatorMeaning.Plus) {
+                                option = BinaryOperatorExpression.Option.AddString;
+                            } else {
+                                RaiseError("String operands don't support this operator", middle);
+                                return null;
+                            }
+                            return new BinaryOperatorExpression(option, x, y, middle);
+                        }
+
+
+                    default:
+                        RaiseError($"Unsupported type '{primitive.Name}' for this operator", left.MainLocation);
+                        return null;
+                }
+
+            } else {
+                RaiseError($"Unsupported type '{x.TypeInfo.Name}' for this operator", left.MainLocation);
+                return null;
             }
         }
     }

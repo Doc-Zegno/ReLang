@@ -11,13 +11,20 @@ using Handmada.ReLang.Compilation.Yet;
 namespace Handmada.ReLang.Compilation.Parsing {
     class SetterIdentifier : IIdentifier {
         public Location StartLocation { get; }
-        public IFunctionDefinition FunctionDefinition { get; }
+        public IFunctionDefinition SetterDefinition { get; }
+        public IFunctionDefinition GetterDefinition { get; }
         public List<IExpression> Arguments { get; }
 
 
-        public SetterIdentifier(IFunctionDefinition functionDefinition, List<IExpression> arguments, Location startLocation) {
+        public SetterIdentifier(
+            IFunctionDefinition setter,
+            IFunctionDefinition getter,
+            List<IExpression> arguments,
+            Location startLocation) 
+        {
             StartLocation = startLocation;
-            FunctionDefinition = functionDefinition;
+            SetterDefinition = setter;
+            GetterDefinition = getter;
             Arguments = arguments;
         }
     }

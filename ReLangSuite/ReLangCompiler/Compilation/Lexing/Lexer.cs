@@ -138,11 +138,17 @@ namespace Handmada.ReLang.Compilation.Lexing {
                     break;
 
                 case '-':
-                    meaning = ScanDoubleOperator(OperatorMeaning.Minus, OperatorMeaning.ThinRightArrow, '>');
+                    meaning = ScanMultipleDoubleOperator(
+                        OperatorMeaning.Minus, 
+                        new List<(OperatorMeaning, char)> {
+                            (OperatorMeaning.ThinRightArrow, '>'),
+                            (OperatorMeaning.Decrement, '-')
+                        }
+                    );
                     break;
 
                 case '+':
-                    meaning = OperatorMeaning.Plus;
+                    meaning = ScanDoubleOperator(OperatorMeaning.Plus, OperatorMeaning.Increment);
                     break;
 
                 case '*':
@@ -206,6 +212,22 @@ namespace Handmada.ReLang.Compilation.Lexing {
                 } else {
                     PutBack();
                 }
+            }
+            return singleMeaning;
+        }
+
+
+        private OperatorMeaning ScanMultipleDoubleOperator(
+            OperatorMeaning singleMeaning,
+            List<(OperatorMeaning, char)> pairs)
+        {
+            if (MoveNextCharacter()) {
+                foreach (var (meaning, target) in pairs) {
+                    if (currentCharacter == target) {
+                        return meaning;
+                    }
+                }
+                PutBack();
             }
             return singleMeaning;
         }

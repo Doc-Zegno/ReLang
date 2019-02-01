@@ -46,6 +46,7 @@ namespace Handmada.ReLang.Compilation {
             } catch (ParserException e) {
                 var kind = e.IsSemantic ? "Semantic" : "Syntax";
                 PrintError(kind, e.Message, e.Line, e.LineNumber, e.ColumnNumber);
+                //Console.WriteLine(e.StackTrace);
             }
         }
 

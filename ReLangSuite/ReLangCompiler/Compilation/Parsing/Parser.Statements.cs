@@ -174,15 +174,129 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 }
 
             } else {
-                // Assignment only
-                CheckOperator(OperatorMeaning.Assignment);
+                // Assignment, short-hand assignment or in/decrement
                 var identifiers = ConvertExpressionToIdentifierList(expression);
+                var middle = currentLexeme.StartLocation;
+                if (currentLexeme is OperatorLexeme operatorLexeme) {
+                    switch (operatorLexeme.Meaning) {
+                        case OperatorMeaning.Assignment:
+                            return GetAssignment(identifiers);
 
-                var right = currentLexeme.StartLocation;
-                var value = GetMultipleExpression();
+                        case OperatorMeaning.Increment:
+                            return GetIncrementDecrement(identifiers, true);
 
-                return ForceAssignVariableList(identifiers, value, right);
+                        case OperatorMeaning.Decrement:
+                            return GetIncrementDecrement(identifiers, false);
+
+                        case OperatorMeaning.Plus:
+                        case OperatorMeaning.Minus:
+                        case OperatorMeaning.Asterisk:
+                        case OperatorMeaning.ForwardSlash:
+                        case OperatorMeaning.BackSlash:
+                        case OperatorMeaning.Modulo:
+                            MoveNextLexeme();
+                            CheckOperator(OperatorMeaning.Assignment);
+                            var right = GetMultipleExpression();
+                            return ForceShorthandAssignList(identifiers, operatorLexeme.Meaning, right, middle);
+
+                        default:
+                            RaiseError($"Unexpected operator: {GetOperatorName(operatorLexeme.Meaning)}");
+                            return null;
+                    }
+                } else {
+                    RaiseError("Either assignment or increment/decrement were expected");
+                    return null;
+                }
             }
+        }
+
+
+
+        private IStatement ForceShorthandAssignList(IIdentifier identifiers, OperatorMeaning meaning, IExpression right, Location middle) {
+            switch (identifiers) {
+                case IdentifierList identifierList:
+                    RaiseError("Massive shorthand for assignment is not supported in current version", middle);
+                    return null;
+
+                case SingleIdentifier single:
+                    // v += e
+                    //  <=>
+                    // v = v + e
+                    var variable = CreateVariableExpression(single);
+                    var value = CreateBinaryExpression(meaning, variable, right, middle);
+                    return ForceAssignVariable(single, value, value.MainLocation);
+
+                case SetterIdentifier setter:
+                    return ForceShorthandAssignSetter(setter, meaning, right, middle);
+
+                default:
+                    throw new NotSupportedException($"Unknown identifier's type: {identifiers}");
+            }
+        }
+
+
+
+        private IStatement ForceShorthandAssignSetter(SetterIdentifier setter, OperatorMeaning meaning, IExpression right, Location middle) {
+            var setterDefinition = setter.SetterDefinition;
+            var getterDefinition = setter.GetterDefinition;
+            var arguments = setter.Arguments;
+            var argumentMutabilities = setterDefinition.Signature.ArgumentMutabilities;
+
+            var statements = new List<IStatement>();
+            // Precalculate arguments
+            for (var i = 0; i < arguments.Count; i++) {
+                var argument = arguments[i];
+                var mutability = argumentMutabilities[i];
+                if (!(argument is VariableExpression || argument is PrimitiveLiteralExpression)) {
+                    // Store into tmp
+                    var tmpVariable = DeclareTemporaryVariable(argument.TypeInfo, argument, mutability);
+                    statements.Add(new VariableDeclarationStatement(tmpVariable.Name, tmpVariable.TypeInfo, argument, true, mutability));
+                    setter.Arguments[i] = tmpVariable;
+                }
+            }
+
+            // value = get(tmp, i) op expr
+            // set(tmp, i, value)
+            var getterArguments = new List<IExpression>(setter.Arguments);
+            var getterExpression = new FunctionCallExpression(getterDefinition, getterArguments, true, setter.StartLocation);
+            var value = CreateBinaryExpression(meaning, getterExpression, right, middle);
+            setter.Arguments.Add(value);
+            statements.Add(
+                new ExpressionStatement(
+                    new FunctionCallExpression(setterDefinition, setter.Arguments, true, setter.StartLocation)
+                )
+            );
+
+            if (statements.Count > 1) {
+                return new CompoundStatement(statements);
+            } else {
+                return statements[0];
+            }
+        }
+
+
+
+        // [x, y, z] = a, b, c
+        private IStatement GetAssignment(IIdentifier identifiers) {
+            CheckOperator(OperatorMeaning.Assignment);
+
+            var right = currentLexeme.StartLocation;
+            var value = GetMultipleExpression();
+
+            return ForceAssignVariableList(identifiers, value, right);
+        }
+
+
+
+        // [x]++
+        private IStatement GetIncrementDecrement(IIdentifier identifiers, bool isIncrement) {
+            var location = currentLexeme.StartLocation;
+            MoveNextLexeme();
+
+            var one = new PrimitiveLiteralExpression(1, PrimitiveTypeInfo.Int, location);
+            var meaning = isIncrement ? OperatorMeaning.Plus : OperatorMeaning.Minus;
+
+            return ForceShorthandAssignList(identifiers, meaning, one, location);
         }
 
 
@@ -203,16 +317,17 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     var self = functionCall.Arguments[0];
                     var isSelfMutable = WhetherExpressionMutable(self);
                     var methodName = functionCall.FunctionDefinition.ShortName;
-                    var definition = self.TypeInfo.GetMethodDefinition("s" + methodName.Substring(1), isSelfMutable);
+                    var setter = self.TypeInfo.GetMethodDefinition("s" + methodName.Substring(1), isSelfMutable);
+                    var getter = functionCall.FunctionDefinition;
 
                     Console.WriteLine($"Type of 'self' is '{self.TypeInfo.Name}'");
                     Console.WriteLine($"Method name is '{methodName}'");
 
-                    if (definition == null) {
+                    if (setter == null) {
                         RaiseError("No setter is available for this expression", functionCall.MainLocation);
                     }
 
-                    return new SetterIdentifier(definition, functionCall.Arguments, functionCall.MainLocation);
+                    return new SetterIdentifier(setter, getter, functionCall.Arguments, functionCall.MainLocation);
 
                 default:
                     RaiseError("This expression cannot be at the left side of assignment", expression.MainLocation);
@@ -245,7 +360,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
                 case SetterIdentifier setter:
-                    var definition = setter.FunctionDefinition;
+                    var definition = setter.SetterDefinition;
                     setter.Arguments.Add(value);
                     CheckAndConvertFunctionArguments(definition.Signature, setter.Arguments, setter.StartLocation);
 
