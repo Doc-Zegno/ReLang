@@ -1,8 +1,10 @@
 # ReLang
+![Big logo](https://i.imgur.com/Skl0TNa.png)
+
 Compiler and interpreter for Re:Lang
 
 
-## TODO List
+## Overall TODO List
 - [x] Variable resolution
 - [x] Function resolution
 - [x] Custom functions with arguments
@@ -10,7 +12,7 @@ Compiler and interpreter for Re:Lang
 - [x] Complex expressions
 - [x] Explicit conversions (`Int("5")`, `String(5)`)
 - [x] `Char` data type (and iterating over string)
-- [ ] Shorthand operators (`+=`, `++`)
+- [x] Shorthand operators (`+=`, `++`)
 - [x] `for-each`-style loop
 - [x] `do-while` and `while` loops
 - [ ] C-style `for` loop
@@ -25,3 +27,14 @@ Compiler and interpreter for Re:Lang
 - [ ] Files and managable disposables (`use f = open("input.txt")`)
 - [ ] Namespaces with util functions
 - [x] Runtime! 
+
+
+## Expansion Packs
+### Lord of the strings (String DLC)
+![progress bar](http://progressed.io/bar/1?title=progress)
+
+This pack includes:
+ * Basic methods for strings (like `contains`, `toUpper`, `toLower`, `join`)
+ * Slices for strings
+ * Verbatim strings (`@"C:\Program Files (x86)\Handmada\Yet Studio"`)
+ * String interpolation (`$"({x}, {y})"`)
