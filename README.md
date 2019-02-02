@@ -32,10 +32,10 @@ Compiler and interpreter for Re:Lang
 
 ## Expansion Packs
 ### Lord of the strings (String DLC)
-![progress bar](http://progressed.io/bar/50?title=progress)
+![progress bar](http://progressed.io/bar/67?title=progress)
 
 This pack includes:
 - [x] Basic methods for strings (like `contains`, `toUpper`, `toLower`, `join`)
 - [x] Slices for strings
-- [ ] Verbatim strings (`@"C:\Program Files (x86)\Handmada\Yet Studio"`)
+- [x] Verbatim strings (`@"C:\Program Files (x86)\Handmada\Yet Studio"`)
 - [ ] String interpolation (`$"({x}, {y})"`)

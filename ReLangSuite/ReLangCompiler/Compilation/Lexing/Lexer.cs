@@ -61,6 +61,10 @@ namespace Handmada.ReLang.Compilation.Lexing {
                     // String literal
                     return ScanString();
 
+                } else if (currentCharacter == '@') {
+                    // Verbatim string literal
+                    return ScanVerbatimString();
+
                 } else if (currentCharacter == '\'') {
                     // Character literal
                     return ScanGrapheme();
@@ -309,6 +313,39 @@ namespace Handmada.ReLang.Compilation.Lexing {
                 default:
                     return new SymbolLexeme(text, location);
             }
+        }
+
+
+        private Lexeme ScanVerbatimString() {
+            var location = CurrentLocation;
+            var builder = new StringBuilder();
+
+            if (!MoveNextCharacter() || currentCharacter != '\"') {
+                RaiseError("Opening quote was expected");
+            }
+
+            while (true) {
+                if (!MoveNextCharacter() || currentCharacter == '\n') {
+                    RaiseError("Closing quote was expected");
+                }
+
+                if (currentCharacter == '\"') {
+                    // Either end of string or internal quote
+                    if (!MoveNextCharacter()) {
+                        break;
+                    }
+
+                    if (currentCharacter == '\"') {
+                        builder.Append('\"');
+                    } else {
+                        break;
+                    }
+                } else {
+                    builder.Append(currentCharacter);
+                }
+            }
+
+            return new LiteralLexeme(builder.ToString(), location);
         }
 
 
