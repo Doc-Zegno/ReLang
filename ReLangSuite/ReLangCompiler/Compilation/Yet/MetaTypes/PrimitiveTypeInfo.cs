@@ -48,7 +48,11 @@ namespace Handmada.ReLang.Compilation.Yet {
 
         public bool CanUpcast(ITypeInfo sourceType) {
             if (TypeOption == Option.Object) {
-                return true;
+                if (sourceType is NullTypeInfo || sourceType is MaybeTypeInfo) {
+                    return false;
+                } else {
+                    return true;
+                }
             } else {
                 return Equals(sourceType);
             }
@@ -56,46 +60,39 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public IExpression ConvertFrom(IExpression expression) {
-            if (TypeOption == Option.Object) {
-                // Trivial conversion
+            if (CanUpcast(expression.TypeInfo)) {
                 return expression.ChangeType(this);
 
             } else if (expression.TypeInfo is PrimitiveTypeInfo primitiveSource) {
-                if (primitiveSource.TypeOption == TypeOption) {
-                    // Identity conversion
-                    return expression;
-
-                } else {
-                    switch (primitiveSource.TypeOption) {
-                        case Option.Char:
-                            if (TypeOption == Option.Int) {
-                                if (expression.IsCompileTime) {
-                                    var character = (char)expression.Value;
-                                    return new PrimitiveLiteralExpression((int)character, Int, expression.MainLocation);
-                                } else {
-                                    return new ConversionExpression(ConversionExpression.Option.Char2Int, expression, expression.MainLocation);
-                                }
+                switch (primitiveSource.TypeOption) {
+                    case Option.Char:
+                        if (TypeOption == Option.Int) {
+                            if (expression.IsCompileTime) {
+                                var character = (char)expression.Value;
+                                return new PrimitiveLiteralExpression((int)character, Int, expression.MainLocation);
                             } else {
-                                return null;
+                                return new ConversionExpression(ConversionExpression.Option.Char2Int, expression, expression.MainLocation);
                             }
-
-                        case Option.Int:
-                            if (TypeOption == Option.Float) {
-                                if (expression.IsCompileTime) {
-                                    var integer = (int)expression.Value;
-                                    return new PrimitiveLiteralExpression((double)integer, Float, expression.MainLocation);
-                                } else {
-                                    return new ConversionExpression(ConversionExpression.Option.Int2Float, expression, expression.MainLocation);
-                                }
-                            } else { 
-                                return null;
-                            }
-
-                        default:
+                        } else {
                             return null;
-                    }
+                        }
+
+                    case Option.Int:
+                        if (TypeOption == Option.Float) {
+                            if (expression.IsCompileTime) {
+                                var integer = (int)expression.Value;
+                                return new PrimitiveLiteralExpression((double)integer, Float, expression.MainLocation);
+                            } else {
+                                return new ConversionExpression(ConversionExpression.Option.Int2Float, expression, expression.MainLocation);
+                            }
+                        } else {
+                            return null;
+                        }
+
+                    default:
+                        return null;
                 }
-                
+
             } else {
                 return null;
             }
@@ -259,6 +256,16 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 new List<bool> { false },
                                 Int);
 
+                        case "getSlice":
+                            return new BuiltinFunctionDefinition(
+                                name,
+                                BuiltinFunctionDefinition.Option.StringGetSlice,
+                                new List<string> { "self", "start", "end", "step" },
+                                new List<ITypeInfo> { this, Int, new MaybeTypeInfo(Int), Int },
+                                new List<bool> { isSelfMutable, false, false, false },
+                                String,
+                                isSelfMutable);
+
                         case "toLower":
                             return new BuiltinFunctionDefinition(
                                 name,
@@ -303,6 +310,33 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 new List<ITypeInfo> { this, new IterableTypeInfo(Object) },
                                 new List<bool> { false, false },
                                 String);
+
+                        case "reversed":
+                            return new BuiltinFunctionDefinition(
+                                name,
+                                BuiltinFunctionDefinition.Option.StringReversed,
+                                new List<string> { "self" },
+                                new List<ITypeInfo> { this },
+                                new List<bool> { false },
+                                String);
+
+                        case "find":
+                            return new BuiltinFunctionDefinition(
+                                name,
+                                BuiltinFunctionDefinition.Option.StringFind,
+                                new List<string> { "self", "substring" },
+                                new List<ITypeInfo> { this, this },
+                                new List<bool> { false, false },
+                                new MaybeTypeInfo(Int));
+
+                        case "findLast":
+                            return new BuiltinFunctionDefinition(
+                                name,
+                                BuiltinFunctionDefinition.Option.StringFindLast,
+                                new List<string> { "self", "substring" },
+                                new List<ITypeInfo> { this, this },
+                                new List<bool> { false, false },
+                                new MaybeTypeInfo(Int));
 
                         default:
                             return null;

@@ -16,6 +16,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
         public enum Option {
             RangeError,
             KeyError,
+            ValueError,
             FormatError,
             ZeroDivisionError,
             NullError,

@@ -43,11 +43,15 @@ namespace Handmada.ReLang.Compilation.Yet {
             DictionaryCopy,
 
             StringGetLength,
+            StringGetSlice,
             StringToLower,
             StringToUpper,
             StringSplit,
             StringContains,
             StringJoin,
+            StringReversed,
+            StringFind,
+            StringFindLast,
 
             RangeContains,
         }

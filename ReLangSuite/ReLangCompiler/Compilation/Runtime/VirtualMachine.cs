@@ -735,6 +735,18 @@ namespace Handmada.ReLang.Compilation.Runtime {
                 case BuiltinFunctionDefinition.Option.StringJoin:
                     return CallStringJoin((string)arguments[0], ConvertToEnumerable(arguments[1]));
 
+                case BuiltinFunctionDefinition.Option.StringGetSlice:
+                    return CallStringGetSlice((string)arguments[0], (int)arguments[1], (int?)arguments[2], (int)arguments[3]);
+
+                case BuiltinFunctionDefinition.Option.StringReversed:
+                    return CallStringReversed((string)arguments[0]);
+
+                case BuiltinFunctionDefinition.Option.StringFind:
+                    return CallStringFind((string)arguments[0], (string)arguments[1]);
+
+                case BuiltinFunctionDefinition.Option.StringFindLast:
+                    return CallStringFindLast((string)arguments[0], (string)arguments[1]);
+
                 default:
                     throw new VirtualMachineException($"Unsupported built-in function call: {option}");
             }
@@ -793,6 +805,11 @@ namespace Handmada.ReLang.Compilation.Runtime {
             var endAdjusted = maximum;
             if (end != null && end.Value != maximum) {
                 endAdjusted = GetAdjustedListIndex(end.Value, maximum);
+            }
+
+            // Still no support for negative slices
+            if (step <= 0) {
+                throw new ProgramException(ProgramException.Option.ValueError, $"Slice's step must be positive (got {step})", null);
             }
 
             return list.GetSlice(startAdjusted, endAdjusted, step);
@@ -920,6 +937,57 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
         private object CallStringJoin(string s, IEnumerable<object> items) {
             return string.Join(s, items.Select(item => ObjectToString(item, false, false)));
+        }
+
+
+        private object CallStringGetSlice(string s, int start, int? end, int step) {
+            var maximum = s.Length;
+            var startAdjusted = GetAdjustedListIndex(start, maximum);
+
+            var endAdjusted = maximum;
+            if (end != null && end.Value != maximum) {
+                endAdjusted = GetAdjustedListIndex(end.Value, maximum);
+            }
+
+            // Still no support for negative slices
+            if (step <= 0) {
+                throw new ProgramException(ProgramException.Option.ValueError, $"Slice's step must be positive (got {step})", null);
+            }
+
+            // Build slice
+            var builder = new StringBuilder();
+            for (var i = startAdjusted; i < endAdjusted; i += step) {
+                builder.Append(s[i]);
+            }
+
+            return builder.ToString();
+        }
+
+
+        private object CallStringReversed(string s) {
+            var charArray = s.ToCharArray();
+            Array.Reverse(charArray);
+            return new string(charArray);
+        }
+
+
+        private object CallStringFind(string s, string substring) {
+            var index = s.IndexOf(substring);
+            if (index == -1) {
+                return null;
+            } else {
+                return index;
+            }
+        }
+
+
+        private object CallStringFindLast(string s, string substring) {
+            var index = s.LastIndexOf(substring);
+            if (index == -1) {
+                return null;
+            } else {
+                return index;
+            }
         }
 
 
