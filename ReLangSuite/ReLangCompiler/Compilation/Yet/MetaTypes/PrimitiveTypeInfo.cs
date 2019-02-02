@@ -46,6 +46,15 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
+        public bool CanUpcast(ITypeInfo sourceType) {
+            if (TypeOption == Option.Object) {
+                return true;
+            } else {
+                return Equals(sourceType);
+            }
+        }
+
+
         public IExpression ConvertFrom(IExpression expression) {
             if (TypeOption == Option.Object) {
                 // Trivial conversion
@@ -238,7 +247,70 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public IFunctionDefinition GetMethodDefinition(string name, bool isSelfMutable) {
-            return null;
+            switch (TypeOption) {
+                case Option.String:
+                    switch (name) {
+                        case "getLength":
+                            return new BuiltinFunctionDefinition(
+                                name,
+                                BuiltinFunctionDefinition.Option.StringGetLength,
+                                new List<string> { "self" },
+                                new List<ITypeInfo> { this },
+                                new List<bool> { false },
+                                Int);
+
+                        case "toLower":
+                            return new BuiltinFunctionDefinition(
+                                name,
+                                BuiltinFunctionDefinition.Option.StringToLower,
+                                new List<string> { "self" },
+                                new List<ITypeInfo> { this },
+                                new List<bool> { false },
+                                String);
+
+                        case "toUpper":
+                            return new BuiltinFunctionDefinition(
+                                name,
+                                BuiltinFunctionDefinition.Option.StringToUpper,
+                                new List<string> { "self" },
+                                new List<ITypeInfo> { this },
+                                new List<bool> { false },
+                                String);
+
+                        case "split":
+                            return new BuiltinFunctionDefinition(
+                                name,
+                                BuiltinFunctionDefinition.Option.StringSplit,
+                                new List<string> { "self" },
+                                new List<ITypeInfo> { this },
+                                new List<bool> { false },
+                                new ArrayListTypeInfo(String));
+
+                        case "contains":
+                            return new BuiltinFunctionDefinition(
+                                name,
+                                BuiltinFunctionDefinition.Option.StringContains,
+                                new List<string> { "self", "substring" },
+                                new List<ITypeInfo> { this, this },
+                                new List<bool> { false, false },
+                                Bool);
+
+                        case "join":
+                            return new BuiltinFunctionDefinition(
+                                name,
+                                BuiltinFunctionDefinition.Option.StringJoin,
+                                new List<string> { "self", "items" },
+                                new List<ITypeInfo> { this, new IterableTypeInfo(Object) },
+                                new List<bool> { false, false },
+                                String);
+
+                        default:
+                            return null;
+                    }
+
+                default:
+                    return null;
+            }
         }
 
 

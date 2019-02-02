@@ -420,6 +420,9 @@ namespace Handmada.ReLang.Compilation.Runtime {
                 case BinaryOperatorExpression.Option.AddString:
                     return (string)left + (string)right;
 
+                case BinaryOperatorExpression.Option.AddList:
+                    return CallListExtended((ListAdapter)left, (ListAdapter)right);
+
                 case BinaryOperatorExpression.Option.SubtractInteger:
                     return (int)left - (int)right;
 
@@ -494,8 +497,10 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
                 case BinaryOperatorExpression.Option.MoreOrEqualFloating:
                     return (double)left >= (double)right;
+
+                default:
+                    throw new NotImplementedException($"Not implemented binary: {binary.OperatorOption}");
             }
-            return null;
         }
 
 
@@ -693,7 +698,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
                 case BuiltinFunctionDefinition.Option.DictionaryGetLength:
                     return CallDictionaryGetLength((DictionaryAdapter)arguments[0]);
-                
+
                 case BuiltinFunctionDefinition.Option.DictionarySet:
                     return CallDictionarySet((DictionaryAdapter)arguments[0], arguments[1], arguments[2]);
 
@@ -710,7 +715,25 @@ namespace Handmada.ReLang.Compilation.Runtime {
                     return CallRangeContains((RangeAdapter)arguments[0], (int)arguments[1]);
 
                 case BuiltinFunctionDefinition.Option.IterableContains:
-                    return CallIterableContains((IEnumerable<object>)arguments[0], arguments[1]);
+                    return CallIterableContains(ConvertToEnumerable(arguments[0]), arguments[1]);
+
+                case BuiltinFunctionDefinition.Option.StringGetLength:
+                    return ((string)arguments[0]).Length;
+
+                case BuiltinFunctionDefinition.Option.StringToLower:
+                    return ((string)arguments[0]).ToLower();
+
+                case BuiltinFunctionDefinition.Option.StringToUpper:
+                    return ((string)arguments[0]).ToUpper();
+
+                case BuiltinFunctionDefinition.Option.StringSplit:
+                    return CallStringSplit((string)arguments[0]);
+
+                case BuiltinFunctionDefinition.Option.StringContains:
+                    return ((string)arguments[0]).Contains((string)arguments[1]);
+
+                case BuiltinFunctionDefinition.Option.StringJoin:
+                    return CallStringJoin((string)arguments[0], ConvertToEnumerable(arguments[1]));
 
                 default:
                     throw new VirtualMachineException($"Unsupported built-in function call: {option}");
@@ -735,6 +758,13 @@ namespace Handmada.ReLang.Compilation.Runtime {
             } else {
                 throw ProgramException.CreateNotSupportedError("Slice", "extend", null);
             }
+        }
+
+
+        private object CallListExtended(ListAdapter listA, ListAdapter listB) {
+            var copy = (ListAdapter)listA.Clone();
+            copy.Extend(listB);
+            return copy;
         }
 
 
@@ -880,6 +910,16 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
         private object CallIterableContains(IEnumerable<object> sequence, object item) {
             return sequence.Contains(item);
+        }
+
+
+        private object CallStringSplit(string s) {
+            return new ListAdapter(s.Split());
+        }
+
+
+        private object CallStringJoin(string s, IEnumerable<object> items) {
+            return string.Join(s, items.Select(item => ObjectToString(item, false, false)));
         }
 
 

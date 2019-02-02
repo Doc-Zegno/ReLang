@@ -24,6 +24,11 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
+        public bool CanUpcast(ITypeInfo sourceType) {
+            return Equals(sourceType);
+        }
+
+
         public IExpression ConstructFrom(IExpression expression, Location location) {
             return ConvertFrom(expression);
         }

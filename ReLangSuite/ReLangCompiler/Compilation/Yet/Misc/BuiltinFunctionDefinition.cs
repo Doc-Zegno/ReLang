@@ -42,6 +42,13 @@ namespace Handmada.ReLang.Compilation.Yet {
             DictionaryContains,
             DictionaryCopy,
 
+            StringGetLength,
+            StringToLower,
+            StringToUpper,
+            StringSplit,
+            StringContains,
+            StringJoin,
+
             RangeContains,
         }
 

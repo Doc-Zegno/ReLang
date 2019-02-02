@@ -18,6 +18,11 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
+        public override bool CanUpcast(ITypeInfo sourceType) {
+            return Equals(sourceType);
+        }
+
+
         public override IExpression ConstructFrom(IExpression expression, Location location) {
             throw new NotImplementedException();
         }

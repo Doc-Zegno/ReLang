@@ -21,13 +21,36 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
+        public virtual bool CanUpcast(ITypeInfo sourceType) {
+            ITypeInfo sourceItemType = null;
+            switch (sourceType) {
+                case IterableTypeInfo iterable:
+                    sourceItemType = iterable.ItemType;
+                    break;
+
+                case PrimitiveTypeInfo primitive when primitive.TypeOption == PrimitiveTypeInfo.Option.String:
+                    sourceItemType = PrimitiveTypeInfo.Char;
+                    break;
+
+                default:
+                    return false;
+            }
+
+            if (sourceItemType != null && ItemType.CanUpcast(sourceItemType)) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+
         public virtual IExpression ConstructFrom(IExpression expression, Location location) {
             throw new NotImplementedException();
         }
 
 
         public virtual IExpression ConvertFrom(IExpression expression) {
-            switch (expression.TypeInfo) {
+            /*switch (expression.TypeInfo) {
                 case IterableTypeInfo iterableType when ItemType.Equals(iterableType.ItemType):
                 case PrimitiveTypeInfo primitive
                 when primitive.TypeOption == PrimitiveTypeInfo.Option.String && ItemType.Equals(PrimitiveTypeInfo.Char):
@@ -35,6 +58,12 @@ namespace Handmada.ReLang.Compilation.Yet {
 
                 default:
                     return null;
+            }*/
+
+            if (CanUpcast(expression.TypeInfo)) {
+                return expression.ChangeType(this);
+            } else {
+                return null;
             }
         }
 
@@ -53,6 +82,24 @@ namespace Handmada.ReLang.Compilation.Yet {
                 default:
                     return null;
             } 
+        }
+
+
+        public override bool Equals(object obj) {
+            if (obj is IterableTypeInfo iterable && ItemType.Equals(iterable.ItemType)) {
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+
+        public override int GetHashCode() {
+            var hashCode = -1213424712;
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(Name);
+            hashCode = hashCode * -1521134295 + IsReferential.GetHashCode();
+            hashCode = hashCode * -1521134295 + EqualityComparer<ITypeInfo>.Default.GetHashCode(ItemType);
+            return hashCode;
         }
     }
 }

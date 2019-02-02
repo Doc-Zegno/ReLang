@@ -370,6 +370,7 @@ namespace Handmada.ReLang.Compilation {
                 case BinaryOperatorExpression.Option.AddInteger:
                 case BinaryOperatorExpression.Option.AddFloating:
                 case BinaryOperatorExpression.Option.AddString:
+                case BinaryOperatorExpression.Option.AddList:
                     Console.Write("+");
                     break;
 

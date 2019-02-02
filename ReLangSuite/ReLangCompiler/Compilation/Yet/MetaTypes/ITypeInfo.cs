@@ -21,6 +21,13 @@ namespace Handmada.ReLang.Compilation.Yet {
         bool IsReferential { get; }
 
         /// <summary>
+        /// Check if it's possible to upcast given source type to this one
+        /// </summary>
+        /// <param name="sourceType">Source type</param>
+        /// <returns>`true` if upcasting is possible and `false` otherwise</returns>
+        bool CanUpcast(ITypeInfo sourceType);
+
+        /// <summary>
         /// Get expression of this type converted from given source expression
         /// </summary>
         /// <param name="expression">Source expression</param>

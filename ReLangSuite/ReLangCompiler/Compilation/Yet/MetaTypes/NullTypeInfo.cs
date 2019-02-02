@@ -11,6 +11,11 @@ namespace Handmada.ReLang.Compilation.Yet {
         public bool IsReferential => true;
 
 
+        public bool CanUpcast(ITypeInfo sourceType) {
+            return false;
+        }
+
+
         public IExpression ConstructFrom(IExpression expression, Location location) {
             return null;
         }

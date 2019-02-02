@@ -24,6 +24,11 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
+        public override bool CanUpcast(ITypeInfo sourceType) {
+            return Equals(sourceType);
+        }
+
+
         public override IExpression ConvertFrom(IExpression expression) {
             if (Equals(expression.TypeInfo)) {
                 return expression;
