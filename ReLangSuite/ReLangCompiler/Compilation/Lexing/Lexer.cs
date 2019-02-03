@@ -18,6 +18,8 @@ namespace Handmada.ReLang.Compilation.Lexing {
         private char? previousCharacter;
         private char currentCharacter;
         private bool isEofReached;
+        private bool isInsideFormat;
+        private int braceBalance;
 
         public string CurrentLine { get; private set; }
         public int CurrentLineNumber { get; private set; }
@@ -30,6 +32,8 @@ namespace Handmada.ReLang.Compilation.Lexing {
             lineEnumerator = lines.GetEnumerator();
             //bufferedCharacters = new Stack<char>();
             isEofReached = false;
+            isInsideFormat = false;
+            braceBalance = 0;
             CurrentLineNumber = -1;
 
             if (!MoveNextLine()) { 
@@ -64,6 +68,13 @@ namespace Handmada.ReLang.Compilation.Lexing {
                 } else if (currentCharacter == '@') {
                     // Verbatim string literal
                     return ScanVerbatimString();
+
+                } else if (currentCharacter == '$') {
+                    // Format string literal
+                    if (isInsideFormat) {
+                        RaiseError("Nested format strings are not allowed");
+                    }
+                    return ScanFormatStringBeginning();
 
                 } else if (currentCharacter == '\'') {
                     // Character literal
@@ -118,10 +129,15 @@ namespace Handmada.ReLang.Compilation.Lexing {
                     break;
 
                 case '{':
+                    braceBalance++;
                     meaning = OperatorMeaning.OpenBrace;
                     break;
 
                 case '}':
+                    if (isInsideFormat && braceBalance == 0) {
+                        return ScanFormatStringPiece();
+                    }
+                    braceBalance--;
                     meaning = OperatorMeaning.CloseBrace;
                     break;
 
@@ -316,6 +332,63 @@ namespace Handmada.ReLang.Compilation.Lexing {
         }
 
 
+        private Lexeme ScanFormatStringBeginning() {
+            var location = CurrentLocation;
+
+            if (!MoveNextCharacter() || currentCharacter != '\"') {
+                RaiseError("Opening quote was expected");
+            }
+
+            isInsideFormat = true;
+            return ScanFormatStringPiece(location);
+        }
+
+
+        private Lexeme ScanFormatStringPiece(Location location = null) {
+            var loc = location ?? CurrentLocation;
+            var isEnding = false;
+            var builder = new StringBuilder();
+
+            while (true) {
+                if (!MoveNextCharacter() || currentCharacter == '\n') {
+                    RaiseError("Either closing quote or opening brace were expected");
+                }
+
+                if (currentCharacter == '\"') {
+                    MoveNextCharacter();
+                    isEnding = true;
+                    isInsideFormat = false;
+                    break;
+                }
+
+                if (currentCharacter == '{') {
+                    // May close
+                    if (!MoveNextCharacter()) {
+                        RaiseError("Unexpected end of file");
+                    }
+
+                    if (currentCharacter == '{') {
+                        builder.Append('{');
+                    } else {
+                        braceBalance = 0;
+                        break;
+                    }
+
+                } else if (currentCharacter == '}') {
+                    if (!MoveNextCharacter() || currentCharacter != '}') {
+                        RaiseError("Another one closing brace was expected");
+                    }
+                    builder.Append('}');
+
+                } else {
+                    builder.Append(ScanCharacter());
+                }
+            }
+
+            return new FormatStringLexeme(builder.ToString(), isEnding, loc);
+        }
+
+
         private Lexeme ScanVerbatimString() {
             var location = CurrentLocation;
             var builder = new StringBuilder();
@@ -395,6 +468,12 @@ namespace Handmada.ReLang.Compilation.Lexing {
                     switch (currentCharacter) {
                         case 'n':
                             return '\n';
+
+                        case '\"':
+                            return '\"';
+
+                        case '\'':
+                            return '\'';
 
                         case 't':
                             return '\t';

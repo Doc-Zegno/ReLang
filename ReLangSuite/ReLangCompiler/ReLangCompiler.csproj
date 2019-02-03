@@ -71,6 +71,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Compilation\Lexing\FormatStringLexeme.cs" />
     <Compile Include="Compilation\Location.cs" />
     <Compile Include="Compilation\Parsing\IdentifierList.cs" />
     <Compile Include="Compilation\Parsing\IIdentifier.cs" />
@@ -83,6 +84,7 @@
     <Compile Include="Compilation\Runtime\ListAdapter.cs" />
     <Compile Include="Compilation\Runtime\TupleAdapter.cs" />
     <Compile Include="Compilation\Yet\Expressions\DictionaryLiteralExpression.cs" />
+    <Compile Include="Compilation\Yet\Expressions\FormatStringExpression.cs" />
     <Compile Include="Compilation\Yet\Expressions\NullLiteralExpression.cs" />
     <Compile Include="Compilation\Yet\Expressions\TupleLiteralExpression.cs" />
     <Compile Include="Compilation\Yet\MetaTypes\ArrayListTypeInfo.cs" />

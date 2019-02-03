@@ -24,7 +24,7 @@ Compiler and interpreter for Re:Lang
 - [ ] Built-in high-order functions (`filter`, `map`, `reduce`, `zip`)
 - [x] Built-in methods for collections (including indexing)
 - [x] Slices for lists
-- [ ] Built-in methods and slices for strings
+- [x] Built-in methods and slices for strings
 - [ ] Files and managable disposables (`use f = open("input.txt")`)
 - [ ] Namespaces with util functions
 - [x] Runtime! 
@@ -32,10 +32,10 @@ Compiler and interpreter for Re:Lang
 
 ## Expansion Packs
 ### Lord of the strings (String DLC)
-![progress bar](http://progressed.io/bar/67?title=progress)
+![progress bar](http://progressed.io/bar/100?title=released)
 
 This pack includes:
 - [x] Basic methods for strings (like `contains`, `toUpper`, `toLower`, `join`)
 - [x] Slices for strings
 - [x] Verbatim strings (`@"C:\Program Files (x86)\Handmada\Yet Studio"`)
-- [ ] String interpolation (`$"({x}, {y})"`)
+- [x] String interpolation (`$"({x}, {y})"`)

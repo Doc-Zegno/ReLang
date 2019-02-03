@@ -321,6 +321,9 @@ namespace Handmada.ReLang.Compilation.Runtime {
                 case ConversionExpression conversion:
                     return EvaluateConversion(conversion);
 
+                case FormatStringExpression formatString:
+                    return EvaluateFormatString(formatString);
+
                 case ILiteralExpression literal:
                     switch (literal) {
                         case PrimitiveLiteralExpression primitiveLiteral:
@@ -363,6 +366,23 @@ namespace Handmada.ReLang.Compilation.Runtime {
                 default:
                     throw new VirtualMachineException($"Unsupported expression: {expression}");
             }
+        }
+
+
+        private object EvaluateFormatString(FormatStringExpression formatString) {
+            var builder = new StringBuilder(formatString.Pieces[0]);
+
+            var pieces = formatString.Pieces;
+            var expressions = formatString.Expressions;
+            var number = expressions.Count;
+
+            for (var i = 0; i < number; i++) {
+                var value = EvaluateExpression(expressions[i]);
+                builder.Append(ObjectToString(value, false, false));
+                builder.Append(pieces[i + 1]);
+            }
+
+            return builder.ToString();
         }
 
 
@@ -717,6 +737,9 @@ namespace Handmada.ReLang.Compilation.Runtime {
                 case BuiltinFunctionDefinition.Option.IterableContains:
                     return CallIterableContains(ConvertToEnumerable(arguments[0]), arguments[1]);
 
+                case BuiltinFunctionDefinition.Option.StringGet:
+                    return CallStringGet((string)arguments[0], (int)arguments[1]);
+
                 case BuiltinFunctionDefinition.Option.StringGetLength:
                     return ((string)arguments[0]).Length;
 
@@ -746,6 +769,12 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
                 case BuiltinFunctionDefinition.Option.StringFindLast:
                     return CallStringFindLast((string)arguments[0], (string)arguments[1]);
+
+                case BuiltinFunctionDefinition.Option.StringEndsWith:
+                    return ((string)arguments[0]).EndsWith((string)arguments[1]);
+
+                case BuiltinFunctionDefinition.Option.StringStartsWith:
+                    return ((string)arguments[0]).StartsWith((string)arguments[1]);
 
                 default:
                     throw new VirtualMachineException($"Unsupported built-in function call: {option}");
@@ -927,6 +956,12 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
         private object CallIterableContains(IEnumerable<object> sequence, object item) {
             return sequence.Contains(item);
+        }
+
+
+        private object CallStringGet(string s, int index) {
+            var adjusted = GetAdjustedListIndex(index, s.Length);
+            return s[adjusted];
         }
 
 

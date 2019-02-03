@@ -247,6 +247,15 @@ namespace Handmada.ReLang.Compilation.Yet {
             switch (TypeOption) {
                 case Option.String:
                     switch (name) {
+                        case "get":
+                            return new BuiltinFunctionDefinition(
+                                name,
+                                BuiltinFunctionDefinition.Option.StringGet,
+                                new List<string> { "self", "index" },
+                                new List<ITypeInfo> { this, Int },
+                                new List<bool> { false, false },
+                                Char);
+
                         case "getLength":
                             return new BuiltinFunctionDefinition(
                                 name,
@@ -337,6 +346,24 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 new List<ITypeInfo> { this, this },
                                 new List<bool> { false, false },
                                 new MaybeTypeInfo(Int));
+
+                        case "startsWith":
+                            return new BuiltinFunctionDefinition(
+                                name,
+                                BuiltinFunctionDefinition.Option.StringStartsWith,
+                                new List<string> { "self", "prefix" },
+                                new List<ITypeInfo> { this, this },
+                                new List<bool> { false, false },
+                                Bool);
+
+                        case "endsWith":
+                            return new BuiltinFunctionDefinition(
+                                name,
+                                BuiltinFunctionDefinition.Option.StringEndsWith,
+                                new List<string> { "self", "suffix" },
+                                new List<ITypeInfo> { this, this },
+                                new List<bool> { false, false },
+                                Bool);
 
                         default:
                             return null;

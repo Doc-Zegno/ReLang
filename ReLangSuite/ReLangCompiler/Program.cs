@@ -257,6 +257,10 @@ namespace Handmada.ReLang.Compilation {
                     PrintConversion(conversion);
                     break;
 
+                case FormatStringExpression formatString:
+                    PrintFormatString(formatString);
+                    break;
+
                 case ILiteralExpression literal:
                     switch (literal) {
                         case PrimitiveLiteralExpression primitiveLiteral:
@@ -329,6 +333,19 @@ namespace Handmada.ReLang.Compilation {
                     break;
             }
             //Console.Write($"<{expression.TypeInfo.Name}>");
+        }
+
+
+        private static void PrintFormatString(FormatStringExpression formatString) {
+            Console.Write("$\"");
+            Console.Write(formatString.Pieces[0]);
+            for (var i = 0; i < formatString.Expressions.Count; i++) {
+                Console.Write("{");
+                PrintExpression(formatString.Expressions[i]);
+                Console.Write("}");
+                Console.Write(formatString.Pieces[i + 1]);
+            }
+            Console.Write("\"");
         }
 
 

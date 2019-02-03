@@ -42,6 +42,7 @@ namespace Handmada.ReLang.Compilation.Yet {
             DictionaryContains,
             DictionaryCopy,
 
+            StringGet,
             StringGetLength,
             StringGetSlice,
             StringToLower,
@@ -52,6 +53,8 @@ namespace Handmada.ReLang.Compilation.Yet {
             StringReversed,
             StringFind,
             StringFindLast,
+            StringEndsWith,
+            StringStartsWith,
 
             RangeContains,
         }

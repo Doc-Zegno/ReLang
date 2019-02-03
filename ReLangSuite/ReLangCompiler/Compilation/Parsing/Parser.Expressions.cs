@@ -387,6 +387,10 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     MoveNextLexeme();
                     return new PrimitiveLiteralExpression(literal.Value, new PrimitiveTypeInfo(typeOption), location);
 
+                case FormatStringLexeme formatString:
+                    MoveNextLexeme();
+                    return GetFormatStringExpression(formatString);
+
                 default:
                     RaiseError("Expression was expected");
                     break;
@@ -394,6 +398,35 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
             // Sanity check
             return null;
+        }
+
+
+
+        // [$"{]x}, {y}"
+        private IExpression GetFormatStringExpression(FormatStringLexeme startFormat) {
+            var pieces = new List<string> { startFormat.Piece };
+            var expressions = new List<IExpression>();
+
+            var format = startFormat;
+            while (!format.IsEnding) {
+                var expression = GetMultipleExpression();
+                var converted = ForceConvertExpression(expression, PrimitiveTypeInfo.Object, expression.MainLocation);
+                expressions.Add(converted);
+
+                if (currentLexeme is FormatStringLexeme nextFormat) {
+                    MoveNextLexeme();
+                    pieces.Add(nextFormat.Piece);
+                    format = nextFormat;
+                } else {
+                    RaiseError("Format string's piece was expected");
+                }
+            }
+
+            if (expressions.Count > 0) {
+                return new FormatStringExpression(pieces, expressions, startFormat.StartLocation);
+            } else {
+                return new PrimitiveLiteralExpression(pieces[0], PrimitiveTypeInfo.String, startFormat.StartLocation);
+            }
         }
 
 
