@@ -340,7 +340,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     } else {
                         var definition = scopeStack.GetDefinition(symbol.Text);
                         if (definition == null) {
-                            RaiseError($"Undeclared identifier '{symbol.Text}'");
+                            RaiseError($"Undeclared identifier '{symbol.Text}'", location);
                         }
                         
                         if (!definition.IsMutable && definition.Value != null && definition.Value.IsCompileTime) {
@@ -351,8 +351,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
                             //return new PrimitiveLiteralExpression(value.Value, value.TypeInfo);
                         } else {
                             // Should be resolved at run-time
-                            var frameOffset = definition.ScopeNumber - (scopeStack.Count - 1);
-                            return new VariableExpression(symbol.Text, definition.Number, frameOffset,
+                            //var frameOffset = definition.ScopeNumber - (scopeStack.Count - 1);
+                            return new VariableExpression(symbol.Text, definition.Number, 0,
                                                           false, definition.TypeInfo, location);
                         }
                     }

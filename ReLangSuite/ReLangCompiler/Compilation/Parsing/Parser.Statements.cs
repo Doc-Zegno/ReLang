@@ -129,10 +129,10 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
         // [while] condition { statements }
         private IStatement GetWhileLoop() {
-            scopeStack.EnterScope(false, true);
             var condition = GetExpression();
             CheckCondition(condition, true, false);
 
+            scopeStack.EnterScope(false, true);
             CheckOperator(OperatorMeaning.OpenBrace);
             var statements = GetStatementList(false);
             CheckOperator(OperatorMeaning.CloseBrace);
@@ -149,11 +149,11 @@ namespace Handmada.ReLang.Compilation.Parsing {
             CheckOperator(OperatorMeaning.OpenBrace);
             var statements = GetStatementList(false);
             CheckOperator(OperatorMeaning.CloseBrace);
-            CheckOperator(OperatorMeaning.While);
+            scopeStack.LeaveScope();
 
+            CheckOperator(OperatorMeaning.While);
             var condition = GetExpression();
             CheckCondition(condition, true, false);
-            scopeStack.LeaveScope();
 
             return new DoWhileStatement(condition, statements);
         }
@@ -452,7 +452,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 RaiseError($"Undeclared identifier '{name}'", identifier.StartLocation);
             }
             
-            var frameOffset = definition.ScopeNumber - (scopeStack.Count - 1);
+            //var frameOffset = definition.ScopeNumber - (scopeStack.Count - 1);
 
             // Check if it's mutable
             if (definition.IsFinal) {
@@ -462,7 +462,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             var converted = ForceConvertExpression(value, definition.TypeInfo, right);
             CheckMutability(converted, true);
 
-            return new AssignmentStatement(name, definition.Number, frameOffset, converted);
+            return new AssignmentStatement(name, definition.Number, 0, converted);
         }
 
 
@@ -658,11 +658,11 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
             // Get a variable expression
             var definition = scopeStack.GetDefinition(tmpName);
-            var frameOffset = definition.ScopeNumber - (scopeStack.Count - 1);
+            //var frameOffset = definition.ScopeNumber - (scopeStack.Count - 1);
             return new VariableExpression(
                 tmpName,
                 definition.Number,
-                frameOffset,
+                0,
                 false,
                 typeInfo,
                 value?.MainLocation
@@ -875,8 +875,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 CheckOperator(OperatorMeaning.OpenBrace);
 
                 // Adjust variable expression on scope enter
-                variable = new VariableExpression(variable.Name, variable.Number, variable.FrameOffset - 1,
-                                                  variable.IsCompileTime, variable.TypeInfo, variable.MainLocation);
+                /*variable = new VariableExpression(variable.Name, variable.Number, variable.FrameOffset - 1,
+                                                  variable.IsCompileTime, variable.TypeInfo, variable.MainLocation);*/
 
                 // Declare binded variables on scope enter
                 List<IStatement> ifStatements = null;

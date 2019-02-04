@@ -19,7 +19,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
         }
 
 
-        private List<List<object>> frames;
+        private FrameMachine frameMachine;
         private List<FunctionData> functions;
         private object functionValue;
         private bool wasReturnValueSet;
@@ -38,7 +38,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
 
         public int Execute(ParsedProgram program, string[] commandLineArguments) {
-            frames = new List<List<object>>();
+            frameMachine = new FrameMachine();
             functions = program.Functions;
             functionValue = null;
             LogInfo("Executing main()...");
@@ -100,11 +100,11 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
 
         private object EvaluateCustomFunction(int number, List<object> arguments) {
-            EnterFrame();
+            frameMachine.EnterFrame();
 
             // Push arguments
             foreach (var argument in arguments) {
-                CreateVariable(argument);
+                frameMachine.CreateVariable(argument);
             }
 
             // Execute body
@@ -119,7 +119,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
                 ExecuteStatementList(function.Body);
             } finally {
                 // Leave frame and return function value
-                LeaveFrame();
+                frameMachine.LeaveFrame();
                 returnOption = ReturnOption.None;
                 wasSet = wasReturnValueSet;
                 wasReturnValueSet = false;
@@ -159,11 +159,11 @@ namespace Handmada.ReLang.Compilation.Runtime {
                     }
 
                     if (statements != null) {
-                        EnterFrame();
+                        frameMachine.EnterScope();
                         try {
                             ExecuteStatementList(statements);
                         } finally {
-                            LeaveFrame();
+                            frameMachine.LeaveScope();
                         }
                     }
                     break;
@@ -172,11 +172,11 @@ namespace Handmada.ReLang.Compilation.Runtime {
                     //Log("Executing for-each...");
                     statements = forEach.Statements;
                     var iterable = ConvertToEnumerable(EvaluateExpression(forEach.Iterable));
-                    EnterFrame();
-                    try {
-                        foreach (var item in iterable) {
-                            ClearFrame();
-                            CreateVariable(item);
+
+                    foreach (var item in iterable) {
+                        frameMachine.EnterScope();
+                        try {
+                            frameMachine.CreateVariable(item);
                             ExecuteStatementList(statements);
 
                             if (returnOption <= ReturnOption.Continue) {
@@ -187,18 +187,17 @@ namespace Handmada.ReLang.Compilation.Runtime {
                             } else {
                                 break;
                             }
+                        } finally {
+                            frameMachine.LeaveScope();
                         }
-                    } finally {
-                        LeaveFrame();
                     }
                     break;
 
                 case WhileStatement whileStatement:
                     statements = whileStatement.Statements;
-                    EnterFrame();
-                    try {
-                        while ((bool)EvaluateExpression(whileStatement.Condition)) {
-                            ClearFrame();
+                    while ((bool)EvaluateExpression(whileStatement.Condition)) {
+                        frameMachine.EnterScope();
+                        try {
                             ExecuteStatementList(statements);
 
                             if (returnOption <= ReturnOption.Continue) {
@@ -209,18 +208,17 @@ namespace Handmada.ReLang.Compilation.Runtime {
                             } else {
                                 break;
                             }
+                        } finally {
+                            frameMachine.LeaveScope();
                         }
-                    } finally {
-                        LeaveFrame();
                     }
                     break;
 
                 case DoWhileStatement doWhileStatement:
                     statements = doWhileStatement.Statements;
-                    EnterFrame();
-                    try {
-                        do {
-                            ClearFrame();
+                    do {
+                        frameMachine.EnterScope();
+                        try {
                             ExecuteStatementList(statements);
 
                             if (returnOption <= ReturnOption.Continue) {
@@ -231,10 +229,10 @@ namespace Handmada.ReLang.Compilation.Runtime {
                             } else {
                                 break;
                             }
-                        } while ((bool)EvaluateExpression(doWhileStatement.Condition));
-                    } finally {
-                        LeaveFrame();
-                    }
+                        } finally {
+                            frameMachine.LeaveScope();
+                        }
+                    } while ((bool)EvaluateExpression(doWhileStatement.Condition));
                     break;
 
                 case ExpressionStatement expression:
@@ -243,12 +241,12 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
                 case VariableDeclarationStatement variableDeclaration:
                     value = EvaluateExpression(variableDeclaration.Value);
-                    CreateVariable(value);
+                    frameMachine.CreateVariable(value);
                     break;
 
                 case AssignmentStatement assignment:
                     value = EvaluateExpression(assignment.Value);
-                    SetVariable(assignment.Number, assignment.FrameOffset, value);
+                    frameMachine.SetVariable(assignment.Number, value);
                     break;
 
                 case ReturnStatement returnStatement:
@@ -361,7 +359,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
                     } 
 
                 case VariableExpression variable:
-                    return GetVariable(variable.Number, variable.FrameOffset);
+                    return frameMachine.GetVariable(variable.Number);
 
                 default:
                     throw new VirtualMachineException($"Unsupported expression: {expression}");
@@ -1078,49 +1076,6 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
         private string ObjectListToString(IEnumerable<object> objs, bool isEscaped, bool isTuplePair) {
             return string.Join(", ", objs.Select(obj => ObjectToString(obj, isEscaped, isTuplePair)));
-        }
-
-
-        private void CreateVariable(object value) {
-            var frame = frames.Last();;
-            frame.Add(value);
-            //Log($"Added variable, total count: {frame.Count}");
-        }
-
-
-        private object GetVariable(int number, int frameOffset) {
-            //Log($"Requested variable <{number}:{frameOffset}>");
-
-            var index = frames.Count + frameOffset - 1;
-            //Log($"Calculated frame index: {index}");
-
-            var frame = frames[index];
-            //Log($"Frame size: {frame.Count}");
-
-            return frame[number];
-        }
-
-
-        private void SetVariable(int number, int frameOffset, object value) {
-            var index = frames.Count + frameOffset - 1;
-            frames[index][number] = value;
-        }
-
-
-        private void ClearFrame() {
-            var frame = frames.Last();
-            frame.Clear();
-            //Log("Frame was cleared");
-        }
-
-
-        private void EnterFrame() {
-            frames.Add(new List<object>());
-        }
-
-
-        private void LeaveFrame() {
-            frames.RemoveAt(frames.Count - 1);
         }
 
 

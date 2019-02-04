@@ -31,9 +31,11 @@ namespace Handmada.ReLang.Compilation.Parsing {
     class ScopeStack {
         private class Scope {
             private IDictionary<string, VariableDefinition> table;
+            private HashSet<string> names;
 
             public int Number { get; }
             public Scope Parent { get; }
+            public Scope Master { get; }
             public bool IsFunction { get; }
             public bool IsLoop { get; }
 
@@ -56,50 +58,42 @@ namespace Handmada.ReLang.Compilation.Parsing {
             }    
 
 
-            public Scope(int number, Scope parent, bool isFunction, bool isLoop) {
+            public Scope(int number, Scope parent, Scope master, bool isFunction, bool isLoop) {
                 table = new Dictionary<string, VariableDefinition>();
+                names = new HashSet<string>();
                 Number = number;
                 Parent = parent;
+                Master = master ?? this;
                 IsFunction = isFunction;
                 IsLoop = isLoop;
             }
 
 
             public bool DeclareVariable(string name, ITypeInfo typeInfo, bool isFinal, bool isMutable, IExpression value) {
-                var scope = this;
-                while (scope != null) {
-                    if (scope.table.ContainsKey(name)) {
-                        return false;
-                    }
-
-                    if (!scope.IsFunction) {
-                        scope = scope.Parent;
-                    } else {
-                        break;
-                    }
+                if (Master.table.ContainsKey(name)) {
+                    return false;
+                } else {  
+                    var number = Master.table.Count;
+                    Master.table[name] = new VariableDefinition(typeInfo, isFinal, isMutable, number, Number, value);
+                    names.Add(name);
+                    return true;
                 }
-
-                // OK! No collisions
-                var number = table.Count;
-                table[name] = new VariableDefinition(typeInfo, isFinal, isMutable, number, Number, value);
-                return true;
             }
 
 
             public VariableDefinition GetDefinition(string name) {
-                var scope = this;
-                while (scope != null) {
-                    if (scope.table.TryGetValue(name, out VariableDefinition definition)) {
-                        return definition;
-                    } else {
-                        if (!scope.IsFunction) {
-                            scope = scope.Parent;
-                        } else {
-                            return null;
-                        }
-                    }
+                if (Master.table.TryGetValue(name, out VariableDefinition definition)) {
+                    return definition;
+                } else {
+                    return null;
                 }
-                return null;
+            }
+
+
+            public void Leave() {
+                foreach (var name in names) {
+                    Master.table.Remove(name);
+                }
             }
         }
 
@@ -111,19 +105,21 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
         public ScopeStack() {
-            top = new Scope(0, null, true, false);
+            top = new Scope(0, null, null, true, false);
             Count = 1;
         }
 
 
         public void EnterScope(bool isFunction, bool isLoop) {
-            var scope = new Scope(Count, top, isFunction, isLoop);
+            var master = isFunction ? null : top.Master;
+            var scope = new Scope(Count, top, master, isFunction, isLoop);
             top = scope;
             Count++;
         }
 
 
         public void LeaveScope() {
+            top.Leave();
             top = top.Parent;
             Count--;
         }

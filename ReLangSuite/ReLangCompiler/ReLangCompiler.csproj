@@ -81,6 +81,7 @@
     <Compile Include="Compilation\Parsing\SetterIdentifier.cs" />
     <Compile Include="Compilation\Parsing\SingleIdentifier.cs" />
     <Compile Include="Compilation\Runtime\DictionaryAdapter.cs" />
+    <Compile Include="Compilation\Runtime\FrameMachine.cs" />
     <Compile Include="Compilation\Runtime\ListAdapter.cs" />
     <Compile Include="Compilation\Runtime\TupleAdapter.cs" />
     <Compile Include="Compilation\Yet\Expressions\DictionaryLiteralExpression.cs" />
