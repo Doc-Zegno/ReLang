@@ -10,17 +10,15 @@ using Handmada.ReLang.Compilation.Yet;
 namespace Handmada.ReLang.Compilation.Parsing {
     class VariableDefinition {
         public ITypeInfo TypeInfo { get; }
-        public bool IsFinal { get; }
-        public bool IsMutable { get; }
+        public VariableQualifier Qualifier { get; }
         public int Number { get; }
         public int ScopeNumber { get; }
         public IExpression Value { get; }
 
 
-        public VariableDefinition(ITypeInfo typeInfo, bool isFinal, bool isMutable, int number, int scopeNumber, IExpression value) {
+        public VariableDefinition(ITypeInfo typeInfo, VariableQualifier qualifier, int number, int scopeNumber, IExpression value) {
             TypeInfo = typeInfo;
-            IsFinal = isFinal;
-            IsMutable = isMutable;
+            Qualifier = qualifier;
             Number = number;
             ScopeNumber = scopeNumber;
             Value = value;
@@ -69,12 +67,12 @@ namespace Handmada.ReLang.Compilation.Parsing {
             }
 
 
-            public bool DeclareVariable(string name, ITypeInfo typeInfo, bool isFinal, bool isMutable, IExpression value) {
+            public bool DeclareVariable(string name, ITypeInfo typeInfo, VariableQualifier qualifier, IExpression value) {
                 if (Master.table.ContainsKey(name)) {
                     return false;
                 } else {  
                     var number = Master.table.Count;
-                    Master.table[name] = new VariableDefinition(typeInfo, isFinal, isMutable, number, Number, value);
+                    Master.table[name] = new VariableDefinition(typeInfo, qualifier, number, Number, value);
                     names.Add(name);
                     return true;
                 }
@@ -125,8 +123,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
         }
 
 
-        public bool DeclareVariable(string name, ITypeInfo typeInfo, bool isFinal, bool isMutable, IExpression value) {
-            return top.DeclareVariable(name, typeInfo, isFinal, isMutable, value);
+        public bool DeclareVariable(string name, ITypeInfo typeInfo, VariableQualifier qualifier, IExpression value) {
+            return top.DeclareVariable(name, typeInfo, qualifier, value);
         }
 
 

@@ -48,6 +48,10 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     }
                     break;
 
+                case "open":
+                    definition = BuiltinFunctionDefinition.Open;
+                    break;
+
                 default:
                     definition = functionTree.GetFunctionDefinition(name);
                     if (definition == null) {
@@ -376,7 +380,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                             RaiseError($"Undeclared identifier '{symbol.Text}'", location);
                         }
                         
-                        if (!definition.IsMutable && definition.Value != null && definition.Value.IsCompileTime) {
+                        if (definition.Qualifier == VariableQualifier.Final && definition.Value != null && definition.Value.IsCompileTime) {
                             // Can be evaluated at compile-time
                             return definition.Value;
 

@@ -155,11 +155,14 @@ namespace Handmada.ReLang.Compilation {
 
                 case VariableDeclarationStatement variableDeclaration:
                     var prefix = "var";
-                    if (variableDeclaration.IsFinal) {
+                    if ((variableDeclaration.Qualifier & VariableQualifier.Final) != 0) {
                         prefix = "val";
                     }
-                    if (!variableDeclaration.IsMutable) {
+                    if ((variableDeclaration.Qualifier & VariableQualifier.Mutable) == 0) {
                         prefix = "let";
+                    }
+                    if ((variableDeclaration.Qualifier & VariableQualifier.Disposable) != 0) {
+                        prefix = "use";
                     }
                     var typeName = variableDeclaration.TypeInfo.Name;
                     Console.Write($"{prefix} {variableDeclaration.Name}: {typeName} = ");

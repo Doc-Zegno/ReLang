@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 
 namespace Handmada.ReLang.Compilation.Runtime {
     class Frame {
+        private Stack<List<IDisposable>> disposableStack;
+        private List<IDisposable> disposables;
         private Stack<int> framePointerStack;
         private int framePointer;
 
@@ -15,28 +17,42 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
         public Frame() {
             Variables = new List<object>();
+            disposableStack = new Stack<List<IDisposable>>();
+            disposables = new List<IDisposable>();
             framePointerStack = new Stack<int>();
             framePointer = 0;
         }
 
 
-        public void CreateVariable(object value) {
+        public void CreateVariable(object value, bool isDisposable) {
             if (framePointer < Variables.Count) {
                 Variables[framePointer] = value;
             } else {
                 Variables.Add(value);
             }
             framePointer++;
+
+            if (isDisposable) {
+                disposables.Add((IDisposable)value);
+            }
         }
 
 
         public void EnterScope() {
             framePointerStack.Push(framePointer);
+
+            disposableStack.Push(disposables);
+            disposables = new List<IDisposable>();
         }
 
 
         public void LeaveScope() {
             framePointer = framePointerStack.Pop();
+
+            foreach (var disposable in disposables) {
+                disposable.Dispose();
+            }
+            disposables = disposableStack.Pop();
         }
     }
 
@@ -73,8 +89,8 @@ namespace Handmada.ReLang.Compilation.Runtime {
         }
 
 
-        public void CreateVariable(object value) {
-            topFrame.CreateVariable(value);
+        public void CreateVariable(object value, bool isDisposable) {
+            topFrame.CreateVariable(value, isDisposable);
         }
 
 

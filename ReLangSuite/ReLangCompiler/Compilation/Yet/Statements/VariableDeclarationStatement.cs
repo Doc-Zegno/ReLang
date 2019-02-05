@@ -13,16 +13,14 @@ namespace Handmada.ReLang.Compilation.Yet {
         public string Name { get; }
         public ITypeInfo TypeInfo { get; }
         public IExpression Value { get; }
-        public bool IsFinal { get; }
-        public bool IsMutable { get; }
+        public VariableQualifier Qualifier { get; }
 
 
-        public VariableDeclarationStatement(string name, ITypeInfo typeInfo, IExpression value, bool isFinal, bool isMutable) {
+        public VariableDeclarationStatement(string name, ITypeInfo typeInfo, IExpression value, VariableQualifier qualifier) {
             Name = name;
             TypeInfo = typeInfo;
             Value = value;
-            IsFinal = isFinal;
-            IsMutable = isMutable;
+            Qualifier = qualifier;
         }
     }
 }

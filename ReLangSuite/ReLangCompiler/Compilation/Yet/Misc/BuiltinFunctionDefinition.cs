@@ -11,6 +11,7 @@ namespace Handmada.ReLang.Compilation.Yet {
             Print,
             Enumerate,
             Zip,
+            Open,
 
             TupleGet,
             TupleGetFirst,
@@ -94,6 +95,16 @@ namespace Handmada.ReLang.Compilation.Yet {
                 new List<ITypeInfo> { PrimitiveTypeInfo.Object },
                 new List<bool> { false },
                 PrimitiveTypeInfo.Void);
+
+
+        public static BuiltinFunctionDefinition Open =>
+            new BuiltinFunctionDefinition(
+                "open",
+                Option.Open,
+                new List<string> { "path" },
+                new List<ITypeInfo> { PrimitiveTypeInfo.String },
+                new List<bool> { false },
+                new FileStreamTypeInfo());
 
 
         public static BuiltinFunctionDefinition CreateEnumerate(bool areItemsMutable) {

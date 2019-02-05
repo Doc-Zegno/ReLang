@@ -22,6 +22,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             NullError,
             NoReturnValueError,
             NotSupportedError,
+            IOError,
         }
 
 

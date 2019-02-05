@@ -42,12 +42,12 @@ This pack includes:
 
 
 ### Ready to work (Disposable DLC)
-![progress bar](http://progressed.io/bar/10?title=progress)
+![progress bar](http://progressed.io/bar/20?title=progress)
 
 This pack includes:
 - [x] Generic wrappers for sequences (`enumerate` and `zip`)
 - [ ] Files: tools for opening, reading, iterating and disposing
-- [ ] VM's support for `Disposable` interface
+- [x] VM's support for `Disposable` interface
 - [ ] Exception handling with `try`-`catch`
 - [ ] Optional arguments (especially for `print` and `open`)
 - [ ] Overloaded util functions (like `min`, `max`)

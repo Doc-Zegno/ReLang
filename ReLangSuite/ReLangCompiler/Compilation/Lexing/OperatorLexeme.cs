@@ -52,6 +52,7 @@ namespace Handmada.ReLang.Compilation.Lexing {
         // Textual
         Var,
         Let,
+        Use,
         If,
         Elif,
         Else,

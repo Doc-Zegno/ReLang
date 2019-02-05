@@ -284,6 +284,9 @@ namespace Handmada.ReLang.Compilation.Lexing {
                 case "let":
                     return new OperatorLexeme(OperatorMeaning.Let, location);
 
+                case "use":
+                    return new OperatorLexeme(OperatorMeaning.Use, location);
+
                 case "func":
                     return new OperatorLexeme(OperatorMeaning.Func, location);
 

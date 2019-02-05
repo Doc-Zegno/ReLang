@@ -329,7 +329,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 var argumentName = signature.ArgumentNames[i];
                 var argumentType = signature.ArgumentTypes[i];
                 var argumentMutability = signature.ArgumentMutabilities[i];
-                scopeStack.DeclareVariable(argumentName, argumentType, true, argumentMutability, null);
+                scopeStack.DeclareVariable(argumentName, argumentType, MakeQualifier(true, argumentMutability, false), null);
             }
 
             var body = GetStatementList(true);
@@ -466,6 +466,21 @@ namespace Handmada.ReLang.Compilation.Parsing {
             } else {
                 return false;
             }
+        }
+
+
+        private VariableQualifier MakeQualifier(bool isFinal, bool isMutable, bool isDisposable) {
+            var qualifier = VariableQualifier.None;
+            if (isFinal) {
+                qualifier |= VariableQualifier.Final;
+            }
+            if (isMutable) {
+                qualifier |= VariableQualifier.Mutable;
+            }
+            if (isDisposable) {
+                qualifier |= VariableQualifier.Disposable;
+            }
+            return qualifier;
         }
 
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Globalization;
 using System.Collections.Generic;
 using System.Linq;
@@ -104,7 +105,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
             // Push arguments
             foreach (var argument in arguments) {
-                frameMachine.CreateVariable(argument);
+                frameMachine.CreateVariable(argument, false);
             }
 
             // Execute body
@@ -176,7 +177,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
                     foreach (var item in iterable) {
                         frameMachine.EnterScope();
                         try {
-                            frameMachine.CreateVariable(item);
+                            frameMachine.CreateVariable(item, false);
                             ExecuteStatementList(statements);
 
                             if (returnOption <= ReturnOption.Continue) {
@@ -241,7 +242,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
                 case VariableDeclarationStatement variableDeclaration:
                     value = EvaluateExpression(variableDeclaration.Value);
-                    frameMachine.CreateVariable(value);
+                    frameMachine.CreateVariable(value, (variableDeclaration.Qualifier & VariableQualifier.Disposable) != 0);
                     break;
 
                 case AssignmentStatement assignment:
@@ -276,8 +277,19 @@ namespace Handmada.ReLang.Compilation.Runtime {
         private IEnumerable<object> ConvertToEnumerable(object value) {
             if (value is string str) {
                 return GetStringEnumerable(str);
+            } else if (value is FileStream stream) {
+                return GetFileStreamEnumerable(stream);
             } else {
                 return (IEnumerable<object>)value;
+            }
+        }
+
+
+        private IEnumerable<object> GetFileStreamEnumerable(FileStream stream) {
+            var reader = new StreamReader(stream);
+            string line;
+            while ((line = reader.ReadLine()) != null) {
+                yield return line;
             }
         }
 
@@ -657,6 +669,9 @@ namespace Handmada.ReLang.Compilation.Runtime {
                 case BuiltinFunctionDefinition.Option.Zip:
                     return CallZip(ConvertToEnumerable(arguments[0]), ConvertToEnumerable(arguments[1]));
 
+                case BuiltinFunctionDefinition.Option.Open:
+                    return CallOpen((string)arguments[0]);
+
                 case BuiltinFunctionDefinition.Option.TupleGet:
                     return CallTupleGet((TupleAdapter)arguments[0], (int)arguments[1]);
 
@@ -1026,6 +1041,20 @@ namespace Handmada.ReLang.Compilation.Runtime {
                 return null;
             } else {
                 return index;
+            }
+        }
+
+
+        private object CallOpen(string path) {
+            if (File.Exists(path)) {
+                try {
+                    return new FileStream(path, FileMode.Open);
+                } catch (IOException) {
+                    var message = $"Failed to open '{path}'. It may be used by another process";
+                    throw new ProgramException(ProgramException.Option.IOError, message, null);
+                }
+            } else {
+                throw new ProgramException(ProgramException.Option.IOError, $"File '{path}' was not found", null);
             }
         }
 
