@@ -651,6 +651,12 @@ namespace Handmada.ReLang.Compilation.Runtime {
                 case BuiltinFunctionDefinition.Option.Print:
                     return CallPrint(arguments[0]);
 
+                case BuiltinFunctionDefinition.Option.Enumerate:
+                    return CallEnumerate(ConvertToEnumerable(arguments[0]));
+
+                case BuiltinFunctionDefinition.Option.Zip:
+                    return CallZip(ConvertToEnumerable(arguments[0]), ConvertToEnumerable(arguments[1]));
+
                 case BuiltinFunctionDefinition.Option.TupleGet:
                     return CallTupleGet((TupleAdapter)arguments[0], (int)arguments[1]);
 
@@ -1021,6 +1027,24 @@ namespace Handmada.ReLang.Compilation.Runtime {
             } else {
                 return index;
             }
+        }
+
+
+        private IEnumerable<object> CallEnumerate(IEnumerable<object> items) {
+            var i = 0;
+            foreach (var item in items) {
+                var tuple = new object[] { i, item };
+                i++;
+                yield return new TupleAdapter(tuple);
+            }
+        } 
+
+
+        private IEnumerable<object> CallZip(IEnumerable<object> itemsA, IEnumerable<object> itemsB) {
+            return Enumerable.Zip(itemsA, itemsB, (first, second) => {
+                var tuple = new object[] { first, second };
+                return (object)new TupleAdapter(tuple);
+            });
         }
 
 

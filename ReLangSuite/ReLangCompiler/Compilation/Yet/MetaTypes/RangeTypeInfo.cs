@@ -18,6 +18,16 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
+        public override ITypeInfo ResolveGeneric() {
+            var resolvedItemType = ItemType.ResolveGeneric();
+            if (resolvedItemType != null) {
+                return new RangeTypeInfo(resolvedItemType);
+            } else {
+                return null;
+            }
+        }
+
+
         public override bool CanUpcast(ITypeInfo sourceType) {
             return Equals(sourceType);
         }

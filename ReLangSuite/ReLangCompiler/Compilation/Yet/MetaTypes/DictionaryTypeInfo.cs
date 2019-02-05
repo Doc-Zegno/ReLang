@@ -24,6 +24,17 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
+        public override ITypeInfo ResolveGeneric() {
+            var resolvedKeyType = KeyType.ResolveGeneric();
+            var resolvedValueType = ValueType.ResolveGeneric();
+            if (resolvedKeyType != null && resolvedValueType != null) {
+                return new DictionaryTypeInfo(resolvedKeyType, resolvedValueType);
+            } else {
+                return null;
+            }
+        }
+
+
         public override bool CanUpcast(ITypeInfo sourceType) {
             return Equals(sourceType);
         }

@@ -28,12 +28,12 @@ namespace Handmada.ReLang.Compilation.Yet {
         public IFunctionDefinition FunctionDefinition { get; }
 
 
-        public FunctionCallExpression(IFunctionDefinition functionDefinition, List<IExpression> arguments,
+        public FunctionCallExpression(IFunctionDefinition functionDefinition, List<IExpression> arguments, ITypeInfo resultType,
                                       bool isLvalue, Location mainLocation)
         {
             FunctionDefinition = functionDefinition;
             Arguments = arguments;
-            TypeInfo = FunctionDefinition.Signature.ResultType;
+            TypeInfo = resultType;
             IsLvalue = isLvalue;
             MainLocation = mainLocation;
         }

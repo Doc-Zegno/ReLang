@@ -30,6 +30,25 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
+        public ITypeInfo ResolveGeneric() {
+            var resolvedResultType = ResultType.ResolveGeneric();
+            if (resolvedResultType == null) {
+                return null;
+            }
+
+            var resolvedArgumentTypes = new List<ITypeInfo>();
+            foreach (var argumentType in ArgumentTypes) {
+                var resolvedArgumentType = argumentType.ResolveGeneric();
+                if (resolvedArgumentType == null) {
+                    return null;
+                }
+                resolvedArgumentTypes.Add(resolvedArgumentType);
+            }
+
+            return new FunctionTypeInfo(resolvedArgumentTypes, resolvedResultType);
+        }
+
+
         public bool CanUpcast(ITypeInfo sourceType) {
             return Equals(sourceType);
         }

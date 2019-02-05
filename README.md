@@ -39,3 +39,18 @@ This pack includes:
 - [x] Slices for strings
 - [x] Verbatim strings (`@"C:\Program Files (x86)\Handmada\Yet Studio"`)
 - [x] String interpolation (`$"({x}, {y})"`)
+
+
+### Ready to work (Disposable DLC)
+![progress bar](http://progressed.io/bar/10?title=progress)
+
+This pack includes:
+- [x] Generic wrappers for sequences (`enumerate` and `zip`)
+- [ ] Files: tools for opening, reading, iterating and disposing
+- [ ] VM's support for `Disposable` interface
+- [ ] Exception handling with `try`-`catch`
+- [ ] Optional arguments (especially for `print` and `open`)
+- [ ] Overloaded util functions (like `min`, `max`)
+- [ ] Empty collections' literals (`[]`, `{}`, `{:}`)
+- [ ] Constructors for collections (`[Int]()`, `[Int](n)`)
+- [ ] Special "I don't care" identifier `_`

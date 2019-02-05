@@ -21,6 +21,16 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
+        public virtual ITypeInfo ResolveGeneric() {
+            var resolvedItemType = ItemType.ResolveGeneric();
+            if (resolvedItemType != null) {
+                return new IterableTypeInfo(resolvedItemType);
+            } else {
+                return null;
+            }
+        }
+
+
         public virtual bool CanUpcast(ITypeInfo sourceType) {
             ITypeInfo sourceItemType = null;
             switch (sourceType) {

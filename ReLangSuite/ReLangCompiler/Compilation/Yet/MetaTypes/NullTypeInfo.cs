@@ -11,6 +11,9 @@ namespace Handmada.ReLang.Compilation.Yet {
         public bool IsReferential => true;
 
 
+        public ITypeInfo ResolveGeneric() => this;
+
+
         public bool CanUpcast(ITypeInfo sourceType) {
             return false;
         }

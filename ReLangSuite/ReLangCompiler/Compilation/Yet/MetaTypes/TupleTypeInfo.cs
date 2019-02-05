@@ -24,6 +24,19 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
+        public ITypeInfo ResolveGeneric() {
+            var resolvedItemTypes = new List<ITypeInfo>();
+            foreach (var itemType in ItemTypes) {
+                var resolvedItemType = itemType.ResolveGeneric();
+                if (resolvedItemType == null) {
+                    return null;
+                }
+                resolvedItemTypes.Add(resolvedItemType);
+            }
+            return new TupleTypeInfo(resolvedItemTypes);
+        }
+
+
         public bool CanUpcast(ITypeInfo sourceType) {
             return Equals(sourceType);
         }

@@ -91,6 +91,7 @@
     <Compile Include="Compilation\Yet\MetaTypes\ArrayListTypeInfo.cs" />
     <Compile Include="Compilation\Yet\MetaTypes\DictionaryTypeInfo.cs" />
     <Compile Include="Compilation\Yet\MetaTypes\FunctionTypeInfo.cs" />
+    <Compile Include="Compilation\Yet\MetaTypes\GenericTypeInfo.cs" />
     <Compile Include="Compilation\Yet\MetaTypes\MaybeTypeInfo.cs" />
     <Compile Include="Compilation\Yet\MetaTypes\NullTypeInfo.cs" />
     <Compile Include="Compilation\Yet\MetaTypes\TupleTypeInfo.cs" />

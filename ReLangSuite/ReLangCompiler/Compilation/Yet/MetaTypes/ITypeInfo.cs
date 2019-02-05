@@ -21,6 +21,12 @@ namespace Handmada.ReLang.Compilation.Yet {
         bool IsReferential { get; }
 
         /// <summary>
+        /// Get a new instance of type where all generic entries are resolved to concrete types
+        /// </summary>
+        /// <returns>Resolved type or `null` if it's not possible</returns>
+        ITypeInfo ResolveGeneric();
+
+        /// <summary>
         /// Check if it's possible to upcast given source type to this one
         /// </summary>
         /// <param name="sourceType">Source type</param>

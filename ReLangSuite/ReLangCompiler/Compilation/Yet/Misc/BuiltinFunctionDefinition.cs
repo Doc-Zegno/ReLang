@@ -9,6 +9,8 @@ namespace Handmada.ReLang.Compilation.Yet {
     class BuiltinFunctionDefinition : IFunctionDefinition {
         public enum Option {
             Print,
+            Enumerate,
+            Zip,
 
             TupleGet,
             TupleGetFirst,
@@ -92,5 +94,42 @@ namespace Handmada.ReLang.Compilation.Yet {
                 new List<ITypeInfo> { PrimitiveTypeInfo.Object },
                 new List<bool> { false },
                 PrimitiveTypeInfo.Void);
+
+
+        public static BuiltinFunctionDefinition CreateEnumerate(bool areItemsMutable) {
+            var itemType = new GenericTypeInfo("T", new Dictionary<string, ITypeInfo>());
+            var argumentType = new IterableTypeInfo(itemType);
+            var tupleType = new TupleTypeInfo(new List<ITypeInfo> { PrimitiveTypeInfo.Int, itemType });
+            var resultType = new IterableTypeInfo(tupleType);
+
+            return new BuiltinFunctionDefinition(
+                "enumerate",
+                Option.Enumerate,
+                new List<string> { "items" },
+                new List<ITypeInfo> { argumentType },
+                new List<bool> { false },
+                resultType,
+                areItemsMutable);    
+        }
+        
+
+        public static BuiltinFunctionDefinition CreateZip(bool areItemsMutable) {
+            var table = new Dictionary<string, ITypeInfo>();
+            var firstItemType = new GenericTypeInfo("T", table);
+            var secondItemType = new GenericTypeInfo("E", table);
+            var firstArgumentType = new IterableTypeInfo(firstItemType);
+            var secondArgumentType = new IterableTypeInfo(secondItemType);
+            var tupleType = new TupleTypeInfo(new List<ITypeInfo> { firstItemType, secondItemType });
+            var resultType = new IterableTypeInfo(tupleType);
+
+            return new BuiltinFunctionDefinition(
+                "zip",
+                Option.Zip,
+                new List<string> { "itemsA", "itemsB" },
+                new List<ITypeInfo> { firstArgumentType, secondArgumentType },
+                new List<bool> { false, false },
+                resultType,
+                areItemsMutable);
+        }
     }
 }

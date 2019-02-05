@@ -24,6 +24,16 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
+        public ITypeInfo ResolveGeneric() {
+            var resolvedInternalType = InternalType.ResolveGeneric();
+            if (resolvedInternalType != null) {
+                return new MaybeTypeInfo(resolvedInternalType);
+            } else {
+                return null;
+            }
+        }
+
+
         public bool CanUpcast(ITypeInfo sourceType) {
             return Equals(sourceType);
         }

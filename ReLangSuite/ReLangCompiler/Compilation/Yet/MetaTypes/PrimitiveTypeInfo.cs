@@ -46,6 +46,9 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
+        public ITypeInfo ResolveGeneric() => this;
+
+
         public bool CanUpcast(ITypeInfo sourceType) {
             if (TypeOption == Option.Object) {
                 if (sourceType is NullTypeInfo || sourceType is MaybeTypeInfo) {
