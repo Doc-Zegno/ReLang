@@ -191,6 +191,20 @@ namespace Handmada.ReLang.Compilation {
                     Console.WriteLine(breakStatement.IsContinue ? "continue" : "break");
                     break;
 
+                case TryCatchStatement tryCatch:
+                    Console.WriteLine("try {");
+                    foreach (var s in tryCatch.TryBlock) {
+                        PrintStatement(s, shiftLevel + 1);
+                    }
+                    foreach (var (errorOption, instanceName, statements) in tryCatch.CatchBlocks) {
+                        Console.WriteLine(padding + $"}} catch {instanceName}: {errorOption} {{");
+                        foreach (var s in statements) {
+                            PrintStatement(s, shiftLevel + 1);
+                        }
+                    }
+                    Console.WriteLine(padding + "}");
+                    break;
+
                 default:
                     Console.WriteLine("<!> Unknown statement <!>");
                     break;

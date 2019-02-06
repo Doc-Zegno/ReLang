@@ -72,14 +72,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
             Console.ForegroundColor = ConsoleColor.Red;
 
             ProgramErr.WriteLine("Error has occured during program's execution:");
-            foreach (var location in e.Locations) {
-                if (location != null) {
-                    ProgramErr.WriteLine($"  at line {location.LineNumber + 1} at column {location.ColumnNumber + 1}");
-                    ProgramErr.Write($"    {location.Line}");
-                    ProgramErr.WriteLine($"{new string(' ', location.ColumnNumber + 4)}^\n");
-                }
-            }
-            ProgramErr.WriteLine($"{e.ErrorOption}: {e.Message}\n");
+            ProgramErr.WriteLine(ErrorToString(e));
 
             Console.ForegroundColor = oldForeground;
 
@@ -261,6 +254,33 @@ namespace Handmada.ReLang.Compilation.Runtime {
                         returnOption = ReturnOption.Continue;
                     } else {
                         returnOption = ReturnOption.Break;
+                    }
+                    break;
+
+                case TryCatchStatement tryCatch:
+                    try {
+                        frameMachine.EnterScope();
+                        try {
+                            ExecuteStatementList(tryCatch.TryBlock);
+                        } finally {
+                            frameMachine.LeaveScope();
+                        }
+                    } catch (ProgramException e) {
+                        foreach (var (option, instanceName, catchStatements) in tryCatch.CatchBlocks) {
+                            if (option == e.ErrorOption || option == ErrorTypeInfo.Option.Error) {
+                                frameMachine.EnterScope();
+                                if (instanceName != "_") {
+                                    frameMachine.CreateVariable(e, false);
+                                }
+                                try {
+                                    ExecuteStatementList(catchStatements);
+                                } finally {
+                                    frameMachine.LeaveScope();
+                                }
+                                return;
+                            }
+                        }
+                        throw;
                     }
                     break;
 
@@ -584,7 +604,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
                         return (char)integer;
                     } else {
                         throw new ProgramException(
-                            ProgramException.Option.FormatError, 
+                            ErrorTypeInfo.Option.FormatError, 
                             $"Cannot convert {integer} to a valid character code", 
                             conversion.MainLocation);
                     }
@@ -606,7 +626,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
                         return resultInt;
                     } else {
                         throw new ProgramException(
-                            ProgramException.Option.FormatError, 
+                            ErrorTypeInfo.Option.FormatError, 
                             $"Cannot convert \"{value}\" to integer", 
                             conversion.MainLocation);
                     }
@@ -616,7 +636,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
                         return resultFloat;
                     } else {
                         throw new ProgramException(
-                            ProgramException.Option.FormatError, 
+                            ErrorTypeInfo.Option.FormatError, 
                             $"Cannot convert \"{value}\" to floating", 
                             conversion.MainLocation);
                     }
@@ -631,7 +651,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
                         default:
                             throw new ProgramException(
-                                ProgramException.Option.FormatError, 
+                                ErrorTypeInfo.Option.FormatError, 
                                 $"Cannot convert \"{value}\" to boolean", 
                                 conversion.MainLocation);
                     }
@@ -795,6 +815,23 @@ namespace Handmada.ReLang.Compilation.Runtime {
                 case BuiltinFunctionDefinition.Option.StringStartsWith:
                     return ((string)arguments[0]).StartsWith((string)arguments[1]);
 
+                case BuiltinFunctionDefinition.Option.FileReadLine:
+                    return CallFileReadLine((FileStream)arguments[0]);
+
+                case BuiltinFunctionDefinition.Option.FileReset:
+                    ((FileStream)arguments[0]).Seek(0, SeekOrigin.Begin);
+                    return null;
+
+                case BuiltinFunctionDefinition.Option.FileClose:
+                    ((FileStream)arguments[0]).Close();
+                    return null;
+
+                case BuiltinFunctionDefinition.Option.ErrorGetMessage:
+                    return ((ProgramException)arguments[0]).Message;
+
+                case BuiltinFunctionDefinition.Option.ErrorGetStackTrace:
+                    return ErrorStackTraceToString((ProgramException)arguments[0]);
+
                 default:
                     throw new VirtualMachineException($"Unsupported built-in function call: {option}");
             }
@@ -857,7 +894,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
             // Still no support for negative slices
             if (step <= 0) {
-                throw new ProgramException(ProgramException.Option.ValueError, $"Slice's step must be positive (got {step})", null);
+                throw new ProgramException(ErrorTypeInfo.Option.ValueError, $"Slice's step must be positive (got {step})", null);
             }
 
             return list.GetSlice(startAdjusted, endAdjusted, step);
@@ -1005,7 +1042,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
             // Still no support for negative slices
             if (step <= 0) {
-                throw new ProgramException(ProgramException.Option.ValueError, $"Slice's step must be positive (got {step})", null);
+                throw new ProgramException(ErrorTypeInfo.Option.ValueError, $"Slice's step must be positive (got {step})", null);
             }
 
             // Build slice
@@ -1045,16 +1082,29 @@ namespace Handmada.ReLang.Compilation.Runtime {
         }
 
 
+        private object CallFileReadLine(FileStream stream) {
+            try {
+                var reader = new StreamReader(stream);
+                var line = reader.ReadLine();  // maybe null
+                                               // TODO: looks like stream reader reads lots of lines at a time
+                                               // Next calls of `readLine()` can't see anything
+                return line;
+            } catch (IOException) {
+                throw new ProgramException(ErrorTypeInfo.Option.IOError, "Cannot read from this file stream", null);
+            }
+        }
+
+
         private object CallOpen(string path) {
             if (File.Exists(path)) {
                 try {
-                    return new FileStream(path, FileMode.Open);
+                    return new FileStream(path, FileMode.Open, FileAccess.Read);
                 } catch (IOException) {
                     var message = $"Failed to open '{path}'. It may be used by another process";
-                    throw new ProgramException(ProgramException.Option.IOError, message, null);
+                    throw new ProgramException(ErrorTypeInfo.Option.IOError, message, null);
                 }
             } else {
-                throw new ProgramException(ProgramException.Option.IOError, $"File '{path}' was not found", null);
+                throw new ProgramException(ErrorTypeInfo.Option.IOError, $"File '{path}' was not found", null);
             }
         }
 
@@ -1121,6 +1171,9 @@ namespace Handmada.ReLang.Compilation.Runtime {
                         return $"({ObjectListToString(tuple.Items, true, false)})";
                     }
 
+                case ProgramException e:
+                    return ErrorToString(e);
+
                 default:
                     return obj.ToString();
             }
@@ -1129,6 +1182,32 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
         private string ObjectListToString(IEnumerable<object> objs, bool isEscaped, bool isTuplePair) {
             return string.Join(", ", objs.Select(obj => ObjectToString(obj, isEscaped, isTuplePair)));
+        }
+
+
+        private string ErrorToString(ProgramException e) {
+            var builder = new StringBuilder();
+            builder.Append(ErrorStackTraceToString(e));
+            builder.Append($"\n{e.ErrorOption}: {e.Message}");
+            return builder.ToString();
+        }
+
+
+        private string ErrorStackTraceToString(ProgramException e) {
+            var builder = new StringBuilder();
+            var isFirst = true;
+            foreach (var location in e.Locations) {
+                if (location != null) {
+                    if (!isFirst) {
+                        builder.Append("\n");
+                    }
+                    isFirst = false;
+                    builder.Append($"  at line {location.LineNumber + 1} at column {location.ColumnNumber + 1}\n");
+                    builder.Append($"    {location.Line}");
+                    builder.Append($"{new string(' ', location.ColumnNumber + 4)}^");
+                }
+            }
+            return builder.ToString();
         }
 
 

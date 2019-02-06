@@ -60,6 +60,13 @@ namespace Handmada.ReLang.Compilation.Yet {
             StringStartsWith,
 
             RangeContains,
+
+            FileReadLine,
+            FileReset,
+            FileClose,
+
+            ErrorGetMessage,
+            ErrorGetStackTrace,
         }
 
 

@@ -67,6 +67,8 @@ namespace Handmada.ReLang.Compilation.Lexing {
         Null,
         Mutable,
         Const,
+        Try,
+        Catch,
     }
 
 

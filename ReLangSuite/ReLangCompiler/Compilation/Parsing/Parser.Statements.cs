@@ -67,7 +67,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                         case OperatorMeaning.Use:
                             MoveNextLexeme();
-                            return GetVariableDeclaration(VariableQualifier.Final | VariableQualifier.Disposable, location);
+                            return GetVariableDeclaration(VariableQualifier.Final | VariableQualifier.Mutable | VariableQualifier.Disposable,
+                                                          location);
 
                         case OperatorMeaning.For:
                             MoveNextLexeme();
@@ -93,6 +94,10 @@ namespace Handmada.ReLang.Compilation.Parsing {
                             MoveNextLexeme();
                             return GetContinue(location);
 
+                        case OperatorMeaning.Try:
+                            MoveNextLexeme();
+                            return GetTryCatch();
+
                         case OperatorMeaning.OpenParenthesis:
                             return GetFunctionCallOrAssignment();
 
@@ -107,6 +112,87 @@ namespace Handmada.ReLang.Compilation.Parsing {
             }
 
             return null;
+        }
+
+
+
+        // [try] {
+        //     expr
+        // } catch IOError {
+        //     expr
+        // }
+        private IStatement GetTryCatch() {
+            CheckOperator(OperatorMeaning.OpenBrace);
+            scopeStack.EnterScope(false, false);
+            var tryStatements = GetStatementList(false);
+            scopeStack.LeaveScope();
+            CheckOperator(OperatorMeaning.CloseBrace);
+
+            var catchBlocks = new List<(ErrorTypeInfo.Option, string, List<IStatement>)>();
+            var traced = new HashSet<ErrorTypeInfo.Option>();
+
+            do {
+                var location = currentLexeme.StartLocation;
+                CheckOperator(OperatorMeaning.Catch);
+                var errorOption = ErrorTypeInfo.Option.None;
+                var instanceName = "_";
+
+                if (traced.Contains(ErrorTypeInfo.Option.Error)) {
+                    RaiseError("Useless catch-block: universal handler has already been defined", location, true);
+                }
+
+                if (WhetherOperator(OperatorMeaning.OpenBrace)) {
+                    // Catch all
+                    traced.Add(ErrorTypeInfo.Option.Error);
+                    errorOption = ErrorTypeInfo.Option.Error;
+
+                } else {
+                    // Catch concrete one
+                    location = currentLexeme.StartLocation;
+                    var name = GetSymbolText("Either error's type or name of error's instance");
+                    var errorTypeName = "";
+                    if (WhetherOperator(OperatorMeaning.Colon)) {
+                        // Type of error after name
+                        MoveNextLexeme();
+                        instanceName = name;
+                        location = currentLexeme.StartLocation;
+                        errorTypeName = GetSymbolText("Error's type");
+                    } else {
+                        // Only type
+                        errorTypeName = name;
+                    }
+
+                    foreach (var objectOption in Enum.GetValues(typeof(ErrorTypeInfo.Option))) {
+                        var option = (ErrorTypeInfo.Option)objectOption;
+                        if (option.ToString() == errorTypeName) {
+                            errorOption = option;
+                            break;
+                        }
+                    }
+                    if (errorOption == ErrorTypeInfo.Option.None) {
+                        RaiseError($"'{errorTypeName}' is not a valid error's type", location);
+                    }
+
+                    if (traced.Contains(errorOption)) {
+                        RaiseError("Handler for this error has already been declared", location, true);
+                    }
+
+                    traced.Add(errorOption);
+                }
+
+                CheckOperator(OperatorMeaning.OpenBrace);
+                scopeStack.EnterScope(false, false);
+                if (instanceName != "_") {
+                    scopeStack.DeclareVariable(instanceName, new ErrorTypeInfo(errorOption), MakeQualifier(true, true, false), null);
+                }
+                var catchStatements = GetStatementList(false);
+                scopeStack.LeaveScope();
+                CheckOperator(OperatorMeaning.CloseBrace);
+
+                catchBlocks.Add((errorOption, instanceName, catchStatements));
+            } while (WhetherOperator(OperatorMeaning.Catch));
+
+            return new TryCatchStatement(tryStatements, catchBlocks);
         }
 
 

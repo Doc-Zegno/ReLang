@@ -41,7 +41,37 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public override IFunctionDefinition GetMethodDefinition(string name, bool isSelfMutable) {
-            return base.GetMethodDefinition(name, isSelfMutable);
+            switch (name) {
+                case "reset":
+                    return new BuiltinFunctionDefinition(
+                        name,
+                        BuiltinFunctionDefinition.Option.FileReset,
+                        new List<string> { "self" },
+                        new List<ITypeInfo> { this },
+                        new List<bool> { true },
+                        PrimitiveTypeInfo.Void);
+
+                /*case "readLine":
+                    return new BuiltinFunctionDefinition(
+                        name,
+                        BuiltinFunctionDefinition.Option.FileReadLine,
+                        new List<string> { "self" },
+                        new List<ITypeInfo> { this },
+                        new List<bool> { true },
+                        new MaybeTypeInfo(PrimitiveTypeInfo.String));*/
+
+                case "close":
+                    return new BuiltinFunctionDefinition(
+                        name,
+                        BuiltinFunctionDefinition.Option.FileClose,
+                        new List<string> { "self" },
+                        new List<ITypeInfo> { this },
+                        new List<bool> { true },
+                        PrimitiveTypeInfo.Void);
+
+                default:
+                    return base.GetMethodDefinition(name, isSelfMutable);
+            }
         }
 
 

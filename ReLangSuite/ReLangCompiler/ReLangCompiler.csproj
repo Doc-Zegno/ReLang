@@ -77,7 +77,7 @@
     <Compile Include="Compilation\Parsing\IIdentifier.cs" />
     <Compile Include="Compilation\Parsing\Parser.Expressions.cs" />
     <Compile Include="Compilation\Parsing\Parser.Statements.cs" />
-    <Compile Include="Compilation\Parsing\ProgramException.cs" />
+    <Compile Include="Compilation\Runtime\ProgramException.cs" />
     <Compile Include="Compilation\Parsing\SetterIdentifier.cs" />
     <Compile Include="Compilation\Parsing\SingleIdentifier.cs" />
     <Compile Include="Compilation\Runtime\DictionaryAdapter.cs" />
@@ -91,6 +91,7 @@
     <Compile Include="Compilation\Yet\MetaTypes\ArrayListTypeInfo.cs" />
     <Compile Include="Compilation\Yet\MetaTypes\DictionaryTypeInfo.cs" />
     <Compile Include="Compilation\Yet\MetaTypes\DisposableTypeInfo.cs" />
+    <Compile Include="Compilation\Yet\MetaTypes\ErrorTypeInfo.cs" />
     <Compile Include="Compilation\Yet\MetaTypes\FileStreamTypeInfo.cs" />
     <Compile Include="Compilation\Yet\MetaTypes\FunctionTypeInfo.cs" />
     <Compile Include="Compilation\Yet\MetaTypes\GenericTypeInfo.cs" />
@@ -142,6 +143,7 @@
     <Compile Include="Compilation\Yet\Expressions\SetLiteralExpression.cs" />
     <Compile Include="Compilation\Yet\Expressions\TypeLiteralExpression.cs" />
     <Compile Include="Compilation\Yet\Expressions\UnaryOperatorExpression.cs" />
+    <Compile Include="Compilation\Yet\Statements\TryCatchStatement.cs" />
     <Compile Include="Compilation\Yet\Statements\VariableDeclarationStatement.cs" />
     <Compile Include="Compilation\Yet\Expressions\VariableExpression.cs" />
     <Compile Include="Compilation\Runtime\RangeAdapter.cs" />

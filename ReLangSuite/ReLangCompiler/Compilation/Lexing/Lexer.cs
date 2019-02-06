@@ -329,6 +329,12 @@ namespace Handmada.ReLang.Compilation.Lexing {
                 case "const":
                     return new OperatorLexeme(OperatorMeaning.Const, location);
 
+                case "try":
+                    return new OperatorLexeme(OperatorMeaning.Try, location);
+
+                case "catch":
+                    return new OperatorLexeme(OperatorMeaning.Catch, location);
+
                 default:
                     return new SymbolLexeme(text, location);
             }
