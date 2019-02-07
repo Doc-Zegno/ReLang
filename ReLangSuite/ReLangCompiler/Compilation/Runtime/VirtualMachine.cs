@@ -692,6 +692,18 @@ namespace Handmada.ReLang.Compilation.Runtime {
                 case BuiltinFunctionDefinition.Option.Open:
                     return CallOpen((string)arguments[0]);
 
+                case BuiltinFunctionDefinition.Option.Maxi:
+                    return Math.Max((int)arguments[0], (int)arguments[1]);
+
+                case BuiltinFunctionDefinition.Option.Mini:
+                    return Math.Min((int)arguments[0], (int)arguments[1]);
+
+                case BuiltinFunctionDefinition.Option.Maxf:
+                    return Math.Max((double)arguments[0], (double)arguments[1]);
+
+                case BuiltinFunctionDefinition.Option.Minf:
+                    return Math.Min((double)arguments[0], (double)arguments[1]);
+
                 case BuiltinFunctionDefinition.Option.TupleGet:
                     return CallTupleGet((TupleAdapter)arguments[0], (int)arguments[1]);
 

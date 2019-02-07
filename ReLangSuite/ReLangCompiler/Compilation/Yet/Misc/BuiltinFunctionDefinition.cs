@@ -12,6 +12,10 @@ namespace Handmada.ReLang.Compilation.Yet {
             Enumerate,
             Zip,
             Open,
+            Maxi,
+            Maxf,
+            Mini,
+            Minf,
 
             TupleGet,
             TupleGetFirst,
@@ -112,6 +116,46 @@ namespace Handmada.ReLang.Compilation.Yet {
                 new List<ITypeInfo> { PrimitiveTypeInfo.String },
                 new List<bool> { false },
                 new FileStreamTypeInfo());
+
+
+        public static BuiltinFunctionDefinition Maxi =>
+            new BuiltinFunctionDefinition(
+                "maxi",
+                Option.Maxi,
+                new List<string> { "x", "y" },
+                new List<ITypeInfo> { PrimitiveTypeInfo.Int, PrimitiveTypeInfo.Int },
+                new List<bool> { false, false },
+                PrimitiveTypeInfo.Int);
+
+
+        public static BuiltinFunctionDefinition Mini =>
+            new BuiltinFunctionDefinition(
+                "mini",
+                Option.Mini,
+                new List<string> { "x", "y" },
+                new List<ITypeInfo> { PrimitiveTypeInfo.Int, PrimitiveTypeInfo.Int },
+                new List<bool> { false, false },
+                PrimitiveTypeInfo.Int);
+
+
+        public static BuiltinFunctionDefinition Maxf =>
+            new BuiltinFunctionDefinition(
+                "maxf",
+                Option.Maxf,
+                new List<string> { "x", "y" },
+                new List<ITypeInfo> { PrimitiveTypeInfo.Float, PrimitiveTypeInfo.Float },
+                new List<bool> { false, false },
+                PrimitiveTypeInfo.Float);
+
+
+        public static BuiltinFunctionDefinition Minf =>
+            new BuiltinFunctionDefinition(
+                "minf",
+                Option.Minf,
+                new List<string> { "x", "y" },
+                new List<ITypeInfo> { PrimitiveTypeInfo.Float, PrimitiveTypeInfo.Float },
+                new List<bool> { false, false },
+                PrimitiveTypeInfo.Float);
 
 
         public static BuiltinFunctionDefinition CreateEnumerate(bool areItemsMutable) {

@@ -52,6 +52,32 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     definition = BuiltinFunctionDefinition.Open;
                     break;
 
+                case "max":
+                    if (arguments.Count >= 1) {
+                        if (TryConvertExpression(arguments[0], PrimitiveTypeInfo.Int) != null) {
+                            definition = BuiltinFunctionDefinition.Maxi;
+                        } else {
+                            definition = BuiltinFunctionDefinition.Maxf;
+                        }
+                    } else {
+                        RaiseError("Not enough arguments provided for this function call", location);
+                        definition = null;
+                    }
+                    break;
+
+                case "min":
+                    if (arguments.Count >= 1) {
+                        if (TryConvertExpression(arguments[0], PrimitiveTypeInfo.Int) != null) {
+                            definition = BuiltinFunctionDefinition.Mini;
+                        } else {
+                            definition = BuiltinFunctionDefinition.Minf;
+                        }
+                    } else {
+                        RaiseError("Not enough arguments provided for this function call", location);
+                        definition = null;
+                    }
+                    break;
+
                 default:
                     definition = functionTree.GetFunctionDefinition(name);
                     if (definition == null) {
