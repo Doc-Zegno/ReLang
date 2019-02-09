@@ -40,7 +40,7 @@ namespace Handmada.ReLang.Compilation.Yet {
 
         public override IExpression ConvertFrom(IExpression expression) {
             if (Equals(expression.TypeInfo)) {
-                return expression;
+                return expression.ChangeType(this);
             } else {
                 return null;
             }
@@ -65,7 +65,7 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public override bool Equals(object obj) {
-            return obj is RangeTypeInfo;
+            return obj is IncompleteTypeInfo || obj is RangeTypeInfo;
         }
 
 

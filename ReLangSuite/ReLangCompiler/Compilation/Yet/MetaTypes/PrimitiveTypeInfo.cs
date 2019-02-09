@@ -28,6 +28,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         public Option TypeOption { get; }
         public string Name => TypeOption.ToString();
         public bool IsReferential { get; }
+        public bool IsComplete => true;
 
 
         public PrimitiveTypeInfo(Option typeOption) {
@@ -51,7 +52,9 @@ namespace Handmada.ReLang.Compilation.Yet {
 
         public bool CanUpcast(ITypeInfo sourceType) {
             if (TypeOption == Option.Object) {
-                if (sourceType is NullTypeInfo || sourceType is MaybeTypeInfo) {
+                if (sourceType is NullTypeInfo || sourceType is MaybeTypeInfo
+                    || sourceType is PrimitiveTypeInfo primitive && primitive.TypeOption == Option.Void)
+                {
                     return false;
                 } else {
                     return true;
@@ -379,7 +382,7 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public override bool Equals(object obj) {
-            if (obj is PrimitiveTypeInfo primitiveType && TypeOption == primitiveType.TypeOption) {
+            if (obj is IncompleteTypeInfo || obj is PrimitiveTypeInfo primitiveType && TypeOption == primitiveType.TypeOption) {
                 return true;
             } else {
                 return false;

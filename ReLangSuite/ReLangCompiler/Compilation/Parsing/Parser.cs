@@ -484,6 +484,50 @@ namespace Handmada.ReLang.Compilation.Parsing {
         }
 
 
+        private ITypeInfo ForceJoinTypes(IExpression x, IExpression y) {
+            var joined = TryJoinTypes(x, y);
+            if (joined == null) {
+                RaiseError($"Cannot join expression of type '{y.TypeInfo.Name}' and '{x.TypeInfo.Name}'", y.MainLocation);
+            }
+            return joined;
+        }
+
+
+        private ITypeInfo TryJoinTypes(IExpression x, IExpression y) {
+            // 1) x <- y
+            var yConverted = x.TypeInfo.ConvertFrom(y);
+            if (yConverted != null) {
+                return yConverted.TypeInfo;
+            }
+
+            // 2) y <- x
+            var xConverted = y.TypeInfo.ConvertFrom(x);
+            if (xConverted != null) {
+                return xConverted.TypeInfo;
+            }
+
+            // 3) x is not maybe T, y is null -> Maybe<T>
+            if (!(x.TypeInfo is MaybeTypeInfo) && y.TypeInfo is NullTypeInfo) {
+                return new MaybeTypeInfo(x.TypeInfo);
+            }
+            if (x.TypeInfo is NullTypeInfo && !(y.TypeInfo is MaybeTypeInfo)) {
+                return new MaybeTypeInfo(y.TypeInfo);
+            }
+            
+            // 4) x is Maybe<T>, y is E, E <- T
+            // i.e. Float? + Object = Object?
+            if (x.TypeInfo is MaybeTypeInfo maybeType && y.TypeInfo.CanUpcast(maybeType.InternalType)) {
+                return new MaybeTypeInfo(y.TypeInfo);
+            }
+            if (y.TypeInfo is MaybeTypeInfo maybeType2 && x.TypeInfo.CanUpcast(maybeType2.InternalType)) {
+                return new MaybeTypeInfo(x.TypeInfo);
+            }
+
+            // Nothing works [and nobody knows why]
+            return null;
+        }
+
+
         private string GetOperatorName(OperatorMeaning meaning) {
             switch (meaning) {
                 case OperatorMeaning.Unknown:

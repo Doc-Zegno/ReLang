@@ -9,6 +9,7 @@ namespace Handmada.ReLang.Compilation.Yet {
     class IterableTypeInfo : ITypeInfo {
         public virtual string Name => $"{ItemType.Name}&";
         public virtual bool IsReferential => true;
+        public virtual bool IsComplete => ItemType.IsComplete;
 
         /// <summary>
         /// Type of items obtained from this iterable
@@ -96,7 +97,7 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public override bool Equals(object obj) {
-            if (obj is IterableTypeInfo iterable && ItemType.Equals(iterable.ItemType)) {
+            if (obj is IncompleteTypeInfo || obj is IterableTypeInfo iterable && ItemType.Equals(iterable.ItemType)) {
                 return true;
             } else {
                 return false;

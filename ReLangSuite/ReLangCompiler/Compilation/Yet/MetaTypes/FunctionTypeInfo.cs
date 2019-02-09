@@ -12,6 +12,7 @@ namespace Handmada.ReLang.Compilation.Yet {
     class FunctionTypeInfo : ITypeInfo {
         public string Name => $"({string.Join(", ", ArgumentTypes.Select(type => type.Name))}) -> {ResultType.Name}";
         public bool IsReferential => true;
+        public bool IsComplete { get; }
 
         /// <summary>
         /// Types of function's arguments
@@ -27,6 +28,17 @@ namespace Handmada.ReLang.Compilation.Yet {
         public FunctionTypeInfo(List<ITypeInfo> argumentTypes, ITypeInfo resultType) {
             ArgumentTypes = argumentTypes;
             ResultType = resultType;
+
+            IsComplete = true;
+            foreach (var argumentType in argumentTypes) {
+                if (!argumentType.IsComplete) {
+                    IsComplete = false;
+                    break;
+                }
+            }
+            if (!resultType.IsComplete) {
+                IsComplete = false;
+            }
         }
 
 
@@ -61,7 +73,7 @@ namespace Handmada.ReLang.Compilation.Yet {
 
         public IExpression ConvertFrom(IExpression expression) {
             if (Equals(expression.TypeInfo)) {
-                return expression; 
+                return expression.ChangeType(this); 
             } else {
                 return null;
             }
@@ -69,7 +81,9 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public override bool Equals(object obj) {
-            if (obj is FunctionTypeInfo functionType) {
+            if (obj is IncompleteTypeInfo) {
+                return true;
+            } else if (obj is FunctionTypeInfo functionType) {
                 if (!ResultType.Equals(functionType.ResultType)) {
                     return false;
                 }

@@ -803,6 +803,11 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
         private IStatement ForceDeclareVariable(SingleIdentifier identifier, IExpression value, VariableQualifier qualifier) {
+            // Skip "I don't care" identifier
+            if (identifier.Name == "_") {
+                return new NopeStatement();
+            }
+
             var converted = value;
             var typeInfo = value.TypeInfo;
             if (identifier.ExpectedType != null) {
@@ -814,8 +819,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 RaiseError("Cannot declare variable of type 'Void'", converted.MainLocation);
             }
 
-            if (typeInfo is NullTypeInfo) {
-                RaiseError("Cannot deduce type from given expression", converted.MainLocation);
+            if (!typeInfo.IsComplete) {
+                RaiseError($"Cannot deduce complete type from '{typeInfo.Name}'", converted.MainLocation);
             }
 
             if ((qualifier & VariableQualifier.Disposable) != 0) {

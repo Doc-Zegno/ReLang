@@ -34,7 +34,7 @@ namespace Handmada.ReLang.Compilation.Yet {
 
         public override IExpression ConvertFrom(IExpression expression) {
             if (Equals(expression.TypeInfo)) {
-                return expression;
+                return expression.ChangeType(this);
             } else {
                 return null;
             }
@@ -43,7 +43,7 @@ namespace Handmada.ReLang.Compilation.Yet {
 
         public override IExpression ConstructFrom(IExpression expression, Location location) {
             switch (expression.TypeInfo) {
-                case IterableTypeInfo iterable:
+                case IterableTypeInfo iterable when !(iterable.ItemType is IncompleteTypeInfo):
                 case PrimitiveTypeInfo primitive when primitive.TypeOption == PrimitiveTypeInfo.Option.String:
                     return new ConversionExpression(ConversionExpression.Option.Iterable2List, expression, location);
 
@@ -54,7 +54,7 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public override bool Equals(object obj) {
-            if (obj is ArrayListTypeInfo arrayListType && ItemType.Equals(arrayListType.ItemType)) {
+            if (obj is IncompleteTypeInfo || obj is ArrayListTypeInfo arrayListType && ItemType.Equals(arrayListType.ItemType)) {
                 return true;
             } else {
                 return false;

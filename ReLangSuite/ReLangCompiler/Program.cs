@@ -205,6 +205,10 @@ namespace Handmada.ReLang.Compilation {
                     Console.WriteLine(padding + "}");
                     break;
 
+                case NopeStatement nope:
+                    Console.WriteLine("nope");
+                    break;
+
                 default:
                     Console.WriteLine("<!> Unknown statement <!>");
                     break;

@@ -21,6 +21,11 @@ namespace Handmada.ReLang.Compilation.Yet {
         bool IsReferential { get; }
 
         /// <summary>
+        /// Whether a complete type could be deduced from this one
+        /// </summary>
+        bool IsComplete { get; }
+
+        /// <summary>
         /// Get a new instance of type where all generic entries are resolved to concrete types
         /// </summary>
         /// <returns>Resolved type or `null` if it's not possible</returns>

@@ -12,6 +12,7 @@ namespace Handmada.ReLang.Compilation.Yet {
     class DisposableTypeInfo : ITypeInfo {
         public string Name => "Disposable";
         public bool IsReferential => true;
+        public bool IsComplete => true;
 
 
         public ITypeInfo ResolveGeneric() {
@@ -54,7 +55,7 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public override bool Equals(object obj) {
-            return obj is DisposableTypeInfo;
+            return obj is IncompleteTypeInfo || obj is DisposableTypeInfo;
         }
 
 

@@ -543,87 +543,106 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
 
-        // [a, b, c, d, e]
+        // {[}a, b, c, d, e]
         private IExpression GetListLiteral(Location location) {
-            var item = GetExpression();
-            var items = new List<IExpression> { item };
-            items.AddRange(GetItemList(item.TypeInfo));
-            CheckOperator(OperatorMeaning.CloseBracket);
-            return new ListLiteralExpression(items, item.TypeInfo, location);
+            if (WhetherOperator(OperatorMeaning.CloseBracket)) {
+                MoveNextLexeme();
+                return new ListLiteralExpression(new List<IExpression>(), new IncompleteTypeInfo(), location);
+            } else {
+                var firstItem = GetExpression();
+                var items = GetItemList(firstItem);
+                CheckOperator(OperatorMeaning.CloseBracket);
+                return new ListLiteralExpression(items, items[0].TypeInfo, location);
+            }
         }
 
 
 
         // {a, b, c, d, e}
         private IExpression GetSetOrDictionaryLiteral(Location location) {
-            // Determine whether this is set or dictionary
-            var key = GetExpression();
-
-            if (WhetherOperator(OperatorMeaning.Colon)) {
-                // Dictionary
+            if (WhetherOperator(OperatorMeaning.CloseBrace)) {
                 MoveNextLexeme();
-                var value = GetExpression();
+                return new SetLiteralExpression(new List<IExpression>(), new IncompleteTypeInfo(), location);
 
-                var pairs = new List<(IExpression, IExpression)> { (key, value) };
-                pairs.AddRange(GetPairList(key.TypeInfo, value.TypeInfo));
+            } else if (WhetherOperator(OperatorMeaning.Colon)) {
+                MoveNextLexeme();
                 CheckOperator(OperatorMeaning.CloseBrace);
-                return new DictionaryLiteralExpression(pairs, key.TypeInfo, value.TypeInfo, location);
+                return new DictionaryLiteralExpression(new List<(IExpression, IExpression)>(),
+                                                       new IncompleteTypeInfo(), new IncompleteTypeInfo(), location);
 
             } else {
-                // Set
-                var items = new List<IExpression> { key };
-                items.AddRange(GetItemList(key.TypeInfo));
-                CheckOperator(OperatorMeaning.CloseBrace);
-                return new SetLiteralExpression(items, key.TypeInfo, location);
+                // Determine whether this is set or dictionary
+                var key = GetExpression();
+
+                if (WhetherOperator(OperatorMeaning.Colon)) {
+                    // Dictionary
+                    MoveNextLexeme();
+                    var value = GetExpression();
+                    var pairs = GetPairList(key, value);
+                    CheckOperator(OperatorMeaning.CloseBrace);
+                    return new DictionaryLiteralExpression(pairs, pairs[0].Item1.TypeInfo, pairs[0].Item2.TypeInfo, location);
+
+                } else {
+                    // Set
+                    var items = GetItemList(key);
+                    CheckOperator(OperatorMeaning.CloseBrace);
+                    return new SetLiteralExpression(items, items[0].TypeInfo, location);
+                }
             }
         }
 
 
 
-        private List<(IExpression, IExpression)> GetPairList(ITypeInfo keyType, ITypeInfo valueType) {
-            var pairs = new List<(IExpression, IExpression)>();
+        private List<(IExpression, IExpression)> GetPairList(IExpression firstKey, IExpression firstValue) {
+            var pairs = new List<(IExpression, IExpression)> { (firstKey, firstValue) };
+            var joinedKeyType = firstKey.TypeInfo;
+            var joinedValueType = firstValue.TypeInfo;
+            var leftKey = firstKey;
+            var leftValue = firstValue;
+
             while (WhetherOperator(OperatorMeaning.Comma)) {
                 MoveNextLexeme();
 
                 // Get key and check type
-                var locationKey = currentLexeme.StartLocation;
-                var key = GetExpression();
-                if (!keyType.Equals(key.TypeInfo)) {
-                    RaiseError($"Key's type mismatch (expected '{keyType.Name}' but got '{key.TypeInfo.Name}')", locationKey);
-                }
+                var rightKey = GetExpression();
+                joinedKeyType = ForceJoinTypes(leftKey, rightKey);
+                leftKey = joinedKeyType.ConvertFrom(rightKey);
 
                 // Swallow colon
                 CheckOperator(OperatorMeaning.Colon);
 
                 // Get value and check type
-                var locationValue = currentLexeme.StartLocation;
-                var value = GetExpression();
-                if (!valueType.Equals(value.TypeInfo)) {
-                    RaiseError($"Value's type mismatch (expected '{valueType.Name}' but got '{value.TypeInfo.Name}')", locationValue);
-                }
+                var rightValue = GetExpression();
+                joinedValueType = ForceJoinTypes(leftValue, rightValue);
+                leftValue = joinedValueType.ConvertFrom(rightValue);
 
-                pairs.Add((key, value));
+                pairs.Add((leftKey, leftValue));
             }
-            return pairs;
+
+            return new List<(IExpression, IExpression)>(
+                pairs.Select(
+                    pair => (joinedKeyType.ConvertFrom(pair.Item1), joinedValueType.ConvertFrom(pair.Item2))
+                )
+            );
         }
 
 
 
-        private List<IExpression> GetItemList(ITypeInfo itemType) {
-            var items = new List<IExpression>();
+        private List<IExpression> GetItemList(IExpression firstItem) {
+            var items = new List<IExpression> { firstItem };
+            var joinedType = firstItem.TypeInfo;
+            var leftItem = firstItem;
+
+
             while (WhetherOperator(OperatorMeaning.Comma)) {
                 MoveNextLexeme();
-
-                // Get item and check type
-                var location = currentLexeme.StartLocation;
-                var item = GetExpression();
-                if (!itemType.Equals(item.TypeInfo)) {
-                    RaiseError($"Item's type mismatch (expected '{itemType.Name}' but got '{item.TypeInfo.Name}')", location);
-                }
-
-                items.Add(item);
+                var rightItem = GetExpression();
+                items.Add(rightItem);
+                joinedType = ForceJoinTypes(leftItem, rightItem);
+                leftItem = joinedType.ConvertFrom(rightItem);
             }
-            return items;
+
+            return new List<IExpression>(items.Select(item => joinedType.ConvertFrom(item)));
         }
 
 

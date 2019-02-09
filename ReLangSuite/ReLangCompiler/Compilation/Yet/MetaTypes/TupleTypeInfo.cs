@@ -12,6 +12,7 @@ namespace Handmada.ReLang.Compilation.Yet {
     class TupleTypeInfo : ITypeInfo {
         public string Name => $"({string.Join(", ", ItemTypes.Select(itemType => itemType.Name))})";
         public bool IsReferential => false;
+        public bool IsComplete { get; }
 
         /// <summary>
         /// Types of tuple's items
@@ -21,6 +22,14 @@ namespace Handmada.ReLang.Compilation.Yet {
 
         public TupleTypeInfo(List<ITypeInfo> itemTypes) {
             ItemTypes = itemTypes;
+
+            IsComplete = true;
+            foreach (var itemType in itemTypes) {
+                if (!itemType.IsComplete) {
+                    IsComplete = false;
+                    break;
+                }
+            }
         }
 
 
@@ -44,7 +53,7 @@ namespace Handmada.ReLang.Compilation.Yet {
 
         public IExpression ConvertFrom(IExpression expression) {
             if (Equals(expression.TypeInfo)) {
-                return expression;
+                return expression.ChangeType(this);
             } else {
                 return null;
             }
@@ -106,7 +115,9 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public override bool Equals(object obj) {
-            if (obj is TupleTypeInfo tupleType) {
+            if (obj is IncompleteTypeInfo) {
+                return true;
+            } else if (obj is TupleTypeInfo tupleType) {
                 if (tupleType.ItemTypes.Count == ItemTypes.Count) {
                     for (var i = 0; i < ItemTypes.Count; i++) {
                         var x = ItemTypes[i];

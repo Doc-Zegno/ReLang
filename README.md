@@ -42,7 +42,7 @@ This pack includes:
 
 
 ### Ready to work (Disposable DLC)
-![progress bar](http://progressed.io/bar/55?title=progress)
+![progress bar](http://progressed.io/bar/77?title=progress)
 
 This pack includes:
 - [x] Generic wrappers for sequences (`enumerate` and `zip`)
@@ -51,6 +51,6 @@ This pack includes:
 - [x] Exception handling with `try`-`catch`
 - [ ] Optional arguments (especially for `print` and `open`)
 - [x] Overloaded util functions (like `min`, `max`)
-- [ ] Empty collections' literals (`[]`, `{}`, `{:}`)
+- [x] Empty collections' literals (`[]`, `{}`, `{:}`)
 - [ ] Constructors for collections (`[Int]()`, `[Int](n)`)
-- [ ] Special "I don't care" identifier `_`
+- [x] Special "I don't care" identifier `_`

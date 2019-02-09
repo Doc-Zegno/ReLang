@@ -12,6 +12,7 @@ namespace Handmada.ReLang.Compilation.Yet {
     class MaybeTypeInfo : ITypeInfo {
         public string Name => $"{InternalType.Name}?";
         public bool IsReferential => true;
+        public bool IsComplete => InternalType.IsComplete;
 
         /// <summary>
         /// Type of object within this maybe
@@ -35,7 +36,8 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public bool CanUpcast(ITypeInfo sourceType) {
-            return Equals(sourceType);
+            // Object? <- Float?
+            return sourceType is MaybeTypeInfo maybeType && InternalType.CanUpcast(maybeType.InternalType);
         }
 
 
@@ -45,8 +47,8 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public IExpression ConvertFrom(IExpression expression) {
-            if (Equals(expression.TypeInfo)) {
-                return expression;
+            if (CanUpcast(expression.TypeInfo)) {
+                return expression.ChangeType(this);
             } else if (InternalType.Equals(expression.TypeInfo)) {
                 return expression.ChangeType(this);
             } else if (expression.TypeInfo is NullTypeInfo) {
@@ -63,7 +65,7 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public override bool Equals(object obj) {
-            if (obj is MaybeTypeInfo maybeType && InternalType.Equals(maybeType.InternalType)) {
+            if (obj is IncompleteTypeInfo || obj is MaybeTypeInfo maybeType && InternalType.Equals(maybeType.InternalType)) {
                 return true;
             } else {
                 return false;

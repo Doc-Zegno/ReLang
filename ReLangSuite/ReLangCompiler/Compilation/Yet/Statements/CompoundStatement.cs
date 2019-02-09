@@ -13,7 +13,9 @@ namespace Handmada.ReLang.Compilation.Yet {
         public List<IStatement> Statements { get; }
 
         public CompoundStatement(List<IStatement> statements) {
-            Statements = statements;
+            Statements = new List<IStatement>(
+                statements.Where(statement => !(statement is NopeStatement))
+            );
         }
     }
 }

@@ -30,6 +30,7 @@ namespace Handmada.ReLang.Compilation.Yet {
 
         public string Name => ErrorOption.ToString();
         public bool IsReferential => true;
+        public bool IsComplete => true;
         public Option ErrorOption { get; }
 
 
@@ -91,7 +92,7 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public override bool Equals(object obj) {
-            return obj is ErrorTypeInfo errorType && errorType.ErrorOption == ErrorOption;
+            return obj is IncompleteTypeInfo || obj is ErrorTypeInfo errorType && errorType.ErrorOption == ErrorOption;
         }
 
 

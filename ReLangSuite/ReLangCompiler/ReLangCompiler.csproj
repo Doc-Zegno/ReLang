@@ -98,6 +98,7 @@
     <Compile Include="Compilation\Yet\MetaTypes\MaybeTypeInfo.cs" />
     <Compile Include="Compilation\Yet\MetaTypes\NullTypeInfo.cs" />
     <Compile Include="Compilation\Yet\MetaTypes\TupleTypeInfo.cs" />
+    <Compile Include="Compilation\Yet\MetaTypes\IncompleteTypeInfo.cs" />
     <Compile Include="Compilation\Yet\Misc\BuiltinFunctionDefinition.cs" />
     <Compile Include="Compilation\Yet\Misc\CustomFunctionDefinition.cs" />
     <Compile Include="Compilation\Yet\Misc\FunctionSignature.cs" />
@@ -121,6 +122,7 @@
     <Compile Include="Compilation\Parsing\ParsedProgram.cs" />
     <Compile Include="Compilation\Yet\Expressions\RangeLiteralExpression.cs" />
     <Compile Include="Compilation\Yet\MetaTypes\RangeTypeInfo.cs" />
+    <Compile Include="Compilation\Yet\Statements\NopeStatement.cs" />
     <Compile Include="Compilation\Yet\Statements\ReturnStatement.cs" />
     <Compile Include="Compilation\Parsing\ScopeStack.cs" />
     <Compile Include="Compilation\Yet\Statements\IDeclarationStatement.cs" />

@@ -21,6 +21,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
         public bool IsReferential => throw new NotImplementedException();
+        public bool IsComplete => throw new NotImplementedException();
 
 
         public GenericTypeInfo(string metaName, IDictionary<string, ITypeInfo> names2types) {

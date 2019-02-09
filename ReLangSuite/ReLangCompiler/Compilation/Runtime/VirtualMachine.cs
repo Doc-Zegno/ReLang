@@ -288,6 +288,9 @@ namespace Handmada.ReLang.Compilation.Runtime {
                     ExecuteStatementList(compound.Statements);
                     break;
 
+                case NopeStatement nope:
+                    break;
+
                 default:
                     throw new VirtualMachineException($"Unsupported statement: {statement}");
             }

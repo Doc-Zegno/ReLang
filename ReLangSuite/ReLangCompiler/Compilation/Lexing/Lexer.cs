@@ -88,6 +88,15 @@ namespace Handmada.ReLang.Compilation.Lexing {
                     // Symbol
                     return ScanSymbol();
 
+                } else if (currentCharacter == '_') {
+                    // "I don't care" identifier
+                    if (MoveNextCharacter()) {
+                        if (char.IsLetterOrDigit(currentCharacter)) {
+                            RaiseError("Separator was expected after '_'");
+                        }
+                    }
+                    return new SymbolLexeme("_", CurrentLocation);
+
                 } else {
                     // Character
                     var op = ScanOperator();
