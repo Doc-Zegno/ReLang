@@ -79,6 +79,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self", "index" },
                         new List<ITypeInfo> { this, PrimitiveTypeInfo.Int }, 
                         new List<bool> { false, false },
+                        new List<IExpression> { null, null },
                         ItemType,
                         isSelfMutable);
 
@@ -89,6 +90,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self" },
                         new List<ITypeInfo> { this }, 
                         new List<bool> { false },
+                        new List<IExpression> { null },
                         PrimitiveTypeInfo.Int);
 
                 case "getSlice":
@@ -97,7 +99,8 @@ namespace Handmada.ReLang.Compilation.Yet {
                         BuiltinFunctionDefinition.Option.ListGetSlice,
                         new List<string> { "self", "start", "end", "step" },
                         new List<ITypeInfo> { this, PrimitiveTypeInfo.Int, new MaybeTypeInfo(PrimitiveTypeInfo.Int), PrimitiveTypeInfo.Int },
-                        new List<bool> { false, false, false, false },
+                        new List<bool> { isSelfMutable, false, false, false },
+                        new List<IExpression> { null, null, null, null },
                         this,
                         isSelfMutable);
 
@@ -118,6 +121,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self", "index", "value" },
                         new List<ITypeInfo> { this, PrimitiveTypeInfo.Int, ItemType },
                         new List<bool> { true, false, false },
+                        new List<IExpression> { null, null, null },
                         PrimitiveTypeInfo.Void);
 
                 case "append":
@@ -127,6 +131,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self", "value" },
                         new List<ITypeInfo> { this, ItemType },
                         new List<bool> { true, false },
+                        new List<IExpression> { null, null },
                         PrimitiveTypeInfo.Void);
 
                 case "extend":
@@ -136,6 +141,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self", "list" },
                         new List<ITypeInfo> { this, this },
                         new List<bool> { true, false },
+                        new List<IExpression> { null, null },
                         PrimitiveTypeInfo.Void);
 
                 case "contains" when ItemType is PrimitiveTypeInfo || ItemType is TupleTypeInfo:
@@ -145,6 +151,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self", "value" },
                         new List<ITypeInfo> { this, ItemType },
                         new List<bool> { false, false },
+                        new List<IExpression> { null, null },
                         PrimitiveTypeInfo.Bool);
 
                 case "copy":
@@ -154,6 +161,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self" },
                         new List<ITypeInfo> { this },
                         new List<bool> { false },
+                        new List<IExpression> { null },
                         this);
 
                 default:

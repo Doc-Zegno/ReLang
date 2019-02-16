@@ -309,9 +309,27 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
 
         private IEnumerable<object> GetFileStreamEnumerable(FileStream stream) {
-            var reader = new StreamReader(stream);
+            StreamReader reader = null;
+            try {
+                reader = new StreamReader(stream);
+            } catch (ArgumentException e) {
+                throw new ProgramException(ErrorTypeInfo.Option.IOError, e.Message, null);
+            }
             string line;
-            while ((line = reader.ReadLine()) != null) {
+
+            while (true) {
+                try {
+                    line = reader.ReadLine();
+                } catch (IOException e) {
+                    throw new ProgramException(ErrorTypeInfo.Option.IOError, e.Message, null);
+                } catch (NotSupportedException e) {
+                    throw new ProgramException(ErrorTypeInfo.Option.NotSupportedError, e.Message, null);
+                }
+
+                if (line == null) {
+                    yield break;
+                }
+
                 yield return line;
             }
         }
@@ -684,7 +702,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
         private object EvaluateBuiltinFunction(BuiltinFunctionDefinition.Option option, List<object> arguments) {
             switch (option) {
                 case BuiltinFunctionDefinition.Option.Print:
-                    return CallPrint(arguments[0]);
+                    return CallPrint(arguments[0], (string)arguments[1]);
 
                 case BuiltinFunctionDefinition.Option.Enumerate:
                     return CallEnumerate(ConvertToEnumerable(arguments[0]));
@@ -693,7 +711,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
                     return CallZip(ConvertToEnumerable(arguments[0]), ConvertToEnumerable(arguments[1]));
 
                 case BuiltinFunctionDefinition.Option.Open:
-                    return CallOpen((string)arguments[0]);
+                    return CallOpen((string)arguments[0], (string)arguments[1]);
 
                 case BuiltinFunctionDefinition.Option.Maxi:
                     return Math.Max((int)arguments[0], (int)arguments[1]);
@@ -832,6 +850,9 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
                 case BuiltinFunctionDefinition.Option.FileReadLine:
                     return CallFileReadLine((FileStream)arguments[0]);
+
+                case BuiltinFunctionDefinition.Option.FileWrite:
+                    return CallFileWrite((FileStream)arguments[0], (string)arguments[1]);
 
                 case BuiltinFunctionDefinition.Option.FileReset:
                     ((FileStream)arguments[0]).Seek(0, SeekOrigin.Begin);
@@ -1104,22 +1125,44 @@ namespace Handmada.ReLang.Compilation.Runtime {
                                                // TODO: looks like stream reader reads lots of lines at a time
                                                // Next calls of `readLine()` can't see anything
                 return line;
-            } catch (IOException) {
-                throw new ProgramException(ErrorTypeInfo.Option.IOError, "Cannot read from this file stream", null);
+            } catch (IOException e) {
+                throw new ProgramException(ErrorTypeInfo.Option.IOError, e.Message, null);
+            } catch (NotSupportedException e) {
+                throw new ProgramException(ErrorTypeInfo.Option.NotSupportedError, e.Message, null);
             }
         }
 
 
-        private object CallOpen(string path) {
-            if (File.Exists(path)) {
-                try {
-                    return new FileStream(path, FileMode.Open, FileAccess.Read);
-                } catch (IOException) {
-                    var message = $"Failed to open '{path}'. It may be used by another process";
-                    throw new ProgramException(ErrorTypeInfo.Option.IOError, message, null);
+        private object CallFileWrite(FileStream stream, string line) {
+            try {
+                var writer = new StreamWriter(stream);
+                writer.Write(line);
+                writer.Flush();
+            } catch (Exception e) {
+                throw new ProgramException(ErrorTypeInfo.Option.IOError, e.Message, null);
+            }
+            return null;
+        }
+
+
+        private object CallOpen(string path, string mode) {
+            // TODO: implement modes
+            try {
+                switch (mode) {
+                    case "r":
+                        return new FileStream(path, FileMode.Open, FileAccess.Read);
+
+                    case "w":
+                        return new FileStream(path, FileMode.Create, FileAccess.Write);
+
+                    case "a":
+                        return new FileStream(path, FileMode.Append, FileAccess.Write);
+
+                    default:
+                        throw new ProgramException(ErrorTypeInfo.Option.ValueError, $"Invalid mode '{mode}'", null);
                 }
-            } else {
-                throw new ProgramException(ErrorTypeInfo.Option.IOError, $"File '{path}' was not found", null);
+            } catch (IOException e) {
+                throw new ProgramException(ErrorTypeInfo.Option.IOError, e.Message, null);
             }
         }
 
@@ -1142,8 +1185,9 @@ namespace Handmada.ReLang.Compilation.Runtime {
         }
 
 
-        private object CallPrint(object argument) {
-            ProgramOut.WriteLine(ObjectToString(argument, false, false));
+        private object CallPrint(object argument, string end) {
+            ProgramOut.Write(ObjectToString(argument, false, false));
+            ProgramOut.Write(end);
             return null;
         }
 

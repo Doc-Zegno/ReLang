@@ -49,6 +49,17 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self" },
                         new List<ITypeInfo> { this },
                         new List<bool> { true },
+                        new List<IExpression> { null },
+                        PrimitiveTypeInfo.Void);
+
+                case "write":
+                    return new BuiltinFunctionDefinition(
+                        name,
+                        BuiltinFunctionDefinition.Option.FileWrite,
+                        new List<string> { "self", "string" },
+                        new List<ITypeInfo> { this, PrimitiveTypeInfo.String },
+                        new List<bool> { true, false },
+                        new List<IExpression> { null, null },
                         PrimitiveTypeInfo.Void);
 
                 /*case "readLine":
@@ -67,6 +78,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self" },
                         new List<ITypeInfo> { this },
                         new List<bool> { true },
+                        new List<IExpression> { null },
                         PrimitiveTypeInfo.Void);
 
                 default:

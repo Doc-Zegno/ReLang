@@ -56,6 +56,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self", "value" },
                         new List<ITypeInfo> { this, ItemType }, 
                         new List<bool> { false, false },
+                        new List<IExpression> { null, null },
                         PrimitiveTypeInfo.Bool);
 
                 default:

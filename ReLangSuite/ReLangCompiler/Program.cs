@@ -304,7 +304,7 @@ namespace Handmada.ReLang.Compilation {
                                     break;
 
                                 case string value:
-                                    representation = $"\"{value}\"";
+                                    representation = $"\"{value.Replace("\n", "\\n").Replace("\t", "\\t")}\"";
                                     break;
 
                                 default:

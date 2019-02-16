@@ -79,6 +79,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self" },
                         new List<ITypeInfo> { this },
                         new List<bool> { false },
+                        new List<IExpression> { null },
                         PrimitiveTypeInfo.Int);
 
                 case "add":
@@ -88,6 +89,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self", "value" },
                         new List<ITypeInfo> { this, ItemType },
                         new List<bool> { true, false },
+                        new List<IExpression> { null, null },
                         PrimitiveTypeInfo.Void);
 
                 case "remove":
@@ -97,6 +99,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self", "value" },
                         new List<ITypeInfo> { this, ItemType },
                         new List<bool> { true, false },
+                        new List<IExpression> { null, null },
                         PrimitiveTypeInfo.Bool);
 
                 case "union":
@@ -106,6 +109,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self", "set" },
                         new List<ITypeInfo> { this, this },
                         new List<bool> { false, false },
+                        new List<IExpression> { null, null },
                         this);
 
                 case "intersection":
@@ -115,6 +119,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self", "set" },
                         new List<ITypeInfo> { this, this },
                         new List<bool> { false, false },
+                        new List<IExpression> { null, null },
                         this);
 
                 case "difference":
@@ -124,6 +129,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self", "set" },
                         new List<ITypeInfo> { this, this },
                         new List<bool> { false, false },
+                        new List<IExpression> { null, null },
                         this);
 
                 case "contains" when ItemType is PrimitiveTypeInfo || ItemType is TupleTypeInfo:
@@ -133,6 +139,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self", "value" },
                         new List<ITypeInfo> { this, ItemType },
                         new List<bool> { false, false },
+                        new List<IExpression> { null, null },
                         PrimitiveTypeInfo.Bool);
 
                 case "copy":
@@ -142,6 +149,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self" },
                         new List<ITypeInfo> { this },
                         new List<bool> { false },
+                        new List<IExpression> { null },
                         this);
 
                 default:

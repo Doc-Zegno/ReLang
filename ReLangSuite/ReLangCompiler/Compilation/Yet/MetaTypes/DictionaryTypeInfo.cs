@@ -92,6 +92,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self", "key" },
                         new List<ITypeInfo> { this, KeyType }, 
                         new List<bool> { false, false },
+                        new List<IExpression> { null, null },
                         ValueType,
                         isSelfMutable);
 
@@ -102,6 +103,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self", "key", "value" },
                         new List<ITypeInfo> { this, KeyType, ValueType },
                         new List<bool> { true, false, false },
+                        new List<IExpression> { null, null, null },
                         PrimitiveTypeInfo.Void);
 
                 case "tryGet":
@@ -111,6 +113,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self", "key" },
                         new List<ITypeInfo> { this, KeyType },
                         new List<bool> { false, false },
+                        new List<IExpression> { null, null },
                         new MaybeTypeInfo(ValueType),
                         isSelfMutable);
 
@@ -121,6 +124,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self" },
                         new List<ITypeInfo> { this },
                         new List<bool> { false },
+                        new List<IExpression> { null },
                         PrimitiveTypeInfo.Int);
 
                 case "contains" when KeyType is PrimitiveTypeInfo || KeyType is TupleTypeInfo:
@@ -130,6 +134,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self", "key" },
                         new List<ITypeInfo> { this, KeyType },
                         new List<bool> { false, false },
+                        new List<IExpression> { null, null },
                         PrimitiveTypeInfo.Bool);
 
                 case "copy":
@@ -139,6 +144,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self" },
                         new List<ITypeInfo> { this }, 
                         new List<bool> { false },
+                        new List<IExpression> { null },
                         this);
 
                 default:

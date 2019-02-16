@@ -74,6 +74,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self" },
                         new List<ITypeInfo> { this }, 
                         new List<bool> { false },
+                        new List<IExpression> { null },
                         ItemTypes[0],
                         isSelfMutable);
 
@@ -84,6 +85,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self" },
                         new List<ITypeInfo> { this },
                         new List<bool> { false },
+                        new List<IExpression> { null },
                         ItemTypes[1],
                         isSelfMutable);
 
@@ -94,6 +96,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self" },
                         new List<ITypeInfo> { this },
                         new List<bool> { false },
+                        new List<IExpression> { null },
                         ItemTypes[2],
                         isSelfMutable);
 
@@ -110,6 +113,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                 new List<string> { "self", "index" },
                 new List<ITypeInfo> { this, PrimitiveTypeInfo.Int },
                 new List<bool> { false, false },
+                new List<IExpression> { null, null },
                 ItemTypes[index],
                 isSelfMutable);
 

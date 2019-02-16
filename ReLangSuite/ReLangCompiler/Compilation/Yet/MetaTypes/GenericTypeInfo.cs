@@ -20,8 +20,26 @@ namespace Handmada.ReLang.Compilation.Yet {
             }
         }
 
-        public bool IsReferential => throw new NotImplementedException();
-        public bool IsComplete => throw new NotImplementedException();
+        public bool IsReferential {
+            get {
+                if (names2types.TryGetValue(MetaName, out ITypeInfo typeInfo)) {
+                    return typeInfo.IsReferential;
+                } else {
+                    throw new NotImplementedException("Not implemented for generic types");
+                }
+            }
+        }
+
+        public bool IsComplete {
+            get {
+                if (names2types.TryGetValue(MetaName, out ITypeInfo typeInfo)) {
+                    return typeInfo.IsComplete;
+                } else {
+                    //throw new NotImplementedException("Not implemented for generic types");
+                    return false;
+                }
+            }
+        }
 
 
         public GenericTypeInfo(string metaName, IDictionary<string, ITypeInfo> names2types) {

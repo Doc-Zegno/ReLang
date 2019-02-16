@@ -357,10 +357,12 @@ namespace Handmada.ReLang.Compilation.Parsing {
             var getterExpression = new FunctionCallExpression(getterDefinition, getterArguments, getterResultType, true, setter.StartLocation);
             var value = CreateBinaryExpression(meaning, getterExpression, right, middle);
             setter.Arguments.Add(value);
-            var setterResultType = CheckAndConvertFunctionArguments(setterDefinition.Signature, setter.Arguments, middle);
+            var actualNames = new List<string>(setter.Arguments.Select(arg => ""));
+            var (setterResultType, convertedArguments) =
+                CheckAndConvertFunctionArguments(setterDefinition.Signature, actualNames, setter.Arguments, middle);
             statements.Add(
                 new ExpressionStatement(
-                    new FunctionCallExpression(setterDefinition, setter.Arguments, setterResultType, true, setter.StartLocation)
+                    new FunctionCallExpression(setterDefinition, convertedArguments, setterResultType, true, setter.StartLocation)
                 )
             );
 
@@ -459,13 +461,15 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 case SetterIdentifier setter:
                     var definition = setter.SetterDefinition;
                     setter.Arguments.Add(value);
-                    var setterResultType = CheckAndConvertFunctionArguments(definition.Signature, setter.Arguments, setter.StartLocation);
+                    var actualNames = new List<string>(setter.Arguments.Select(arg => ""));
+                    var (setterResultType, convertedArguments) =
+                        CheckAndConvertFunctionArguments(definition.Signature, actualNames, setter.Arguments, setter.StartLocation);
 
                     //var lastType = definition.ArgumentTypes.Last();
                     //var converted = ForceConvertExpression(value, lastType, value.MainLocation);
                     //setter.Arguments.Add(converted);
                     return new ExpressionStatement(
-                        new FunctionCallExpression(definition, setter.Arguments, setterResultType, false, setter.StartLocation)
+                        new FunctionCallExpression(definition, convertedArguments, setterResultType, false, setter.StartLocation)
                     );
 
 
@@ -542,6 +546,11 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
         private IStatement ForceAssignVariable(SingleIdentifier identifier, IExpression value) {
+            // Skip "I don't care" identifier
+            if (identifier.Name == "_") {
+                return new NopeStatement();
+            }
+
             // Check variable definition
             var name = identifier.Name;
             var definition = scopeStack.GetDefinition(name);
@@ -783,11 +792,13 @@ namespace Handmada.ReLang.Compilation.Parsing {
                                         tupleVariable,
                                         new PrimitiveLiteralExpression(i, PrimitiveTypeInfo.Int, null),
                                     };
+                var actualNames = new List<string> { "", "" };
 
                 var definition = tupleType.GetTupleAccessorDefinition(i, isTupleMutable);
-                var resultType = CheckAndConvertFunctionArguments(definition.Signature, arguments, tupleVariable.MainLocation);
+                var (resultType, convertedArguments) =
+                    CheckAndConvertFunctionArguments(definition.Signature, actualNames, arguments, tupleVariable.MainLocation);
 
-                var expression = new FunctionCallExpression(definition, arguments, resultType, false, null);
+                var expression = new FunctionCallExpression(definition, convertedArguments, resultType, false, null);
 
                 /*var expression = new BuiltinFunctionCallExpression(
                     tupleType.ItemTypes[i],

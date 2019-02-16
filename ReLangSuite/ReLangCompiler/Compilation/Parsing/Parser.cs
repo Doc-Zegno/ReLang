@@ -104,9 +104,11 @@ namespace Handmada.ReLang.Compilation.Parsing {
             CheckOperator(OperatorMeaning.OpenParenthesis);
 
             // Parse parameter list
+            var mustHaveDefault = false;
             var argumentNames = new List<string>();
             var argumentTypes = new List<ITypeInfo>();
             var argumentMutabilities = new List<bool>();
+            var argumentDefaultValues = new List<IExpression>();
             if (!WhetherOperator(OperatorMeaning.CloseParenthesis)) {
                 while (true) {
                     // Name
@@ -134,6 +136,26 @@ namespace Handmada.ReLang.Compilation.Parsing {
                         RaiseError("Strings are immutable, this qualifier is useless", location, true);
                     }
                     argumentTypes.Add(argumentType);
+
+                    // Default value
+                    IExpression defaultValue = null;
+                    if (mustHaveDefault) {
+                        CheckOperator(OperatorMeaning.Assignment);
+                        defaultValue = GetExpression();
+                    } else {
+                        if (WhetherOperator(OperatorMeaning.Assignment)) {
+                            MoveNextLexeme();
+                            defaultValue = GetExpression();
+                            mustHaveDefault = true;
+                        }
+                    }
+                    if (defaultValue != null) {
+                        defaultValue = ForceConvertExpression(defaultValue, argumentType, defaultValue.MainLocation);
+                        if (!defaultValue.IsCompileTime) {
+                            RaiseError("Argument's default value must be known at compile time", defaultValue.MainLocation);
+                        }
+                    }
+                    argumentDefaultValues.Add(defaultValue);
 
                     if (WhetherOperator(OperatorMeaning.Comma)) {
                         MoveNextLexeme();
@@ -170,7 +192,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
             }
 
-            return new FunctionSignature(name, argumentNames, argumentTypes, argumentMutabilities, resultType, resultMutability);
+            return new FunctionSignature(name, argumentNames, argumentTypes, argumentMutabilities,
+                                         argumentDefaultValues, resultType, resultMutability);
         }
 
 

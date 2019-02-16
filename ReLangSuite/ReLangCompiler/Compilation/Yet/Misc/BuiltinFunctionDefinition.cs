@@ -66,6 +66,7 @@ namespace Handmada.ReLang.Compilation.Yet {
             RangeContains,
 
             FileReadLine,
+            FileWrite,
             FileReset,
             FileClose,
 
@@ -87,12 +88,14 @@ namespace Handmada.ReLang.Compilation.Yet {
             List<string> argumentNames, 
             List<ITypeInfo> argumentTypes,
             List<bool> argumentMutabilities, 
+            List<IExpression> argumentDefaultValues,
             ITypeInfo resultType, 
             bool resultMutability = true)
         {
             var name = builtinOption.ToString();
             var fullName = char.ToLower(name[0]) + name.Substring(1);
-            Signature = new FunctionSignature(fullName, argumentNames, argumentTypes, argumentMutabilities, resultType, resultMutability);
+            Signature = new FunctionSignature(fullName, argumentNames, argumentTypes, argumentMutabilities,
+                                              argumentDefaultValues, resultType, resultMutability);
             BuiltinOption = builtinOption;
             ShortName = shortName;
         }
@@ -102,9 +105,13 @@ namespace Handmada.ReLang.Compilation.Yet {
             new BuiltinFunctionDefinition(
                 "print",
                 Option.Print, 
-                new List<string> { "object" },
-                new List<ITypeInfo> { PrimitiveTypeInfo.Object },
-                new List<bool> { false },
+                new List<string> { "object", "end" },
+                new List<ITypeInfo> { PrimitiveTypeInfo.Object, PrimitiveTypeInfo.String },
+                new List<bool> { false, false },
+                new List<IExpression> {
+                    new PrimitiveLiteralExpression("", PrimitiveTypeInfo.Object, null),
+                    new PrimitiveLiteralExpression("\n", PrimitiveTypeInfo.String, null)
+                },
                 PrimitiveTypeInfo.Void);
 
 
@@ -112,9 +119,13 @@ namespace Handmada.ReLang.Compilation.Yet {
             new BuiltinFunctionDefinition(
                 "open",
                 Option.Open,
-                new List<string> { "path" },
-                new List<ITypeInfo> { PrimitiveTypeInfo.String },
-                new List<bool> { false },
+                new List<string> { "path", "mode" },
+                new List<ITypeInfo> { PrimitiveTypeInfo.String, PrimitiveTypeInfo.String },
+                new List<bool> { false, false },
+                new List<IExpression> {
+                    null,
+                    new PrimitiveLiteralExpression("r", PrimitiveTypeInfo.String, null)
+                },
                 new FileStreamTypeInfo());
 
 
@@ -125,6 +136,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                 new List<string> { "x", "y" },
                 new List<ITypeInfo> { PrimitiveTypeInfo.Int, PrimitiveTypeInfo.Int },
                 new List<bool> { false, false },
+                new List<IExpression> { null, null },
                 PrimitiveTypeInfo.Int);
 
 
@@ -135,6 +147,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                 new List<string> { "x", "y" },
                 new List<ITypeInfo> { PrimitiveTypeInfo.Int, PrimitiveTypeInfo.Int },
                 new List<bool> { false, false },
+                new List<IExpression> { null, null },
                 PrimitiveTypeInfo.Int);
 
 
@@ -145,6 +158,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                 new List<string> { "x", "y" },
                 new List<ITypeInfo> { PrimitiveTypeInfo.Float, PrimitiveTypeInfo.Float },
                 new List<bool> { false, false },
+                new List<IExpression> { null, null },
                 PrimitiveTypeInfo.Float);
 
 
@@ -155,6 +169,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                 new List<string> { "x", "y" },
                 new List<ITypeInfo> { PrimitiveTypeInfo.Float, PrimitiveTypeInfo.Float },
                 new List<bool> { false, false },
+                new List<IExpression> { null, null },
                 PrimitiveTypeInfo.Float);
 
 
@@ -170,6 +185,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                 new List<string> { "items" },
                 new List<ITypeInfo> { argumentType },
                 new List<bool> { false },
+                new List<IExpression> { null },
                 resultType,
                 areItemsMutable);    
         }
@@ -190,6 +206,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                 new List<string> { "itemsA", "itemsB" },
                 new List<ITypeInfo> { firstArgumentType, secondArgumentType },
                 new List<bool> { false, false },
+                new List<IExpression> { null, null },
                 resultType,
                 areItemsMutable);
         }

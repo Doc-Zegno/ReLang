@@ -16,7 +16,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             Console.WriteLine($"parsing call of '{name}'...");
 
             // Pick all the arguments
-            var arguments = GetFunctionArguments();
+            var (names, arguments) = GetFunctionArguments();
 
             // Filter built-ins
             IFunctionDefinition definition;
@@ -88,21 +88,42 @@ namespace Handmada.ReLang.Compilation.Parsing {
             }
 
             // Check them against expected types
-            var resultType = CheckAndConvertFunctionArguments(definition.Signature, arguments, location);
+            var (resultType, convertedArguments) = CheckAndConvertFunctionArguments(definition.Signature, names, arguments, location);
 
             // return appropriate function call expression
-            return new FunctionCallExpression(definition, arguments, resultType, false, location);
+            return new FunctionCallExpression(definition, convertedArguments, resultType, false, location);
         }
 
 
 
-        private List<IExpression> GetFunctionArguments(OperatorMeaning stop = OperatorMeaning.CloseParenthesis) {
+        private (List<string>, List<IExpression>) GetFunctionArguments(OperatorMeaning stop = OperatorMeaning.CloseParenthesis) {
+            var names = new List<string>();
             var arguments = new List<IExpression>();
+            var mustBeNamed = false;
 
             if (WhetherOperator(stop)) {
                 MoveNextLexeme();
             } else {
                 while (true) {
+                    // Check whether it's named argument
+                    var name = "";
+                    if (mustBeNamed) {
+                        name = GetSymbolText("Argument's name");
+                        CheckOperator(OperatorMeaning.Assignment);
+                    } else {
+                        if (currentLexeme is SymbolLexeme symbol) {
+                            MoveNextLexeme();
+                            if (WhetherOperator(OperatorMeaning.Assignment)) {
+                                MoveNextLexeme();
+                                name = symbol.Text;
+                                mustBeNamed = true;
+                            } else {
+                                PutBack();
+                            }
+                        }
+                    }
+
+                    names.Add(name);
                     arguments.Add(GetExpression());
                     if (WhetherOperator(OperatorMeaning.Comma)) {
                         MoveNextLexeme();
@@ -113,30 +134,55 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 CheckOperator(stop);
             }
 
-            return arguments;
+            return (names, arguments);
         }
 
 
 
-        private ITypeInfo CheckAndConvertFunctionArguments(FunctionSignature signature, List<IExpression> arguments, Location location) {
-            var names = signature.ArgumentNames;
+        private (ITypeInfo, List<IExpression>) CheckAndConvertFunctionArguments(
+            FunctionSignature signature, 
+            List<string> actualNames, 
+            List<IExpression> arguments, 
+            Location location) 
+        {
+            var expectedNames = signature.ArgumentNames;
             var expectedTypes = signature.ArgumentTypes;
             var expectedMutabilities = signature.ArgumentMutabilities;
 
-            if (arguments.Count != expectedTypes.Count) {
-                RaiseError($"Wrong number of arguments for this function call (expected {expectedTypes.Count}"
-                           + $" but got {arguments.Count})", location);
+            var unsetNames = new HashSet<string>(expectedNames);
+
+            var convertedArguments = new List<IExpression>();
+            foreach (var e in expectedTypes) {
+                convertedArguments.Add(null);
             }
 
+            /*if (arguments.Count > expectedTypes.Count) {
+                RaiseError($"Wrong number of arguments for this function call (expected {expectedTypes.Count}"
+                           + $" but got {arguments.Count})", location);
+            }*/
+
             for (var index = 0; index < arguments.Count; index++) {
-                var name = names[index];
+                var actualName = actualNames[index];
                 var argument = arguments[index];
-                var expectedType = expectedTypes[index];
+                var mapped = index;
+
+                if (actualName != "") {
+                    mapped = expectedNames.IndexOf(actualName);
+                    if (mapped == -1) {
+                        RaiseError($"There is no formal argument with name '{actualName}'", argument.MainLocation);
+                    }
+                    if (!unsetNames.Contains(actualName)) {
+                        RaiseError($"Value has already been assigned to argument '{actualName}'", argument.MainLocation);
+                    }
+                }
+
+                var expectedName = expectedNames[mapped];
+                var expectedType = expectedTypes[mapped];
 
                 // Type checks (and conversions if necessary)
                 var converted = TryConvertExpression(argument, expectedType);
                 if (converted == null) {
-                    RaiseError($"Cannot convert expression to type of argument '{name}' (expected '{expectedType.Name}'"
+                    RaiseError($"Cannot convert expression to type of argument '{expectedName}' (expected '{expectedType.Name}'"
                                + $" but got '{argument.TypeInfo.Name}')", argument.MainLocation);
                 }
 
@@ -144,9 +190,21 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 Console.WriteLine($"Converted type: '{converted.TypeInfo.Name}', expected type is '{expectedType.Name}'");
 
                 // Mutability check
-                CheckMutability(converted, expectedMutabilities[index]);
+                CheckMutability(converted, expectedMutabilities[mapped]);
 
-                arguments[index] = converted;
+                convertedArguments[mapped] = converted;
+                unsetNames.Remove(expectedName);
+            }
+
+            for (var i = 0; i < expectedTypes.Count; i++) {
+                if (convertedArguments[i] == null) {
+                    var defaultValue = signature.ArgumentDefaultValues[i];
+                    if (defaultValue != null) {
+                        convertedArguments[i] = defaultValue;
+                    } else {
+                        RaiseError($"No value was assigned to argument '{expectedNames[i]}'", location);
+                    }
+                }
             }
 
             var resultType = signature.ResultType;
@@ -154,7 +212,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             if (resolvedReturnType == null) {
                 RaiseError($"Cannot resolve return type '{resultType.Name}' for this function call", location);
             }
-            return resolvedReturnType;
+            return (resolvedReturnType, convertedArguments);
         }
 
 
@@ -267,9 +325,15 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 if (definition == null) {
                     RaiseError($"Type '{self.TypeInfo.Name}' doesn't implement indexing", location);
                 }
+
+                var actualNames = new List<string>();
+                foreach (var arg in arguments) {
+                    actualNames.Add("");
+                }
                 
-                var resultType = CheckAndConvertFunctionArguments(definition.Signature, arguments, location);
-                return new FunctionCallExpression(definition, arguments, resultType, true, location);
+                var (resultType, convertedArguments) =
+                    CheckAndConvertFunctionArguments(definition.Signature, actualNames, arguments, location);
+                return new FunctionCallExpression(definition, convertedArguments, resultType, true, location);
             }
         }
 
@@ -320,8 +384,10 @@ namespace Handmada.ReLang.Compilation.Parsing {
             }
 
             var arguments = new List<IExpression> { self, start, end, step };
-            var resultType = CheckAndConvertFunctionArguments(definition.Signature, arguments, locationBracket);
-            return new FunctionCallExpression(definition, arguments, resultType, false, locationBracket);
+            var actualNames = new List<string> { "", "", "", "" };
+            var (resultType, convertedArguments) =
+                CheckAndConvertFunctionArguments(definition.Signature, actualNames, arguments, locationBracket);
+            return new FunctionCallExpression(definition, convertedArguments, resultType, false, locationBracket);
         }
 
 
@@ -333,6 +399,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             var name = GetSymbolText("Member's name");
 
             var arguments = new List<IExpression> { self };
+            var actualNames = new List<string> { "" };
             IFunctionDefinition definition = null;
             var isLvalue = false;
 
@@ -346,7 +413,9 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 }
 
                 MoveNextLexeme();
-                arguments.AddRange(GetFunctionArguments());
+                var (tailNames, tailArguments) = GetFunctionArguments();
+                arguments.AddRange(tailArguments);
+                actualNames.AddRange(tailNames);
 
             } else {
                 // Get property's definition
@@ -359,9 +428,10 @@ namespace Handmada.ReLang.Compilation.Parsing {
             }
 
             // Check arguments' types
-            var resultType = CheckAndConvertFunctionArguments(definition.Signature, arguments, location);
+            var (resultType, convertedArguments) =
+                CheckAndConvertFunctionArguments(definition.Signature, actualNames, arguments, location);
 
-            return new FunctionCallExpression(definition, arguments, resultType, isLvalue, location);
+            return new FunctionCallExpression(definition, convertedArguments, resultType, isLvalue, location);
         }
 
 
@@ -789,8 +859,10 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     }
 
                     var arguments = new List<IExpression> { right, left };
-                    var resultType = CheckAndConvertFunctionArguments(definition.Signature, arguments, locationMiddle);
-                    left = new FunctionCallExpression(definition, arguments, resultType, false, locationMiddle);
+                    var actualNames = new List<string> { "", "" };
+                    var (resultType, convertedArguments) =
+                        CheckAndConvertFunctionArguments(definition.Signature, actualNames, arguments, locationMiddle);
+                    left = new FunctionCallExpression(definition, convertedArguments, resultType, false, locationMiddle);
 
                 } else if (left.TypeInfo is MaybeTypeInfo maybeType) {
                     if (left is NullLiteralExpression) {

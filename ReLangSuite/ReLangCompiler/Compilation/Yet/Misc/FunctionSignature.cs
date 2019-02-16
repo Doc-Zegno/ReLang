@@ -11,6 +11,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         public List<string> ArgumentNames { get; }
         public List<ITypeInfo> ArgumentTypes { get; }
         public List<bool> ArgumentMutabilities { get; }
+        public List<IExpression> ArgumentDefaultValues { get; }
         public ITypeInfo ResultType { get; }
         public bool ResultMutability { get; }
 
@@ -20,6 +21,7 @@ namespace Handmada.ReLang.Compilation.Yet {
             List<string> argumentNames, 
             List<ITypeInfo> argumentTypes, 
             List<bool> argumentMutabilities, 
+            List<IExpression> argumentDefaultValues,
             ITypeInfo resultType, 
             bool resultMutability) 
         {
@@ -27,6 +29,7 @@ namespace Handmada.ReLang.Compilation.Yet {
             ArgumentNames = argumentNames;
             ArgumentTypes = argumentTypes;
             ArgumentMutabilities = argumentMutabilities;
+            ArgumentDefaultValues = argumentDefaultValues;
             ResultType = resultType;
             ResultMutability = resultMutability;
         }

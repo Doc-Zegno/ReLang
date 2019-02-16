@@ -74,6 +74,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self" },
                         new List<ITypeInfo> { this },
                         new List<bool> { false },
+                        new List<IExpression> { null },
                         PrimitiveTypeInfo.String);
 
                 case "getStackTrace":
@@ -83,6 +84,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                         new List<string> { "self" },
                         new List<ITypeInfo> { this },
                         new List<bool> { false },
+                        new List<IExpression> { null },
                         PrimitiveTypeInfo.String);
 
                 default:

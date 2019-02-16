@@ -260,6 +260,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 new List<string> { "self", "index" },
                                 new List<ITypeInfo> { this, Int },
                                 new List<bool> { false, false },
+                                new List<IExpression> { null, null },
                                 Char);
 
                         case "getLength":
@@ -269,6 +270,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 new List<string> { "self" },
                                 new List<ITypeInfo> { this },
                                 new List<bool> { false },
+                                new List<IExpression> { null },
                                 Int);
 
                         case "getSlice":
@@ -278,6 +280,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 new List<string> { "self", "start", "end", "step" },
                                 new List<ITypeInfo> { this, Int, new MaybeTypeInfo(Int), Int },
                                 new List<bool> { isSelfMutable, false, false, false },
+                                new List<IExpression> { null, null, null, null },
                                 String,
                                 isSelfMutable);
 
@@ -288,6 +291,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 new List<string> { "self" },
                                 new List<ITypeInfo> { this },
                                 new List<bool> { false },
+                                new List<IExpression> { null },
                                 String);
 
                         case "toUpper":
@@ -297,6 +301,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 new List<string> { "self" },
                                 new List<ITypeInfo> { this },
                                 new List<bool> { false },
+                                new List<IExpression> { null },
                                 String);
 
                         case "split":
@@ -306,6 +311,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 new List<string> { "self" },
                                 new List<ITypeInfo> { this },
                                 new List<bool> { false },
+                                new List<IExpression> { null },  // TODO: add spliting by string
                                 new ArrayListTypeInfo(String));
 
                         case "contains":
@@ -315,6 +321,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 new List<string> { "self", "substring" },
                                 new List<ITypeInfo> { this, this },
                                 new List<bool> { false, false },
+                                new List<IExpression> { null, null },
                                 Bool);
 
                         case "join":
@@ -324,6 +331,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 new List<string> { "self", "items" },
                                 new List<ITypeInfo> { this, new IterableTypeInfo(Object) },
                                 new List<bool> { false, false },
+                                new List<IExpression> { null, null },
                                 String);
 
                         case "reversed":
@@ -333,6 +341,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 new List<string> { "self" },
                                 new List<ITypeInfo> { this },
                                 new List<bool> { false },
+                                new List<IExpression> { null },
                                 String);
 
                         case "find":
@@ -342,6 +351,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 new List<string> { "self", "substring" },
                                 new List<ITypeInfo> { this, this },
                                 new List<bool> { false, false },
+                                new List<IExpression> { null, null },
                                 new MaybeTypeInfo(Int));
 
                         case "findLast":
@@ -351,6 +361,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 new List<string> { "self", "substring" },
                                 new List<ITypeInfo> { this, this },
                                 new List<bool> { false, false },
+                                new List<IExpression> { null, null },
                                 new MaybeTypeInfo(Int));
 
                         case "startsWith":
@@ -360,6 +371,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 new List<string> { "self", "prefix" },
                                 new List<ITypeInfo> { this, this },
                                 new List<bool> { false, false },
+                                new List<IExpression> { null, null },
                                 Bool);
 
                         case "endsWith":
@@ -369,6 +381,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 new List<string> { "self", "suffix" },
                                 new List<ITypeInfo> { this, this },
                                 new List<bool> { false, false },
+                                new List<IExpression> { null, null },
                                 Bool);
 
                         default:
