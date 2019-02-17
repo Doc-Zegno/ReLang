@@ -2,7 +2,7 @@
 ![Big logo](https://i.imgur.com/Xc607oz.png)
 ![Textual logo](https://i.imgur.com/fEvpgxB.png)
 
-(logo was remastered by @razergom)
+(logo was remastered by [@razergom](https://github.com/razergom))
 
 Compiler and interpreter for Re:Lang
 
