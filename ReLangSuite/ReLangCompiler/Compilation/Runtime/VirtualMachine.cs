@@ -284,6 +284,9 @@ namespace Handmada.ReLang.Compilation.Runtime {
                     }
                     break;
 
+                case RaiseErrorStatement raiseError:
+                    throw (ProgramException)EvaluateExpression(raiseError.ErrorExpression);
+
                 case CompoundStatement compound:
                     ExecuteStatementList(compound.Statements);
                     break;
@@ -406,6 +409,13 @@ namespace Handmada.ReLang.Compilation.Runtime {
                                 tuple[i] = EvaluateExpression(tupleLiteral.Items[i]);
                             }
                             return new TupleAdapter(tuple);
+
+                        case ErrorLiteralExpression errorLiteral:
+                            return new ProgramException(
+                                errorLiteral.ErrorOption,
+                                (string)EvaluateExpression(errorLiteral.Description),
+                                errorLiteral.MainLocation
+                            );
 
                         default:
                             throw new VirtualMachineException($"Unknown literal expression: {literal}");

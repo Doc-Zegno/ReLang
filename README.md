@@ -1,6 +1,8 @@
 # ReLang
-![Big logo](https://i.imgur.com/oyGhM25.png)
+![Big logo](https://i.imgur.com/Xc607oz.png)
 ![Textual logo](https://i.imgur.com/fEvpgxB.png)
+
+(logo was remastered by @razergom)
 
 Compiler and interpreter for Re:Lang
 
@@ -42,14 +44,14 @@ This pack includes:
 
 
 ### Ready to work (Disposable DLC)
-![progress bar](http://progressed.io/bar/80?title=progress)
+![progress bar](http://progressed.io/bar/90?title=progress)
 
 This pack includes:
 - [x] Generic wrappers for sequences (`enumerate` and `zip`)
 - [x] Files: tools for opening, reading, iterating and disposing
 - [x] VM's support for `Disposable` interface
 - [x] Exception handling with `try`-`catch`
-- [ ] Raising errors with `raise`
+- [x] Raising errors with `raise`
 - [x] Optional arguments (especially for `print` and `open`)
 - [x] Overloaded util functions (like `min`, `max`)
 - [x] Empty collections' literals (`[]`, `{}`, `{:}`)

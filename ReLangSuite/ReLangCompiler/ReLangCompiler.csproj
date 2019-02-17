@@ -85,6 +85,7 @@
     <Compile Include="Compilation\Runtime\ListAdapter.cs" />
     <Compile Include="Compilation\Runtime\TupleAdapter.cs" />
     <Compile Include="Compilation\Yet\Expressions\DictionaryLiteralExpression.cs" />
+    <Compile Include="Compilation\Yet\Expressions\ErrorLiteralExpression.cs" />
     <Compile Include="Compilation\Yet\Expressions\FormatStringExpression.cs" />
     <Compile Include="Compilation\Yet\Expressions\NullLiteralExpression.cs" />
     <Compile Include="Compilation\Yet\Expressions\TupleLiteralExpression.cs" />
@@ -123,6 +124,7 @@
     <Compile Include="Compilation\Yet\Expressions\RangeLiteralExpression.cs" />
     <Compile Include="Compilation\Yet\MetaTypes\RangeTypeInfo.cs" />
     <Compile Include="Compilation\Yet\Statements\NopeStatement.cs" />
+    <Compile Include="Compilation\Yet\Statements\RaiseErrorStatement.cs" />
     <Compile Include="Compilation\Yet\Statements\ReturnStatement.cs" />
     <Compile Include="Compilation\Parsing\ScopeStack.cs" />
     <Compile Include="Compilation\Yet\Statements\IDeclarationStatement.cs" />

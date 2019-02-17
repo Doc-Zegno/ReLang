@@ -344,6 +344,9 @@ namespace Handmada.ReLang.Compilation.Lexing {
                 case "catch":
                     return new OperatorLexeme(OperatorMeaning.Catch, location);
 
+                case "raise":
+                    return new OperatorLexeme(OperatorMeaning.Raise, location);
+
                 default:
                     return new SymbolLexeme(text, location);
             }

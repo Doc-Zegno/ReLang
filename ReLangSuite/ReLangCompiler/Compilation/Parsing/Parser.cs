@@ -492,6 +492,22 @@ namespace Handmada.ReLang.Compilation.Parsing {
         }
 
 
+        private ErrorTypeInfo.Option GetErrorOption(string errorTypeName, Location location) {
+            var errorOption = ErrorTypeInfo.Option.None;
+            foreach (var objectOption in Enum.GetValues(typeof(ErrorTypeInfo.Option))) {
+                var option = (ErrorTypeInfo.Option)objectOption;
+                if (option.ToString() == errorTypeName) {
+                    errorOption = option;
+                    break;
+                }
+            }
+            if (errorOption == ErrorTypeInfo.Option.None) {
+                RaiseError($"'{errorTypeName}' is not a valid error's type", location);
+            }
+            return errorOption;
+        }
+
+
         private VariableQualifier MakeQualifier(bool isFinal, bool isMutable, bool isDisposable) {
             var qualifier = VariableQualifier.None;
             if (isFinal) {

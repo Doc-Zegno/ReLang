@@ -205,6 +205,12 @@ namespace Handmada.ReLang.Compilation {
                     Console.WriteLine(padding + "}");
                     break;
 
+                case RaiseErrorStatement raiseError:
+                    Console.Write("raise ");
+                    PrintExpression(raiseError.ErrorExpression);
+                    Console.WriteLine();
+                    break;
+
                 case NopeStatement nope:
                     Console.WriteLine("nope");
                     break;
@@ -344,6 +350,13 @@ namespace Handmada.ReLang.Compilation {
                         case TupleLiteralExpression tupleLiteral:
                             Console.Write("(");
                             PrintExpressionList(tupleLiteral.Items);
+                            Console.Write(")");
+                            break;
+
+                        case ErrorLiteralExpression errorLiteral:
+                            Console.Write(errorLiteral.ErrorOption);
+                            Console.Write("(");
+                            PrintExpression(errorLiteral.Description);
                             Console.Write(")");
                             break;
                     }

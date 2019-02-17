@@ -98,6 +98,10 @@ namespace Handmada.ReLang.Compilation.Parsing {
                             MoveNextLexeme();
                             return GetTryCatch();
 
+                        case OperatorMeaning.Raise:
+                            MoveNextLexeme();
+                            return GetRaise();
+
                         case OperatorMeaning.OpenParenthesis:
                             return GetFunctionCallOrAssignment();
 
@@ -112,6 +116,21 @@ namespace Handmada.ReLang.Compilation.Parsing {
             }
 
             return null;
+        }
+
+
+
+        // [raise] RuntimeError("Description is in progress")
+        private IStatement GetRaise() {
+            var location = currentLexeme.StartLocation;
+            var errorTypeName = GetSymbolText("Error's type name");
+            var errorOption = GetErrorOption(errorTypeName, location);
+            CheckOperator(OperatorMeaning.OpenParenthesis);
+            var description = GetExpression();
+            var converted = ForceConvertExpression(description, PrimitiveTypeInfo.String, description.MainLocation);
+            CheckOperator(OperatorMeaning.CloseParenthesis);
+            var errorExpression = new ErrorLiteralExpression(errorOption, converted, location);
+            return new RaiseErrorStatement(errorExpression);
         }
 
 
@@ -162,16 +181,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                         errorTypeName = name;
                     }
 
-                    foreach (var objectOption in Enum.GetValues(typeof(ErrorTypeInfo.Option))) {
-                        var option = (ErrorTypeInfo.Option)objectOption;
-                        if (option.ToString() == errorTypeName) {
-                            errorOption = option;
-                            break;
-                        }
-                    }
-                    if (errorOption == ErrorTypeInfo.Option.None) {
-                        RaiseError($"'{errorTypeName}' is not a valid error's type", location);
-                    }
+                    errorOption = GetErrorOption(errorTypeName, location);
 
                     if (traced.Contains(errorOption)) {
                         RaiseError("Handler for this error has already been declared", location, true);
