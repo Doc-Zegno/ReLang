@@ -26,6 +26,12 @@ namespace Handmada.ReLang.Compilation.Yet {
         bool IsComplete { get; }
 
         /// <summary>
+        /// Default value for object of this type
+        /// </summary>
+        /// <returns>Instance of default value</returns>
+        IExpression GetDefaultValue(Location location);
+
+        /// <summary>
         /// Get a new instance of type where all generic entries are resolved to concrete types
         /// </summary>
         /// <returns>Resolved type or `null` if it's not possible</returns>

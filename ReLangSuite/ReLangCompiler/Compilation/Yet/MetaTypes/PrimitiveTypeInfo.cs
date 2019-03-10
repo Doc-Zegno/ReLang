@@ -47,6 +47,29 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
+        public IExpression GetDefaultValue(Location location) {
+            switch (TypeOption) {
+                case Option.Bool:
+                    return new PrimitiveLiteralExpression(false, Bool, location);
+
+                case Option.Char:
+                    return new PrimitiveLiteralExpression((char)0, Char, location);
+
+                case Option.Int:
+                    return new PrimitiveLiteralExpression(0, Int, location);
+
+                case Option.Float:
+                    return new PrimitiveLiteralExpression(0.0, Float, location);
+
+                case Option.String:
+                    return new PrimitiveLiteralExpression("", String, location);
+
+                default:
+                    return null;
+            }
+        }
+
+
         public ITypeInfo ResolveGeneric() => this;
 
 
@@ -253,6 +276,16 @@ namespace Handmada.ReLang.Compilation.Yet {
             switch (TypeOption) {
                 case Option.String:
                     switch (name) {
+                        case "init":
+                            return new BuiltinFunctionDefinition(
+                                name,
+                                BuiltinFunctionDefinition.Option.StringInit,
+                                new List<string> { "count", "value" },
+                                new List<ITypeInfo> { Int, Char },
+                                new List<bool> { false, false },
+                                new List<IExpression> { null, null },
+                                this);
+
                         case "get":
                             return new BuiltinFunctionDefinition(
                                 name,

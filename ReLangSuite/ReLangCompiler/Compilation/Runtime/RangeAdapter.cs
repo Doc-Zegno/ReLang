@@ -21,15 +21,21 @@ namespace Handmada.ReLang.Compilation.Runtime {
         /// </summary>
         public int End { get; }
 
+        /// <summary>
+        /// Range's step
+        /// </summary>
+        public int Step { get; }
 
-        public RangeAdapter(int start, int end) {
+
+        public RangeAdapter(int start, int end, int step) {
             Start = start;
             End = end;
+            Step = step;
         }
 
 
         public IEnumerator<object> GetEnumerator() {
-            for (var i = Start; i < End; i++) {
+            for (var i = Start; i < End; i += Step) {
                 yield return i;
             }
         }

@@ -24,6 +24,7 @@ namespace Handmada.ReLang.Compilation.Yet {
 
             IterableContains,
 
+            ListInit,
             ListGet,
             ListSet,
             ListGetLength,
@@ -33,6 +34,7 @@ namespace Handmada.ReLang.Compilation.Yet {
             ListContains,
             ListCopy,
 
+            //SetInit,
             SetGetLength,
             SetAdd,
             SetRemove,
@@ -42,6 +44,7 @@ namespace Handmada.ReLang.Compilation.Yet {
             SetContains,
             SetCopy,
 
+            //DictionaryInit,
             DictionaryGet,
             DictionarySet,
             DictionaryTryGet,
@@ -49,6 +52,7 @@ namespace Handmada.ReLang.Compilation.Yet {
             DictionaryContains,
             DictionaryCopy,
 
+            StringInit,
             StringGet,
             StringGetLength,
             StringGetSlice,
@@ -63,6 +67,7 @@ namespace Handmada.ReLang.Compilation.Yet {
             StringEndsWith,
             StringStartsWith,
 
+            RangeInit,
             RangeContains,
 
             FileReadLine,

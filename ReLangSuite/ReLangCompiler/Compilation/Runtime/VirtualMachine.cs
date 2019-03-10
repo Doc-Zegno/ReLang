@@ -401,7 +401,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
                         case RangeLiteralExpression rangeLiteral:
                             var start = (int)EvaluateExpression(rangeLiteral.Start);
                             var end = (int)EvaluateExpression(rangeLiteral.End);
-                            return new RangeAdapter(start, end);
+                            return new RangeAdapter(start, end, 1);
 
                         case TupleLiteralExpression tupleLiteral:
                             var tuple = new object[tupleLiteral.Items.Count];
@@ -747,6 +747,9 @@ namespace Handmada.ReLang.Compilation.Runtime {
                 case BuiltinFunctionDefinition.Option.TupleGetThird:
                     return CallTupleGet((TupleAdapter)arguments[0], 2);
 
+                case BuiltinFunctionDefinition.Option.ListInit:
+                    return CallListInit((int)arguments[0], arguments[1]);
+
                 case BuiltinFunctionDefinition.Option.ListGet:
                     return CallListGet((ListAdapter)arguments[0], (int)arguments[1]);
 
@@ -813,11 +816,17 @@ namespace Handmada.ReLang.Compilation.Runtime {
                 case BuiltinFunctionDefinition.Option.DictionaryCopy:
                     return CallDictionaryCopy((DictionaryAdapter)arguments[0]);
 
+                case BuiltinFunctionDefinition.Option.RangeInit:
+                    return CallRangeInit((int)arguments[0], (int)arguments[1], (int)arguments[2]);
+
                 case BuiltinFunctionDefinition.Option.RangeContains:
                     return CallRangeContains((RangeAdapter)arguments[0], (int)arguments[1]);
 
                 case BuiltinFunctionDefinition.Option.IterableContains:
                     return CallIterableContains(ConvertToEnumerable(arguments[0]), arguments[1]);
+
+                case BuiltinFunctionDefinition.Option.StringInit:
+                    return CallStringInit((int)arguments[0], (char)arguments[1]);
 
                 case BuiltinFunctionDefinition.Option.StringGet:
                     return CallStringGet((string)arguments[0], (int)arguments[1]);
@@ -881,6 +890,11 @@ namespace Handmada.ReLang.Compilation.Runtime {
                 default:
                     throw new VirtualMachineException($"Unsupported built-in function call: {option}");
             }
+        }
+
+
+        private object CallListInit(int count, object value) {
+            return new ListAdapter(Enumerable.Repeat(value, count));
         }
 
 
@@ -1051,6 +1065,11 @@ namespace Handmada.ReLang.Compilation.Runtime {
         }
 
 
+        private object CallRangeInit(int start, int end, int step) {
+            return new RangeAdapter(start, end, step);
+        }
+
+
         private object CallRangeContains(RangeAdapter range, int value) {
             return value >= range.Start && value < range.End;
         }
@@ -1058,6 +1077,11 @@ namespace Handmada.ReLang.Compilation.Runtime {
 
         private object CallIterableContains(IEnumerable<object> sequence, object item) {
             return sequence.Contains(item);
+        }
+
+
+        private object CallStringInit(int count, char value) {
+            return new string(value, count);
         }
 
 
@@ -1230,7 +1254,7 @@ namespace Handmada.ReLang.Compilation.Runtime {
                     return $"{{{ObjectListToString(dictionary, true, true)}}}";
 
                 case RangeAdapter range:
-                    return $"{range.Start}..{range.End}";
+                    return $"Range({range.Start}, {range.End}, {range.Step})";
 
                 case TupleAdapter tuple:
                     if (isTuplePair && tuple.Items.Length == 2) {

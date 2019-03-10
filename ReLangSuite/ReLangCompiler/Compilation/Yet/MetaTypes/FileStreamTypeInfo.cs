@@ -16,6 +16,9 @@ namespace Handmada.ReLang.Compilation.Yet {
         public FileStreamTypeInfo() : base(PrimitiveTypeInfo.String) { }
 
 
+        public override IExpression GetDefaultValue(Location location) => null;
+
+
         public override ITypeInfo ResolveGeneric() {
             return this;
         }
@@ -27,7 +30,8 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public override IExpression ConstructFrom(IExpression expression, Location location) {
-            return ConvertFrom(expression);
+            //return ConvertFrom(expression);
+            return null;
         }
 
 

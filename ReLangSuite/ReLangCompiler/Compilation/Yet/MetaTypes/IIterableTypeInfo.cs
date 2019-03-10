@@ -22,6 +22,11 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
+        public virtual IExpression GetDefaultValue(Location location) {
+            return null;
+        }
+
+
         public virtual ITypeInfo ResolveGeneric() {
             var resolvedItemType = ItemType.ResolveGeneric();
             if (resolvedItemType != null) {
@@ -56,7 +61,12 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public virtual IExpression ConstructFrom(IExpression expression, Location location) {
-            throw new NotImplementedException();
+            /*if (CanUpcast(expression.TypeInfo)) {
+                return expression.ChangeType(this);
+            } else {
+                return null;
+            }*/
+            return null;
         }
 
 

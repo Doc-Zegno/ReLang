@@ -15,6 +15,9 @@ namespace Handmada.ReLang.Compilation.Yet {
         public ITypeInfo ResolveGeneric() => this;
 
 
+        public IExpression GetDefaultValue(Location location) => new NullLiteralExpression(location);
+
+
         public bool CanUpcast(ITypeInfo sourceType) {
             return false;
         }

@@ -14,8 +14,10 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public RangeTypeInfo(ITypeInfo itemType) : base(itemType) {
-
         }
+
+
+        public override IExpression GetDefaultValue(Location location) => null;
 
 
         public override ITypeInfo ResolveGeneric() {
@@ -34,7 +36,8 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public override IExpression ConstructFrom(IExpression expression, Location location) {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
+            return null;
         }
 
 
@@ -49,6 +52,20 @@ namespace Handmada.ReLang.Compilation.Yet {
 
         public override IFunctionDefinition GetMethodDefinition(string name, bool isSelfMutable) {
             switch (name) {
+                case "init":
+                    return new BuiltinFunctionDefinition(
+                        name,
+                        BuiltinFunctionDefinition.Option.RangeInit,
+                        new List<string> { "start", "end", "step" },
+                        new List<ITypeInfo> { PrimitiveTypeInfo.Int, PrimitiveTypeInfo.Int, PrimitiveTypeInfo.Int },
+                        new List<bool> { false, false, false },
+                        new List<IExpression> {
+                            null,
+                            null,
+                            new PrimitiveLiteralExpression(1, PrimitiveTypeInfo.Int, null)
+                        },
+                        this);
+
                 case "contains":
                     return new BuiltinFunctionDefinition(
                         name, 

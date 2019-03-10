@@ -122,15 +122,13 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
         // [raise] RuntimeError("Description is in progress")
         private IStatement GetRaise() {
-            var location = currentLexeme.StartLocation;
-            var errorTypeName = GetSymbolText("Error's type name");
-            var errorOption = GetErrorOption(errorTypeName, location);
-            CheckOperator(OperatorMeaning.OpenParenthesis);
-            var description = GetExpression();
-            var converted = ForceConvertExpression(description, PrimitiveTypeInfo.String, description.MainLocation);
-            CheckOperator(OperatorMeaning.CloseParenthesis);
-            var errorExpression = new ErrorLiteralExpression(errorOption, converted, location);
-            return new RaiseErrorStatement(errorExpression);
+            var expression = GetExpression();
+            if (expression.TypeInfo is ErrorTypeInfo errorType) {
+                return new RaiseErrorStatement(expression);
+            } else {
+                RaiseError("Expression doesn't implement interface of error", expression.MainLocation);
+                return null;
+            }
         }
 
 
@@ -940,6 +938,11 @@ namespace Handmada.ReLang.Compilation.Parsing {
             } else {
                 var location = currentLexeme.StartLocation;
                 var name = GetSymbolText("Identifier");
+                if (name != "_") {
+                    if (!char.IsLower(name[0])) {
+                        RaiseError("Identifier must be lowercased", location, true);
+                    }
+                }
 
                 ITypeInfo expectedType = null;
                 if (WhetherOperator(OperatorMeaning.Colon)) {

@@ -17,6 +17,11 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
+        public override IExpression GetDefaultValue(Location location) {
+            return new SetLiteralExpression(new List<IExpression>(), ItemType, location);
+        }
+
+
         public override ITypeInfo ResolveGeneric() {
             var resolvedItemType = ItemType.ResolveGeneric();
             if (resolvedItemType != null) {
@@ -42,13 +47,31 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public override IExpression ConstructFrom(IExpression expression, Location location) {
+            ITypeInfo itemType = null;
             switch (expression.TypeInfo) {
                 case IterableTypeInfo iterable:
-                case PrimitiveTypeInfo primitive when primitive.TypeOption == PrimitiveTypeInfo.Option.String:
-                    return new ConversionExpression(ConversionExpression.Option.Iterable2Set, expression, location);
+                    itemType = iterable.ItemType;
+                    break;
 
+                case PrimitiveTypeInfo primitive when primitive.TypeOption == PrimitiveTypeInfo.Option.String:
+                    itemType = PrimitiveTypeInfo.Char;
+                    break;
+                    
                 default:
                     return null;
+            }
+
+            if (ItemType.IsComplete) {
+                if (ItemType.CanUpcast(itemType)) {
+                    return new ConversionExpression(
+                        ConversionExpression.Option.Iterable2Set,
+                        expression.ChangeType(new IterableTypeInfo(ItemType)),
+                        location);
+                } else {
+                    return null;
+                }
+            } else {
+                return new ConversionExpression(ConversionExpression.Option.Iterable2Set, expression, location);
             }
         }
 
@@ -72,6 +95,16 @@ namespace Handmada.ReLang.Compilation.Yet {
 
         public override IFunctionDefinition GetMethodDefinition(string name, bool isSelfMutable) {
             switch (name) {
+                /*case "init":
+                    return new BuiltinFunctionDefinition(
+                        name,
+                        BuiltinFunctionDefinition.Option.SetInit,
+                        new List<string> { },
+                        new List<ITypeInfo> { },
+                        new List<bool> { },
+                        new List<IExpression> { },
+                        this);*/
+
                 case "getLength":
                     return new BuiltinFunctionDefinition(
                         name,

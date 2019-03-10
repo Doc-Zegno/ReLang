@@ -20,6 +20,9 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
+        public IExpression GetDefaultValue(Location location) => null;
+
+
         public bool CanUpcast(ITypeInfo sourceType) {
             if (Equals(sourceType)) {
                 return true;
@@ -36,7 +39,8 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public IExpression ConstructFrom(IExpression expression, Location location) {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
+            return null;
         }
 
 

@@ -17,9 +17,12 @@ namespace Handmada.ReLang.Compilation.Yet {
         public bool IsLvalue => false;
         public Location MainLocation { get; }
 
+        public ITypeInfo InternalType { get; private set; }
 
-        public TypeLiteralExpression(ITypeInfo typeInfo, Location mainLocation) {
-            TypeInfo = typeInfo;
+
+        public TypeLiteralExpression(ITypeInfo internalType, Location mainLocation) {
+            InternalType = internalType;
+            TypeInfo = new TypeLiteralTypeInfo(internalType);
             MainLocation = mainLocation;
         }
 

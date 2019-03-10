@@ -33,6 +33,9 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
+        public IExpression GetDefaultValue(Location location) => null;
+
+
         public ITypeInfo ResolveGeneric() {
             var resolvedItemTypes = new List<ITypeInfo>();
             foreach (var itemType in ItemTypes) {
@@ -61,7 +64,8 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public IExpression ConstructFrom(IExpression expression, Location location) {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
+            return null;
         }
 
 

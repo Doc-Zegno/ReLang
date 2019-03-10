@@ -39,6 +39,9 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
+        public IExpression GetDefaultValue(Location location) => null;
+
+
         public ITypeInfo ResolveGeneric() {
             return this;
         }
@@ -50,7 +53,8 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public IExpression ConstructFrom(IExpression expression, Location location) {
-            return ConvertFrom(expression);
+            //return ConvertFrom(expression);
+            return null;
         }
 
 

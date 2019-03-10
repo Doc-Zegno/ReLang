@@ -27,7 +27,7 @@ Compiler and interpreter for Re:Lang
 - [x] Built-in methods for collections (including indexing)
 - [x] Slices for lists
 - [x] Built-in methods and slices for strings
-- [ ] Files and managable disposables (`use f = open("input.txt")`)
+- [x] Files and managable disposables (`use f = open("input.txt")`)
 - [ ] Namespaces with util functions
 - [x] Runtime! 
 
@@ -44,7 +44,7 @@ This pack includes:
 
 
 ### Ready to work (Disposable DLC)
-![progress bar](http://progressed.io/bar/90?title=progress)
+![progress bar](http://progressed.io/bar/100?title=released)
 
 This pack includes:
 - [x] Generic wrappers for sequences (`enumerate` and `zip`)
@@ -55,5 +55,5 @@ This pack includes:
 - [x] Optional arguments (especially for `print` and `open`)
 - [x] Overloaded util functions (like `min`, `max`)
 - [x] Empty collections' literals (`[]`, `{}`, `{:}`)
-- [ ] Constructors for collections (`[Int]()`, `[Int](n)`)
+- [x] Constructors for collections (`[Int]()`, `[Int](n)`)
 - [x] Special "I don't care" identifier `_`

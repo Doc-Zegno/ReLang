@@ -254,6 +254,11 @@ namespace Handmada.ReLang.Compilation.Parsing {
                         expression = GetMemberAccessExpression(expression);
                         break;
 
+                    case OperatorMeaning.OpenParenthesis:
+                        // Function or constructor call
+                        expression = GetConstructorOrFunctionCall(expression);
+                        break;
+
                     case OperatorMeaning.OpenBracket:
                         // Indexing
                         expression = GetIndexingExpression(expression);
@@ -446,6 +451,37 @@ namespace Handmada.ReLang.Compilation.Parsing {
                             MoveNextLexeme();
                             var expression = GetMultipleExpression();
                             CheckOperator(OperatorMeaning.CloseParenthesis);
+
+                            // Can be tuple of type expressions
+                            if (expression is TupleLiteralExpression tupleLiteral) {
+                                var isTypeLiteral = false;
+                                var typeLiterals = new List<ITypeInfo>();
+                                for (var i = 0; i < tupleLiteral.Items.Count; i++) {
+                                    var item = tupleLiteral.Items[i];
+                                    if (item is TypeLiteralExpression typeLiteral) {
+                                        if (i > 0 && !isTypeLiteral) {
+                                            RaiseError("Expression was expected but type literal was found", item.MainLocation);
+                                        }
+
+                                        isTypeLiteral = true;
+                                        typeLiterals.Add(typeLiteral.InternalType);
+                                    } else {
+                                        if (isTypeLiteral) {
+                                            RaiseError("Type literal was expected but expression was found", item.MainLocation);
+                                        }
+                                    }
+                                }
+
+                                if (isTypeLiteral) {
+                                    return new TypeLiteralExpression(new TupleTypeInfo(typeLiterals), location);
+                                }
+
+                            } else if (expression is TypeLiteralExpression typeLiteral) {
+                                // Single type literal within parenthesis is not allowed for now
+                                // since functional types are not supported in 1st Revision
+                                RaiseError("Tuple type literals with one item are not supported", expression.MainLocation);
+                            }
+
                             return expression;
 
                         case OperatorMeaning.OpenBracket:
@@ -467,28 +503,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                 case SymbolLexeme symbol:
                     MoveNextLexeme();
-                    if (WhetherOperator(OperatorMeaning.OpenParenthesis)) {
-                        return GetConstructorOrFunctionCall(symbol.Text, location);
-
-                    } else {
-                        var definition = scopeStack.GetDefinition(symbol.Text);
-                        if (definition == null) {
-                            RaiseError($"Undeclared identifier '{symbol.Text}'", location);
-                        }
-                        
-                        if (definition.Qualifier == VariableQualifier.Final && definition.Value != null && definition.Value.IsCompileTime) {
-                            // Can be evaluated at compile-time
-                            return definition.Value;
-
-                            //var value = definition.Value;
-                            //return new PrimitiveLiteralExpression(value.Value, value.TypeInfo);
-                        } else {
-                            // Should be resolved at run-time
-                            //var frameOffset = definition.ScopeNumber - (scopeStack.Count - 1);
-                            return new VariableExpression(symbol.Text, definition.Number, 0,
-                                                          false, definition.TypeInfo, location);
-                        }
-                    }
+                    return GetPrimitiveSymbolExpression(symbol.Text, location);
 
                 case LiteralLexeme literal:
                     var typeOption = PrimitiveTypeInfo.Option.Void;
@@ -535,6 +550,161 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
 
+        // [identifier]
+        // [Type]
+        // [Type]<T>
+        private IExpression GetPrimitiveSymbolExpression(string name, Location location) {
+            if (char.IsUpper(name[0])) {
+                // Try parse as an error literal
+                var maybe = TryGetErrorOption(name, location);
+                if (maybe != null) {
+                    return new TypeLiteralExpression(
+                        new ErrorTypeInfo(maybe.Value), location
+                    );
+                }
+
+                // Type
+                ITypeInfo targetType = null;
+                ITypeInfo keyType = null;
+                ITypeInfo valueType = null;
+                switch (name) {
+                    case "Object":
+                        targetType = PrimitiveTypeInfo.Object;
+                        break;
+
+                    case "Bool":
+                        targetType = PrimitiveTypeInfo.Bool;
+                        break;
+
+                    case "Char":
+                        targetType = PrimitiveTypeInfo.Char;
+                        break;
+
+                    case "Int":
+                        targetType = PrimitiveTypeInfo.Int;
+                        break;
+
+                    case "Float":
+                        targetType = PrimitiveTypeInfo.Float;
+                        break;
+
+                    case "String":
+                        targetType = PrimitiveTypeInfo.String;
+                        break;
+
+                    case "List":
+                        if (WhetherOperator(OperatorMeaning.Less)) {
+                            MoveNextLexeme();
+                            keyType = GetTypeInfo();
+                            CheckOperator(OperatorMeaning.More);
+                        } else {
+                            keyType = new IncompleteTypeInfo();
+                        }
+                        targetType = new ArrayListTypeInfo(keyType);
+                        break;
+
+                    case "Set":
+                        if (WhetherOperator(OperatorMeaning.Less)) {
+                            MoveNextLexeme();
+                            keyType = GetTypeInfo();
+                            CheckOperator(OperatorMeaning.More);
+                        } else {
+                            keyType = new IncompleteTypeInfo();
+                        }
+                        targetType = new HashSetTypeInfo(keyType);  // Doesn't matter
+                        break;
+
+                    case "Dictionary":
+                        if (WhetherOperator(OperatorMeaning.Less)) {
+                            MoveNextLexeme();
+                            keyType = GetTypeInfo();
+                            CheckOperator(OperatorMeaning.Comma);
+                            valueType = GetTypeInfo();
+                            CheckOperator(OperatorMeaning.More);
+                        } else {
+                            keyType = new IncompleteTypeInfo();
+                            valueType = new IncompleteTypeInfo();
+                        }
+                        targetType = new DictionaryTypeInfo(keyType, valueType);
+                        break;
+
+                    case "Range":
+                        targetType = new RangeTypeInfo(PrimitiveTypeInfo.Int);
+                        break;
+
+                    default:
+                        RaiseError($"Unknown type '{name}'", location);
+                        return null;
+                }
+
+                return new TypeLiteralExpression(targetType, location);
+
+            } else if (char.IsLower(name[0])) {
+                // Variable or function 
+                var functionDefinition = TryGetBuiltinFunctionDefinition(name);
+                if (functionDefinition == null) {
+                    functionDefinition = functionTree.GetFunctionDefinition(name);
+                }
+
+                if (functionDefinition != null) {
+                    // Try function
+                    return new FunctionLiteralExpression(functionDefinition, location);
+
+                } else {
+                    // Try variable
+                    var definition = scopeStack.GetDefinition(name);
+                    if (definition == null) {
+                        RaiseError($"Undeclared identifier '{name}'", location);
+                    }
+
+                    if (definition.Qualifier == VariableQualifier.Final && definition.Value != null && definition.Value.IsCompileTime) {
+                        // Can be evaluated at compile-time
+                        return definition.Value;
+
+                        //var value = definition.Value;
+                        //return new PrimitiveLiteralExpression(value.Value, value.TypeInfo);
+                    } else {
+                        // Should be resolved at run-time
+                        //var frameOffset = definition.ScopeNumber - (scopeStack.Count - 1);
+                        return new VariableExpression(name, definition.Number, 0, false, definition.TypeInfo, location);
+                    }
+                }
+
+            } else {
+                RaiseError("Only identifiers starting with a letter are allowed here", location);
+                return null;
+            }
+        }
+
+
+
+        private IFunctionDefinition TryGetBuiltinFunctionDefinition(string name) {
+            switch (name) {
+                case "print":
+                    return BuiltinFunctionDefinition.Print;
+
+                case "enumerate":
+                    return BuiltinFunctionDefinition.CreateEnumerate(false);
+
+                case "zip":
+                    return BuiltinFunctionDefinition.CreateZip(false);
+
+                case "open":
+                    return BuiltinFunctionDefinition.Open;
+
+                case "max":
+                    return BuiltinFunctionDefinition.Maxf;
+
+                case "min":
+                    return BuiltinFunctionDefinition.Minf;
+
+                default:
+                    return null;
+            }
+        }
+
+
+
         // [$"{]x}, {y}"
         private IExpression GetFormatStringExpression(FormatStringLexeme startFormat) {
             var pieces = new List<string> { startFormat.Piece };
@@ -564,51 +734,80 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
 
 
-        private IExpression GetConstructorOrFunctionCall(string name, Location locationName) {
-            ITypeInfo targetType = null;
-            switch (name) {
-                case "Bool":
-                    targetType = PrimitiveTypeInfo.Bool;
-                    break;
-
-                case "Char":
-                    targetType = PrimitiveTypeInfo.Char;
-                    break;
-
-                case "Int":
-                    targetType = PrimitiveTypeInfo.Int;
-                    break;
-
-                case "Float":
-                    targetType = PrimitiveTypeInfo.Float;
-                    break;
-
-                case "String":
-                    targetType = PrimitiveTypeInfo.String;
-                    break;
-
-                case "List":
-                    targetType = new ArrayListTypeInfo(PrimitiveTypeInfo.Object);  // No matter what type it is
-                    break;
-
-                case "Set":
-                    targetType = new HashSetTypeInfo(PrimitiveTypeInfo.Object);  // Doesn't matter
-                    break;
-
-                case "Dictionary":
-                    targetType = new DictionaryTypeInfo(PrimitiveTypeInfo.Object, PrimitiveTypeInfo.Object);  // Doesn't matter
-                    break;
-
-                default:
-                    return GetFunctionCall(name, locationName);
-            }
-
+        private IExpression GetConstructorOrFunctionCall(IExpression callable) {
+            var location = currentLexeme.StartLocation;
             CheckOperator(OperatorMeaning.OpenParenthesis);
-            var locationValue = currentLexeme.StartLocation;
-            var value = GetExpression();
-            CheckOperator(OperatorMeaning.CloseParenthesis);
+            var (argumentsNames, arguments) = GetFunctionArguments();
 
-            return ForceConstructFrom(value, targetType, locationValue);
+            if (callable is TypeLiteralExpression typeLiteral) {
+                var internalType = typeLiteral.InternalType;
+
+                // Use in-place constructor call for error literals
+                if (internalType is ErrorTypeInfo errorType) {
+                    if (arguments.Count != 1) {
+                        RaiseError("Error object's constructor takes only one argument", location);
+                    }
+
+                    var description = arguments[0];
+                    var converted = ForceConvertExpression(description, PrimitiveTypeInfo.String, description.MainLocation);
+                    return new ErrorLiteralExpression(errorType.ErrorOption, converted, location);
+                }
+
+                // Try interpret as a default constructor call
+                if (arguments.Count == 0) {
+                    var defaultValue = internalType.GetDefaultValue(location);
+                    if (defaultValue != null) {
+                        return defaultValue;
+                    }
+                }
+
+                // Try interpret this as an explicit conversion
+                if (arguments.Count == 1) {
+                    var constructed = TryConstructFrom(arguments[0], internalType, typeLiteral.MainLocation);
+                    if (constructed != null) {
+                        return constructed;
+                    }
+                }
+
+                // Interpret as a custom constructor call otherwise
+                var definition = internalType.GetMethodDefinition("init", false);
+                if (definition == null) {
+                    RaiseError($"Type '{internalType.Name}' has no constructor", location);
+                }
+
+                var (resultType, convertedArguments) = CheckAndConvertFunctionArguments(
+                    definition.Signature, argumentsNames, arguments, location
+                );
+
+                return new FunctionCallExpression(definition, convertedArguments, resultType, false, location);
+
+            } else if (callable is FunctionLiteralExpression functionLiteral) {
+                var definition = functionLiteral.Definition;
+                var (resultType, convertedArguments) = CheckAndConvertFunctionArguments(
+                    definition.Signature, argumentsNames, arguments, location
+                );
+
+                return new FunctionCallExpression(definition, convertedArguments, resultType, false, location);
+
+            } else if (callable.TypeInfo is FunctionTypeInfo functionType) {
+                // TODO: implement
+                var definition = functionType.GetMethodDefinition("call", WhetherExpressionMutable(callable));
+                if (definition == null) {
+                    RaiseError($"Type '{functionType.Name}' doesn't implement functional interface", location);
+                }
+
+                arguments.Insert(0, callable);
+                argumentsNames.Insert(0, "");
+                var (resultType, convertedArguments) = CheckAndConvertFunctionArguments(
+                    definition.Signature, argumentsNames, arguments, location
+                );
+
+                return new FunctionCallExpression(definition, convertedArguments, resultType, false, location);
+
+            } else {
+                RaiseError("Expression is not callable", callable.MainLocation);
+                return null;
+            }
         }
 
 
@@ -620,6 +819,13 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 return new ListLiteralExpression(new List<IExpression>(), new IncompleteTypeInfo(), location);
             } else {
                 var firstItem = GetExpression();
+
+                // Can be type literal
+                if (firstItem is TypeLiteralExpression typeLiteral) {
+                    CheckOperator(OperatorMeaning.CloseBracket);
+                    return new TypeLiteralExpression(new ArrayListTypeInfo(typeLiteral.InternalType), location);
+                }
+
                 var items = GetItemList(firstItem);
                 CheckOperator(OperatorMeaning.CloseBracket);
                 return new ListLiteralExpression(items, items[0].TypeInfo, location);
@@ -648,12 +854,32 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     // Dictionary
                     MoveNextLexeme();
                     var value = GetExpression();
+
+                    // Can be type literal
+                    if (key is TypeLiteralExpression keyTypeLiteral) {
+                        if (value is TypeLiteralExpression valueTypeLiteral) {
+                            CheckOperator(OperatorMeaning.CloseBrace);
+                            return new TypeLiteralExpression(
+                                new DictionaryTypeInfo(keyTypeLiteral.InternalType, valueTypeLiteral.InternalType),
+                                location
+                            );
+                        } else {
+                            RaiseError("Expected type literal but got expression", value.MainLocation);
+                        }
+                    }
+
                     var pairs = GetPairList(key, value);
                     CheckOperator(OperatorMeaning.CloseBrace);
                     return new DictionaryLiteralExpression(pairs, pairs[0].Item1.TypeInfo, pairs[0].Item2.TypeInfo, location);
 
                 } else {
                     // Set
+                    // Can be type literal
+                    if (key is TypeLiteralExpression typeLiteral) {
+                        CheckOperator(OperatorMeaning.CloseBrace);
+                        return new TypeLiteralExpression(new HashSetTypeInfo(typeLiteral.InternalType), location);
+                    }
+
                     var items = GetItemList(key);
                     CheckOperator(OperatorMeaning.CloseBrace);
                     return new SetLiteralExpression(items, items[0].TypeInfo, location);

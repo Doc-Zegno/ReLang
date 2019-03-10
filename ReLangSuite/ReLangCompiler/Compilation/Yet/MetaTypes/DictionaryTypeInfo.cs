@@ -24,6 +24,11 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
+        public override IExpression GetDefaultValue(Location location) {
+            return new DictionaryLiteralExpression(new List<(IExpression, IExpression)>(), KeyType, ValueType, location);
+        }
+
+
         public override ITypeInfo ResolveGeneric() {
             var resolvedKeyType = KeyType.ResolveGeneric();
             var resolvedValueType = ValueType.ResolveGeneric();
@@ -52,8 +57,28 @@ namespace Handmada.ReLang.Compilation.Yet {
         public override IExpression ConstructFrom(IExpression expression, Location location) {
             if (expression.TypeInfo is IterableTypeInfo iterableType
                 && iterableType.ItemType is TupleTypeInfo tupleType
-                && tupleType.ItemTypes.Count == 2) {
-                return new ConversionExpression(ConversionExpression.Option.Iterable2Dictionary, expression, location);
+                && tupleType.ItemTypes.Count == 2)
+            {
+                var keyType = tupleType.ItemTypes[0];
+                var valueType = tupleType.ItemTypes[1];
+
+                if (KeyType.IsComplete && ValueType.IsComplete) {
+                    if (KeyType.CanUpcast(keyType) && ValueType.CanUpcast(valueType)) {
+                        return new ConversionExpression(
+                            ConversionExpression.Option.Iterable2Dictionary,
+                            expression.ChangeType(
+                                new IterableTypeInfo(new TupleTypeInfo(new List<ITypeInfo> { KeyType, ValueType }))),
+                            location);
+                    } else {
+                        return null;
+                    }
+
+                } else if (!KeyType.IsComplete && !ValueType.IsComplete) {
+                    return new ConversionExpression(ConversionExpression.Option.Iterable2Dictionary, expression, location);
+
+                } else {
+                    throw new NotImplementedException("Dictionary type has only one of parameter types being incomplete. Is it ever possible?");
+                }
             } else {
                 return null;
             }
@@ -85,6 +110,16 @@ namespace Handmada.ReLang.Compilation.Yet {
 
         public override IFunctionDefinition GetMethodDefinition(string name, bool isSelfMutable) {
             switch (name) {
+                /*case "init":
+                    return new BuiltinFunctionDefinition(
+                        name,
+                        BuiltinFunctionDefinition.Option.DictionaryInit,
+                        new List<string> { },
+                        new List<ITypeInfo> { },
+                        new List<bool> { },
+                        new List<IExpression> { },
+                        this);*/
+
                 case "get":
                     return new BuiltinFunctionDefinition(
                         name,

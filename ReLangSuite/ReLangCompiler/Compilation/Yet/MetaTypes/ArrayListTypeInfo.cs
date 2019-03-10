@@ -17,6 +17,11 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
+        public override IExpression GetDefaultValue(Location location) {
+            return new ListLiteralExpression(new List<IExpression>(), ItemType, location);
+        }
+
+
         public override ITypeInfo ResolveGeneric() {
             var resolvedItemType = ItemType.ResolveGeneric();
             if (resolvedItemType != null) {
@@ -42,13 +47,34 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public override IExpression ConstructFrom(IExpression expression, Location location) {
+            ITypeInfo itemType = null;
             switch (expression.TypeInfo) {
-                case IterableTypeInfo iterable when !(iterable.ItemType is IncompleteTypeInfo):
+                case IterableTypeInfo iterable:
+                    itemType = iterable.ItemType;
+                    break;
+
                 case PrimitiveTypeInfo primitive when primitive.TypeOption == PrimitiveTypeInfo.Option.String:
-                    return new ConversionExpression(ConversionExpression.Option.Iterable2List, expression, location);
+                    itemType = PrimitiveTypeInfo.Char;
+                    break;
 
                 default:
                     return null;
+            }
+
+            if (ItemType.IsComplete) {
+                // Source type must obey destination type
+                if (ItemType.CanUpcast(itemType)) {
+                    return new ConversionExpression(
+                        ConversionExpression.Option.Iterable2List, 
+                        expression.ChangeType(new IterableTypeInfo(ItemType)), 
+                        location);
+                } else {
+                    return null;
+                }
+
+            } else {
+                // Incomplete type is deduced from source expression
+                return new ConversionExpression(ConversionExpression.Option.Iterable2List, expression, location);
             }
         }
 
@@ -72,6 +98,19 @@ namespace Handmada.ReLang.Compilation.Yet {
 
         public override IFunctionDefinition GetMethodDefinition(string name, bool isSelfMutable) {
             switch (name) {
+                case "init":
+                    return new BuiltinFunctionDefinition(
+                        name,
+                        BuiltinFunctionDefinition.Option.ListInit,
+                        new List<string> { "count", "value" },
+                        new List<ITypeInfo> { PrimitiveTypeInfo.Int, ItemType },
+                        new List<bool> { false, false },
+                        new List<IExpression> {
+                            new PrimitiveLiteralExpression(0, PrimitiveTypeInfo.Int, null),
+                            ItemType.GetDefaultValue(null),
+                        },
+                        this);
+
                 case "get":
                     return new BuiltinFunctionDefinition(
                         name,

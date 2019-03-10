@@ -48,6 +48,9 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
+        public IExpression GetDefaultValue(Location location) => null;
+
+
         public ITypeInfo ResolveGeneric() {
             if (names2types.TryGetValue(MetaName, out ITypeInfo resolvedType)) {
                 return resolvedType;
@@ -72,7 +75,7 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public IExpression ConstructFrom(IExpression expression, Location location) {
-            throw new NotImplementedException();
+            throw new NotImplementedException("Something has triggered construction of template type from expression");
         }
 
 

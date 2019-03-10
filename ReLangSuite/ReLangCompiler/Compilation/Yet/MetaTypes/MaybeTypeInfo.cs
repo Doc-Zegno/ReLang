@@ -25,6 +25,9 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
+        public IExpression GetDefaultValue(Location location) => new NullLiteralExpression(location).ChangeType(this);
+
+
         public ITypeInfo ResolveGeneric() {
             var resolvedInternalType = InternalType.ResolveGeneric();
             if (resolvedInternalType != null) {
@@ -42,7 +45,8 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public IExpression ConstructFrom(IExpression expression, Location location) {
-            return ConvertFrom(expression);
+            //return ConvertFrom(expression);
+            return null;
         }
 
 

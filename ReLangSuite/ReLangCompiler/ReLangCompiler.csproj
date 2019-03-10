@@ -87,6 +87,7 @@
     <Compile Include="Compilation\Yet\Expressions\DictionaryLiteralExpression.cs" />
     <Compile Include="Compilation\Yet\Expressions\ErrorLiteralExpression.cs" />
     <Compile Include="Compilation\Yet\Expressions\FormatStringExpression.cs" />
+    <Compile Include="Compilation\Yet\Expressions\FunctionLiteralExpression.cs" />
     <Compile Include="Compilation\Yet\Expressions\NullLiteralExpression.cs" />
     <Compile Include="Compilation\Yet\Expressions\TupleLiteralExpression.cs" />
     <Compile Include="Compilation\Yet\MetaTypes\ArrayListTypeInfo.cs" />
@@ -100,6 +101,7 @@
     <Compile Include="Compilation\Yet\MetaTypes\NullTypeInfo.cs" />
     <Compile Include="Compilation\Yet\MetaTypes\TupleTypeInfo.cs" />
     <Compile Include="Compilation\Yet\MetaTypes\IncompleteTypeInfo.cs" />
+    <Compile Include="Compilation\Yet\MetaTypes\TypeLiteralTypeInfo.cs" />
     <Compile Include="Compilation\Yet\Misc\BuiltinFunctionDefinition.cs" />
     <Compile Include="Compilation\Yet\Misc\CustomFunctionDefinition.cs" />
     <Compile Include="Compilation\Yet\Misc\FunctionSignature.cs" />

@@ -112,7 +112,13 @@ namespace Handmada.ReLang.Compilation.Parsing {
             if (!WhetherOperator(OperatorMeaning.CloseParenthesis)) {
                 while (true) {
                     // Name
-                    argumentNames.Add(GetSymbolText("Argument name"));
+                    var nameLocation = currentLexeme.StartLocation;
+                    var argumentName = GetSymbolText("Argument's name");
+                    if (!char.IsLower(argumentName[0])) {
+                        RaiseError($"Function's arguments must have lowercased names", nameLocation, true);
+                    }
+
+                    argumentNames.Add(argumentName);
                     CheckOperator(OperatorMeaning.Colon);
 
                     // Mutability
@@ -449,14 +455,19 @@ namespace Handmada.ReLang.Compilation.Parsing {
         }
 
 
-        private IExpression ForceConstructFrom(IExpression expression, ITypeInfo targetType, Location location) {
+        private IExpression TryConstructFrom(IExpression expression, ITypeInfo targetType, Location location) {
             IExpression constructed = null;
             try {
                 constructed = targetType.ConstructFrom(expression, location);
             } catch (FormatException e) {
                 RaiseError(e.Message, location);
             }
+            return constructed;
+        }
 
+
+        private IExpression ForceConstructFrom(IExpression expression, ITypeInfo targetType, Location location) {
+            var constructed = TryConstructFrom(expression, targetType, location);
             if (constructed != null) {
                 return constructed;
             } else {
@@ -492,19 +503,23 @@ namespace Handmada.ReLang.Compilation.Parsing {
         }
 
 
-        private ErrorTypeInfo.Option GetErrorOption(string errorTypeName, Location location) {
-            var errorOption = ErrorTypeInfo.Option.None;
+        private ErrorTypeInfo.Option? TryGetErrorOption(string errorTypeName, Location location) {
             foreach (var objectOption in Enum.GetValues(typeof(ErrorTypeInfo.Option))) {
                 var option = (ErrorTypeInfo.Option)objectOption;
                 if (option.ToString() == errorTypeName) {
-                    errorOption = option;
-                    break;
+                    return option;
                 }
             }
-            if (errorOption == ErrorTypeInfo.Option.None) {
+            return null;
+        }
+
+
+        private ErrorTypeInfo.Option GetErrorOption(string errorTypeName, Location location) {
+            var maybe = TryGetErrorOption(errorTypeName, location);
+            if (maybe == null) {
                 RaiseError($"'{errorTypeName}' is not a valid error's type", location);
             }
-            return errorOption;
+            return maybe.Value;
         }
 
 

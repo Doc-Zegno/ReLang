@@ -10,7 +10,31 @@ namespace Handmada.ReLang.Compilation.Yet {
     /// Type information about a functional object
     /// </summary>
     class FunctionTypeInfo : ITypeInfo {
-        public string Name => $"({string.Join(", ", ArgumentTypes.Select(type => type.Name))}) -> {ResultType.Name}";
+        public string Name {
+            get {
+                var builder = new StringBuilder("(");
+                var isFirst = true;
+
+                for (var i = 0; i < ArgumentTypes.Count; i++) {
+                    if (!isFirst) {
+                        builder.Append(", ");
+                    }
+                    isFirst = false;
+                    if (ArgumentMutabilities[i]) {
+                        builder.Append("mutable ");
+                    }
+                    builder.Append(ArgumentTypes[i].Name);
+                }
+
+                builder.Append(") -> ");
+                if (!ResultMutability) {
+                    builder.Append("const ");
+                }
+                builder.Append(ResultType.Name);
+                return builder.ToString();
+            }
+        }
+        
         public bool IsReferential => true;
         public bool IsComplete { get; }
 
@@ -20,14 +44,28 @@ namespace Handmada.ReLang.Compilation.Yet {
         public List<ITypeInfo> ArgumentTypes { get; }
 
         /// <summary>
+        /// Mutabilities of function's arguments
+        /// </summary>
+        public List<bool> ArgumentMutabilities { get; }
+
+        /// <summary>
         /// Type of function's result
         /// </summary>
         public ITypeInfo ResultType { get; }
 
+        /// <summary>
+        /// Mutability of resulting value
+        /// </summary>
+        public bool ResultMutability { get; }
 
-        public FunctionTypeInfo(List<ITypeInfo> argumentTypes, ITypeInfo resultType) {
+
+        public FunctionTypeInfo(List<ITypeInfo> argumentTypes, List<bool> argumentMutabilities,
+                                ITypeInfo resultType, bool resultMutability)
+        {
             ArgumentTypes = argumentTypes;
+            ArgumentMutabilities = argumentMutabilities;
             ResultType = resultType;
+            ResultMutability = resultMutability;
 
             IsComplete = true;
             foreach (var argumentType in argumentTypes) {
@@ -40,6 +78,9 @@ namespace Handmada.ReLang.Compilation.Yet {
                 IsComplete = false;
             }
         }
+
+
+        public IExpression GetDefaultValue(Location location) => null;
 
 
         public ITypeInfo ResolveGeneric() {
@@ -57,7 +98,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                 resolvedArgumentTypes.Add(resolvedArgumentType);
             }
 
-            return new FunctionTypeInfo(resolvedArgumentTypes, resolvedResultType);
+            return new FunctionTypeInfo(resolvedArgumentTypes, ArgumentMutabilities, resolvedResultType, ResultMutability);
         }
 
 
@@ -67,7 +108,8 @@ namespace Handmada.ReLang.Compilation.Yet {
 
 
         public IExpression ConstructFrom(IExpression expression, Location location) {
-            return ConvertFrom(expression);
+            //return ConvertFrom(expression);
+            return null;
         }
 
 
@@ -84,7 +126,7 @@ namespace Handmada.ReLang.Compilation.Yet {
             if (obj is IncompleteTypeInfo) {
                 return true;
             } else if (obj is FunctionTypeInfo functionType) {
-                if (!ResultType.Equals(functionType.ResultType)) {
+                if (!ResultType.Equals(functionType.ResultType) || ResultMutability != functionType.ResultMutability) {
                     return false;
                 }
 
@@ -93,7 +135,9 @@ namespace Handmada.ReLang.Compilation.Yet {
                 }
 
                 for (var i = 0; i < ArgumentTypes.Count; i++) {
-                    if (!ArgumentTypes[i].Equals(functionType.ArgumentTypes[i])) {
+                    if (!ArgumentTypes[i].Equals(functionType.ArgumentTypes[i])
+                        || ArgumentMutabilities[i] != functionType.ArgumentMutabilities[i])
+                    {
                         return false;
                     }
                 }
