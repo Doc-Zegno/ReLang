@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Handmada.ReLang.Compilation.Yet {
     class IterableTypeInfo : ITypeInfo {
-        public virtual string Name => $"{ItemType.Name}&";
+        public virtual string Name => $"{ItemType.Name}*";
         public virtual bool IsReferential => true;
         public virtual bool IsComplete => ItemType.IsComplete;
 

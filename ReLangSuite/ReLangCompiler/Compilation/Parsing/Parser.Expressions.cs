@@ -249,6 +249,30 @@ namespace Handmada.ReLang.Compilation.Parsing {
             var expression = GetPrimitiveExpression();
             while (currentLexeme is OperatorLexeme operatorLexeme) {
                 switch (operatorLexeme.Meaning) {
+                    case OperatorMeaning.QuestionMark:
+                        if (expression is TypeLiteralExpression typeLiteral) {
+                            MoveNextLexeme();
+                            expression = new TypeLiteralExpression(
+                                new MaybeTypeInfo(typeLiteral.InternalType), 
+                                currentLexeme.StartLocation
+                            );
+                        } else {
+                            return expression;
+                        }
+                        break;
+
+                    case OperatorMeaning.Asterisk:
+                        if (expression is TypeLiteralExpression typeLiteral2) {
+                            MoveNextLexeme();
+                            expression = new TypeLiteralExpression(
+                                new IterableTypeInfo(typeLiteral2.InternalType), 
+                                currentLexeme.StartLocation
+                            );
+                        } else {
+                            return expression;
+                        }
+                        break;
+
                     case OperatorMeaning.Dot:
                         // Access to the field
                         expression = GetMemberAccessExpression(expression);

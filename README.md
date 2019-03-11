@@ -7,6 +7,57 @@
 Compiler and interpreter for Re:Lang
 
 
+## About Re:Lang
+### Overview
+Re:Lang is a modern statically typed imperative programming language.
+
+Main goal of Re:Lang is to ease process of programming and make code listings
+much more readable.
+
+If you want to become more familiar with Re:Lang, consider reading
+[this tutorial](Docs/TUTORIAL)
+
+
+### Version
+Current version is 0.1.0, also known as "The First Revision".
+
+Please note that there is a certain lack of essential functionality in this revision
+and current mutability system seems to be out of date
+so it's not suitable for "serious" programming.
+
+If you are interested in version which is compiled into fast native code
+and supplied with lots of features, you may want to give this repo a star.
+
+If there are enough stars, I'll start preparing the 2nd Revision of Re:Lang
+which is going to be a much better one
+
+
+## How to use it
+### Prerequisites
+You will need a Windows PC with VS 2017 on board
+
+
+### How to build
+Open VS solution `ReLangSuite` and build project `ReLangCompiler`.
+After you've done, please, proceed to output directory
+(which should be `ReLangCompiler/bin/Debug`) and make sure there is
+an executable `ReLangCompiler`
+
+
+### How to compile custom program
+Create a text file `"input.txt"` *near the compiler's executable*,
+write down some code here and launch compiler via PowerShell or cmd.
+
+You may want to specify program parameters as well:
+```
+.\ReLangCompiler.exe hello world
+```
+
+Your program will be compiled and immediately executed by built-in virtual machine
+so you should see an output in console between `Executing main()...`
+and `Process finished with exit code: 0`
+
+
 ## Overall TODO List
 - [x] Variable resolution
 - [x] Function resolution

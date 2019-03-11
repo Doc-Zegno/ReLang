@@ -221,7 +221,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             while (true) {
                 if (currentLexeme is OperatorLexeme operatorLexeme) {
                     switch (operatorLexeme.Meaning) {
-                        case OperatorMeaning.BitwiseAnd:
+                        case OperatorMeaning.Asterisk:
                             MoveNextLexeme();
                             typeInfo = new IterableTypeInfo(typeInfo);
                             break;
