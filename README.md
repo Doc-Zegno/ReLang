@@ -15,7 +15,7 @@ Main goal of Re:Lang is to ease process of programming and make code listings
 much more readable.
 
 If you want to become more familiar with Re:Lang, consider reading
-[this tutorial](Docs/TUTORIAL)
+[this tutorial](Docs/TUTORIAL.md)
 
 
 ### Version
