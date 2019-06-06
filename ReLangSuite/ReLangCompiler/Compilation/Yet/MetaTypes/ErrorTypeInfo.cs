@@ -69,7 +69,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public IFunctionDefinition GetMethodDefinition(string name, bool isSelfMutable) {
+        public IFunctionDefinition GetMethodDefinition(string name) {
             switch (name) {
                 case "getMessage":
                     return new BuiltinFunctionDefinition(
@@ -77,7 +77,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                         BuiltinFunctionDefinition.Option.ErrorGetMessage,
                         new List<string> { "self" },
                         new List<ITypeInfo> { this },
-                        new List<bool> { false },
                         new List<IExpression> { null },
                         PrimitiveTypeInfo.String);
 
@@ -87,7 +86,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                         BuiltinFunctionDefinition.Option.ErrorGetStackTrace,
                         new List<string> { "self" },
                         new List<ITypeInfo> { this },
-                        new List<bool> { false },
                         new List<IExpression> { null },
                         PrimitiveTypeInfo.String);
 

@@ -93,9 +93,9 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public IFunctionDefinition GetMethodDefinition(string name, bool isSelfMutable) {
+        public IFunctionDefinition GetMethodDefinition(string name) {
             if (names2types.TryGetValue(MetaName, out ITypeInfo typeInfo)) {
-                return typeInfo.GetMethodDefinition(name, isSelfMutable);
+                return typeInfo.GetMethodDefinition(name);
             } else {
                 return null;
             }

@@ -10,7 +10,6 @@ namespace Handmada.ReLang.Compilation.Yet {
     public enum VariableQualifier {
         None = 0,
         Final = 1,
-        Mutable = 2,
-        Disposable = 4,
+        Disposable = 2,
     }
 }

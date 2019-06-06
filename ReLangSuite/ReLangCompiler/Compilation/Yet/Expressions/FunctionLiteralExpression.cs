@@ -25,9 +25,7 @@ namespace Handmada.ReLang.Compilation.Yet {
             MainLocation = location;
 
             var signature = definition.Signature;
-            TypeInfo = new FunctionTypeInfo(
-                signature.ArgumentTypes, signature.ArgumentMutabilities, signature.ResultType, signature.ResultMutability
-            );
+            TypeInfo = new FunctionTypeInfo(signature.ArgumentTypes, signature.ResultType);
         }
 
 

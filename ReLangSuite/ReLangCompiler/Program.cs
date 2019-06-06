@@ -69,14 +69,12 @@ namespace Handmada.ReLang.Compilation {
             var signature = definition.Signature;
 
             for (var i = 0; i < signature.ArgumentTypes.Count; i++) {
-                var mutability = signature.ArgumentMutabilities[i] ? " mutable " : " ";
-                argumentStrings.Add($"{signature.ArgumentNames[i]}:{mutability}{signature.ArgumentTypes[i].Name}");
+                argumentStrings.Add($"{signature.ArgumentNames[i]}: {signature.ArgumentTypes[i].Name}");
             }
             var arguments = string.Join(", ", argumentStrings);
-
-            var constantness = signature.ResultMutability ? " " : " const ";
+          
             Console.WriteLine($"func {definition.FullQualification}.{signature.Name}<#{number}>"
-                              + $"({arguments}) ->{constantness}{signature.ResultType.Name} {{");
+                              + $"({arguments}) -> {signature.ResultType.Name} {{");
             foreach (var s in function.Body) {
                 PrintStatement(s, 1);
             }
@@ -156,9 +154,6 @@ namespace Handmada.ReLang.Compilation {
                 case VariableDeclarationStatement variableDeclaration:
                     var prefix = "var";
                     if ((variableDeclaration.Qualifier & VariableQualifier.Final) != 0) {
-                        prefix = "val";
-                    }
-                    if ((variableDeclaration.Qualifier & VariableQualifier.Mutable) == 0) {
                         prefix = "let";
                     }
                     if ((variableDeclaration.Qualifier & VariableQualifier.Disposable) != 0) {

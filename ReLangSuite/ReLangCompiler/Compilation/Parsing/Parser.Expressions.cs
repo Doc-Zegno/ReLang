@@ -27,9 +27,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                 case "enumerate":
                     if (arguments.Count >= 1) {
-                        var items = arguments[0];
-                        var areItemsMutable = WhetherExpressionMutable(items);
-                        definition = BuiltinFunctionDefinition.CreateEnumerate(areItemsMutable);
+                        definition = BuiltinFunctionDefinition.Enumerate;
                     } else {
                         RaiseError("No arguments are provided for this function call", location);
                         definition = null;
@@ -38,10 +36,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                 case "zip":
                     if (arguments.Count >= 2) {
-                        var itemsA = arguments[0];
-                        var itemsB = arguments[1];
-                        var areItemsMutable = WhetherExpressionMutable(itemsA) && WhetherExpressionMutable(itemsB);
-                        definition = BuiltinFunctionDefinition.CreateZip(areItemsMutable);
+                        definition = BuiltinFunctionDefinition.Zip;
                     } else {
                         RaiseError("Not enough arguments provided for this function call", location);
                         definition = null;
@@ -147,7 +142,6 @@ namespace Handmada.ReLang.Compilation.Parsing {
         {
             var expectedNames = signature.ArgumentNames;
             var expectedTypes = signature.ArgumentTypes;
-            var expectedMutabilities = signature.ArgumentMutabilities;
 
             var unsetNames = new HashSet<string>(expectedNames);
 
@@ -188,9 +182,6 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                 // Debug
                 Console.WriteLine($"Converted type: '{converted.TypeInfo.Name}', expected type is '{expectedType.Name}'");
-
-                // Mutability check
-                CheckMutability(converted, expectedMutabilities[mapped]);
 
                 convertedArguments[mapped] = converted;
                 unsetNames.Remove(expectedName);
@@ -348,8 +339,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 arguments.Add(argument);
 
                 // Get definition of "get" and make function call
-                var isSelfMutable = WhetherExpressionMutable(self);
-                var definition = self.TypeInfo.GetMethodDefinition("get", isSelfMutable);
+                var definition = self.TypeInfo.GetMethodDefinition("get");
 
                 if (definition == null) {
                     RaiseError($"Type '{self.TypeInfo.Name}' doesn't implement indexing", location);
@@ -405,8 +395,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
             // Depending on mutability of 'self' call either 'getSlice' or 'getConstSlice'
             var name = "getSlice";
-            var isSelfMutable = WhetherExpressionMutable(self);
-            var definition = self.TypeInfo.GetMethodDefinition(name, isSelfMutable);
+            var definition = self.TypeInfo.GetMethodDefinition(name);
 
             if (definition == null) {
                 RaiseError($"This object doesn't support method '{name}'", locationBracket);
@@ -432,11 +421,9 @@ namespace Handmada.ReLang.Compilation.Parsing {
             IFunctionDefinition definition = null;
             var isLvalue = false;
 
-            var isSelfMutable = WhetherExpressionMutable(self);
-
             if (WhetherOperator(OperatorMeaning.OpenParenthesis)) {
                 // Get method's definition
-                definition = self.TypeInfo.GetMethodDefinition(name, isSelfMutable);
+                definition = self.TypeInfo.GetMethodDefinition(name);
                 if (definition == null) {
                     RaiseError($"Type '{self.TypeInfo.Name}' doesn't implement method '{name}'", location);
                 }
@@ -449,7 +436,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             } else {
                 // Get property's definition
                 var fullName = "get" + char.ToUpper(name[0]) + name.Substring(1);
-                definition = self.TypeInfo.GetMethodDefinition(fullName, isSelfMutable);
+                definition = self.TypeInfo.GetMethodDefinition(fullName);
                 if (definition == null) {
                     RaiseError($"Type '{self.TypeInfo.Name}' doesn't have property '{name}'", location);
                 }
@@ -708,10 +695,10 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     return BuiltinFunctionDefinition.Print;
 
                 case "enumerate":
-                    return BuiltinFunctionDefinition.CreateEnumerate(false);
+                    return BuiltinFunctionDefinition.Enumerate;
 
                 case "zip":
-                    return BuiltinFunctionDefinition.CreateZip(false);
+                    return BuiltinFunctionDefinition.Zip;
 
                 case "open":
                     return BuiltinFunctionDefinition.Open;
@@ -794,7 +781,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
                 }
 
                 // Interpret as a custom constructor call otherwise
-                var definition = internalType.GetMethodDefinition("init", false);
+                var definition = internalType.GetMethodDefinition("init");
                 if (definition == null) {
                     RaiseError($"Type '{internalType.Name}' has no constructor", location);
                 }
@@ -815,7 +802,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
             } else if (callable.TypeInfo is FunctionTypeInfo functionType) {
                 // TODO: implement
-                var definition = functionType.GetMethodDefinition("call", WhetherExpressionMutable(callable));
+                var definition = functionType.GetMethodDefinition("call");
                 if (definition == null) {
                     RaiseError($"Type '{functionType.Name}' doesn't implement functional interface", location);
                 }
@@ -1103,7 +1090,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
                 if (meaning == OperatorMeaning.In) {
                     // Resolve to .contains() call
-                    var definition = right.TypeInfo.GetMethodDefinition("contains", false);
+                    var definition = right.TypeInfo.GetMethodDefinition("contains");
                     if (definition == null) {
                         RaiseError($"Type '{right.TypeInfo.Name}' doesn't implement method 'contains'", right.MainLocation);
                     }

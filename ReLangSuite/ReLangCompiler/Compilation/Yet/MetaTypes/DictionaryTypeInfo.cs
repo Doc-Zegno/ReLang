@@ -108,7 +108,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public override IFunctionDefinition GetMethodDefinition(string name, bool isSelfMutable) {
+        public override IFunctionDefinition GetMethodDefinition(string name) {
             switch (name) {
                 /*case "init":
                     return new BuiltinFunctionDefinition(
@@ -125,11 +125,9 @@ namespace Handmada.ReLang.Compilation.Yet {
                         name,
                         BuiltinFunctionDefinition.Option.DictionaryGet, 
                         new List<string> { "self", "key" },
-                        new List<ITypeInfo> { this, KeyType }, 
-                        new List<bool> { false, false },
+                        new List<ITypeInfo> { this, KeyType },
                         new List<IExpression> { null, null },
-                        ValueType,
-                        isSelfMutable);
+                        ValueType);
 
                 case "set":
                     return new BuiltinFunctionDefinition(
@@ -137,7 +135,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                         BuiltinFunctionDefinition.Option.DictionarySet,
                         new List<string> { "self", "key", "value" },
                         new List<ITypeInfo> { this, KeyType, ValueType },
-                        new List<bool> { true, false, false },
                         new List<IExpression> { null, null, null },
                         PrimitiveTypeInfo.Void);
 
@@ -147,10 +144,8 @@ namespace Handmada.ReLang.Compilation.Yet {
                         BuiltinFunctionDefinition.Option.DictionaryTryGet,
                         new List<string> { "self", "key" },
                         new List<ITypeInfo> { this, KeyType },
-                        new List<bool> { false, false },
                         new List<IExpression> { null, null },
-                        new MaybeTypeInfo(ValueType),
-                        isSelfMutable);
+                        new MaybeTypeInfo(ValueType));
 
                 case "getLength":
                     return new BuiltinFunctionDefinition(
@@ -158,7 +153,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                         BuiltinFunctionDefinition.Option.DictionaryGetLength,
                         new List<string> { "self" },
                         new List<ITypeInfo> { this },
-                        new List<bool> { false },
                         new List<IExpression> { null },
                         PrimitiveTypeInfo.Int);
 
@@ -168,7 +162,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                         BuiltinFunctionDefinition.Option.DictionaryContains,
                         new List<string> { "self", "key" },
                         new List<ITypeInfo> { this, KeyType },
-                        new List<bool> { false, false },
                         new List<IExpression> { null, null },
                         PrimitiveTypeInfo.Bool);
 
@@ -177,13 +170,12 @@ namespace Handmada.ReLang.Compilation.Yet {
                         name, 
                         BuiltinFunctionDefinition.Option.DictionaryCopy,
                         new List<string> { "self" },
-                        new List<ITypeInfo> { this }, 
-                        new List<bool> { false },
+                        new List<ITypeInfo> { this },
                         new List<IExpression> { null },
                         this);
 
                 default:
-                    return base.GetMethodDefinition(name, isSelfMutable);
+                    return base.GetMethodDefinition(name);
             }
         }
     }

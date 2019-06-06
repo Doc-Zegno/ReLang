@@ -89,15 +89,14 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public virtual IFunctionDefinition GetMethodDefinition(string name, bool isSelfMutable) {
+        public virtual IFunctionDefinition GetMethodDefinition(string name) {
             switch (name) {
                 case "contains" when ItemType is PrimitiveTypeInfo || ItemType is TupleTypeInfo:
                     return new BuiltinFunctionDefinition(
                         name, 
                         BuiltinFunctionDefinition.Option.IterableContains, 
                         new List<string> { "self", "value" },
-                        new List<ITypeInfo> { this, ItemType }, 
-                        new List<bool> { false, false },
+                        new List<ITypeInfo> { this, ItemType },
                         new List<IExpression> { null, null },
                         PrimitiveTypeInfo.Bool);
 

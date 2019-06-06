@@ -50,7 +50,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public override IFunctionDefinition GetMethodDefinition(string name, bool isSelfMutable) {
+        public override IFunctionDefinition GetMethodDefinition(string name) {
             switch (name) {
                 case "init":
                     return new BuiltinFunctionDefinition(
@@ -58,7 +58,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                         BuiltinFunctionDefinition.Option.RangeInit,
                         new List<string> { "start", "end", "step" },
                         new List<ITypeInfo> { PrimitiveTypeInfo.Int, PrimitiveTypeInfo.Int, PrimitiveTypeInfo.Int },
-                        new List<bool> { false, false, false },
                         new List<IExpression> {
                             null,
                             null,
@@ -71,13 +70,12 @@ namespace Handmada.ReLang.Compilation.Yet {
                         name, 
                         BuiltinFunctionDefinition.Option.RangeContains, 
                         new List<string> { "self", "value" },
-                        new List<ITypeInfo> { this, ItemType }, 
-                        new List<bool> { false, false },
+                        new List<ITypeInfo> { this, ItemType },
                         new List<IExpression> { null, null },
                         PrimitiveTypeInfo.Bool);
 
                 default:
-                    return base.GetMethodDefinition(name, isSelfMutable);
+                    return base.GetMethodDefinition(name);
             }
         }
 

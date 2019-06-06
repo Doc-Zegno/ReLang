@@ -91,16 +91,13 @@ namespace Handmada.ReLang.Compilation.Yet {
             string shortName, 
             Option builtinOption, 
             List<string> argumentNames, 
-            List<ITypeInfo> argumentTypes,
-            List<bool> argumentMutabilities, 
+            List<ITypeInfo> argumentTypes, 
             List<IExpression> argumentDefaultValues,
-            ITypeInfo resultType, 
-            bool resultMutability = true)
+            ITypeInfo resultType)
         {
             var name = builtinOption.ToString();
             var fullName = char.ToLower(name[0]) + name.Substring(1);
-            Signature = new FunctionSignature(fullName, argumentNames, argumentTypes, argumentMutabilities,
-                                              argumentDefaultValues, resultType, resultMutability);
+            Signature = new FunctionSignature(fullName, argumentNames, argumentTypes, argumentDefaultValues, resultType);
             BuiltinOption = builtinOption;
             ShortName = shortName;
         }
@@ -112,7 +109,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                 Option.Print, 
                 new List<string> { "object", "end" },
                 new List<ITypeInfo> { PrimitiveTypeInfo.Object, PrimitiveTypeInfo.String },
-                new List<bool> { false, false },
                 new List<IExpression> {
                     new PrimitiveLiteralExpression("", PrimitiveTypeInfo.Object, null),
                     new PrimitiveLiteralExpression("\n", PrimitiveTypeInfo.String, null)
@@ -126,7 +122,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                 Option.Open,
                 new List<string> { "path", "mode" },
                 new List<ITypeInfo> { PrimitiveTypeInfo.String, PrimitiveTypeInfo.String },
-                new List<bool> { false, false },
                 new List<IExpression> {
                     null,
                     new PrimitiveLiteralExpression("r", PrimitiveTypeInfo.String, null)
@@ -140,7 +135,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                 Option.Maxi,
                 new List<string> { "x", "y" },
                 new List<ITypeInfo> { PrimitiveTypeInfo.Int, PrimitiveTypeInfo.Int },
-                new List<bool> { false, false },
                 new List<IExpression> { null, null },
                 PrimitiveTypeInfo.Int);
 
@@ -151,7 +145,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                 Option.Mini,
                 new List<string> { "x", "y" },
                 new List<ITypeInfo> { PrimitiveTypeInfo.Int, PrimitiveTypeInfo.Int },
-                new List<bool> { false, false },
                 new List<IExpression> { null, null },
                 PrimitiveTypeInfo.Int);
 
@@ -162,7 +155,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                 Option.Maxf,
                 new List<string> { "x", "y" },
                 new List<ITypeInfo> { PrimitiveTypeInfo.Float, PrimitiveTypeInfo.Float },
-                new List<bool> { false, false },
                 new List<IExpression> { null, null },
                 PrimitiveTypeInfo.Float);
 
@@ -173,47 +165,46 @@ namespace Handmada.ReLang.Compilation.Yet {
                 Option.Minf,
                 new List<string> { "x", "y" },
                 new List<ITypeInfo> { PrimitiveTypeInfo.Float, PrimitiveTypeInfo.Float },
-                new List<bool> { false, false },
                 new List<IExpression> { null, null },
                 PrimitiveTypeInfo.Float);
 
 
-        public static BuiltinFunctionDefinition CreateEnumerate(bool areItemsMutable) {
-            var itemType = new GenericTypeInfo("T", new Dictionary<string, ITypeInfo>());
-            var argumentType = new IterableTypeInfo(itemType);
-            var tupleType = new TupleTypeInfo(new List<ITypeInfo> { PrimitiveTypeInfo.Int, itemType });
-            var resultType = new IterableTypeInfo(tupleType);
+        public static BuiltinFunctionDefinition Enumerate {
+            get {
+                var itemType = new GenericTypeInfo("T", new Dictionary<string, ITypeInfo>());
+                var argumentType = new IterableTypeInfo(itemType);
+                var tupleType = new TupleTypeInfo(new List<ITypeInfo> { PrimitiveTypeInfo.Int, itemType });
+                var resultType = new IterableTypeInfo(tupleType);
 
-            return new BuiltinFunctionDefinition(
-                "enumerate",
-                Option.Enumerate,
-                new List<string> { "items" },
-                new List<ITypeInfo> { argumentType },
-                new List<bool> { false },
-                new List<IExpression> { null },
-                resultType,
-                areItemsMutable);    
+                return new BuiltinFunctionDefinition(
+                    "enumerate",
+                    Option.Enumerate,
+                    new List<string> { "items" },
+                    new List<ITypeInfo> { argumentType },
+                    new List<IExpression> { null },
+                    resultType);
+            } 
         }
         
 
-        public static BuiltinFunctionDefinition CreateZip(bool areItemsMutable) {
-            var table = new Dictionary<string, ITypeInfo>();
-            var firstItemType = new GenericTypeInfo("T", table);
-            var secondItemType = new GenericTypeInfo("E", table);
-            var firstArgumentType = new IterableTypeInfo(firstItemType);
-            var secondArgumentType = new IterableTypeInfo(secondItemType);
-            var tupleType = new TupleTypeInfo(new List<ITypeInfo> { firstItemType, secondItemType });
-            var resultType = new IterableTypeInfo(tupleType);
+        public static BuiltinFunctionDefinition Zip {
+            get {
+                var table = new Dictionary<string, ITypeInfo>();
+                var firstItemType = new GenericTypeInfo("T", table);
+                var secondItemType = new GenericTypeInfo("E", table);
+                var firstArgumentType = new IterableTypeInfo(firstItemType);
+                var secondArgumentType = new IterableTypeInfo(secondItemType);
+                var tupleType = new TupleTypeInfo(new List<ITypeInfo> { firstItemType, secondItemType });
+                var resultType = new IterableTypeInfo(tupleType);
 
-            return new BuiltinFunctionDefinition(
-                "zip",
-                Option.Zip,
-                new List<string> { "itemsA", "itemsB" },
-                new List<ITypeInfo> { firstArgumentType, secondArgumentType },
-                new List<bool> { false, false },
-                new List<IExpression> { null, null },
-                resultType,
-                areItemsMutable);
+                return new BuiltinFunctionDefinition(
+                    "zip",
+                    Option.Zip,
+                    new List<string> { "itemsA", "itemsB" },
+                    new List<ITypeInfo> { firstArgumentType, secondArgumentType },
+                    new List<IExpression> { null, null },
+                    resultType);
+            }
         }
     }
 }

@@ -107,7 +107,6 @@ namespace Handmada.ReLang.Compilation.Parsing {
             var mustHaveDefault = false;
             var argumentNames = new List<string>();
             var argumentTypes = new List<ITypeInfo>();
-            var argumentMutabilities = new List<bool>();
             var argumentDefaultValues = new List<IExpression>();
             if (!WhetherOperator(OperatorMeaning.CloseParenthesis)) {
                 while (true) {
@@ -121,26 +120,8 @@ namespace Handmada.ReLang.Compilation.Parsing {
                     argumentNames.Add(argumentName);
                     CheckOperator(OperatorMeaning.Colon);
 
-                    // Mutability
-                    var location = currentLexeme.StartLocation;
-                    var isMutable = false;
-                    if (WhetherOperator(OperatorMeaning.Mutable)) {
-                        MoveNextLexeme();
-                        isMutable = true;
-                    }
-                    argumentMutabilities.Add(isMutable);
-
                     // Type
                     var argumentType = GetTypeInfo();
-                    if (!argumentType.IsReferential && isMutable) {
-                        RaiseError("'mutable' qualifier has no effect for non-referential types", location, true);
-                    }
-                    if (argumentType is PrimitiveTypeInfo primitive
-                        && primitive.TypeOption == PrimitiveTypeInfo.Option.String
-                        && isMutable)
-                    {
-                        RaiseError("Strings are immutable, this qualifier is useless", location, true);
-                    }
                     argumentTypes.Add(argumentType);
 
                     // Default value
@@ -174,32 +155,12 @@ namespace Handmada.ReLang.Compilation.Parsing {
 
             // Parse return type
             var resultType = (ITypeInfo)PrimitiveTypeInfo.Void;
-            var resultMutability = true;
             if (WhetherOperator(OperatorMeaning.ThinRightArrow)) {
                 MoveNextLexeme();
-
-                var location = currentLexeme.StartLocation;
-                if (WhetherOperator(OperatorMeaning.Const)) {
-                    MoveNextLexeme();
-                    resultMutability = false;
-                }
-
                 resultType = GetTypeInfoOrVoid();
-
-                if (!resultType.IsReferential && !resultMutability) {
-                    RaiseError("'const' qualifier has no effect for non-referential types", location, true);
-                }
-                if (resultType is PrimitiveTypeInfo primitive
-                    && primitive.TypeOption == PrimitiveTypeInfo.Option.String
-                    && !resultMutability)
-                {
-                    RaiseError("Strings are immutable, this qualifier is useless", location, true);
-                }
-
             }
 
-            return new FunctionSignature(name, argumentNames, argumentTypes, argumentMutabilities,
-                                         argumentDefaultValues, resultType, resultMutability);
+            return new FunctionSignature(name, argumentNames, argumentTypes, argumentDefaultValues, resultType);
         }
 
 
@@ -357,8 +318,7 @@ namespace Handmada.ReLang.Compilation.Parsing {
             for (var i = 0; i < signature.ArgumentNames.Count; i++) {
                 var argumentName = signature.ArgumentNames[i];
                 var argumentType = signature.ArgumentTypes[i];
-                var argumentMutability = signature.ArgumentMutabilities[i];
-                scopeStack.DeclareVariable(argumentName, argumentType, MakeQualifier(true, argumentMutability, false), null);
+                scopeStack.DeclareVariable(argumentName, argumentType, MakeQualifier(true, false), null);
             }
 
             var body = GetStatementList(true);
@@ -523,13 +483,10 @@ namespace Handmada.ReLang.Compilation.Parsing {
         }
 
 
-        private VariableQualifier MakeQualifier(bool isFinal, bool isMutable, bool isDisposable) {
+        private VariableQualifier MakeQualifier(bool isFinal, bool isDisposable) {
             var qualifier = VariableQualifier.None;
             if (isFinal) {
                 qualifier |= VariableQualifier.Final;
-            }
-            if (isMutable) {
-                qualifier |= VariableQualifier.Mutable;
             }
             if (isDisposable) {
                 qualifier |= VariableQualifier.Disposable;

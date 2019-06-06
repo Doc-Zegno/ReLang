@@ -63,7 +63,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public IFunctionDefinition GetMethodDefinition(string name, bool isSelfMutable) {
+        public IFunctionDefinition GetMethodDefinition(string name) {
             return null;
         }
 

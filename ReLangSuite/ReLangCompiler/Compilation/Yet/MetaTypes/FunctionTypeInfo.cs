@@ -20,16 +20,10 @@ namespace Handmada.ReLang.Compilation.Yet {
                         builder.Append(", ");
                     }
                     isFirst = false;
-                    if (ArgumentMutabilities[i]) {
-                        builder.Append("mutable ");
-                    }
                     builder.Append(ArgumentTypes[i].Name);
                 }
 
                 builder.Append(") -> ");
-                if (!ResultMutability) {
-                    builder.Append("const ");
-                }
                 builder.Append(ResultType.Name);
                 return builder.ToString();
             }
@@ -44,28 +38,15 @@ namespace Handmada.ReLang.Compilation.Yet {
         public List<ITypeInfo> ArgumentTypes { get; }
 
         /// <summary>
-        /// Mutabilities of function's arguments
-        /// </summary>
-        public List<bool> ArgumentMutabilities { get; }
-
-        /// <summary>
         /// Type of function's result
         /// </summary>
         public ITypeInfo ResultType { get; }
 
-        /// <summary>
-        /// Mutability of resulting value
-        /// </summary>
-        public bool ResultMutability { get; }
 
-
-        public FunctionTypeInfo(List<ITypeInfo> argumentTypes, List<bool> argumentMutabilities,
-                                ITypeInfo resultType, bool resultMutability)
+        public FunctionTypeInfo(List<ITypeInfo> argumentTypes, ITypeInfo resultType)
         {
             ArgumentTypes = argumentTypes;
-            ArgumentMutabilities = argumentMutabilities;
             ResultType = resultType;
-            ResultMutability = resultMutability;
 
             IsComplete = true;
             foreach (var argumentType in argumentTypes) {
@@ -98,7 +79,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                 resolvedArgumentTypes.Add(resolvedArgumentType);
             }
 
-            return new FunctionTypeInfo(resolvedArgumentTypes, ArgumentMutabilities, resolvedResultType, ResultMutability);
+            return new FunctionTypeInfo(resolvedArgumentTypes, resolvedResultType);
         }
 
 
@@ -126,7 +107,7 @@ namespace Handmada.ReLang.Compilation.Yet {
             if (obj is IncompleteTypeInfo) {
                 return true;
             } else if (obj is FunctionTypeInfo functionType) {
-                if (!ResultType.Equals(functionType.ResultType) || ResultMutability != functionType.ResultMutability) {
+                if (!ResultType.Equals(functionType.ResultType)) {
                     return false;
                 }
 
@@ -135,9 +116,7 @@ namespace Handmada.ReLang.Compilation.Yet {
                 }
 
                 for (var i = 0; i < ArgumentTypes.Count; i++) {
-                    if (!ArgumentTypes[i].Equals(functionType.ArgumentTypes[i])
-                        || ArgumentMutabilities[i] != functionType.ArgumentMutabilities[i])
-                    {
+                    if (!ArgumentTypes[i].Equals(functionType.ArgumentTypes[i])) {
                         return false;
                     }
                 }
@@ -159,7 +138,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public IFunctionDefinition GetMethodDefinition(string name, bool isSelfMutable) {
+        public IFunctionDefinition GetMethodDefinition(string name) {
             return null;
         }
     }

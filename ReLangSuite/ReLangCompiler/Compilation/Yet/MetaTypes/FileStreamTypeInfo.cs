@@ -44,7 +44,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public override IFunctionDefinition GetMethodDefinition(string name, bool isSelfMutable) {
+        public override IFunctionDefinition GetMethodDefinition(string name) {
             switch (name) {
                 case "reset":
                     return new BuiltinFunctionDefinition(
@@ -52,7 +52,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                         BuiltinFunctionDefinition.Option.FileReset,
                         new List<string> { "self" },
                         new List<ITypeInfo> { this },
-                        new List<bool> { true },
                         new List<IExpression> { null },
                         PrimitiveTypeInfo.Void);
 
@@ -62,7 +61,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                         BuiltinFunctionDefinition.Option.FileWrite,
                         new List<string> { "self", "string" },
                         new List<ITypeInfo> { this, PrimitiveTypeInfo.String },
-                        new List<bool> { true, false },
                         new List<IExpression> { null, null },
                         PrimitiveTypeInfo.Void);
 
@@ -81,12 +79,11 @@ namespace Handmada.ReLang.Compilation.Yet {
                         BuiltinFunctionDefinition.Option.FileClose,
                         new List<string> { "self" },
                         new List<ITypeInfo> { this },
-                        new List<bool> { true },
                         new List<IExpression> { null },
                         PrimitiveTypeInfo.Void);
 
                 default:
-                    return base.GetMethodDefinition(name, isSelfMutable);
+                    return base.GetMethodDefinition(name);
             }
         }
 

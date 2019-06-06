@@ -108,3 +108,31 @@ This pack includes:
 - [x] Empty collections' literals (`[]`, `{}`, `{:}`)
 - [x] Constructors for collections (`[Int]()`, `[Int](n)`)
 - [x] Special "I don't care" identifier `_`
+
+
+
+## About ReLite
+### Overview
+Re:Lite stands for "Re:Lang Elite Edition".
+This is the second revision of Re:Lang which brings to you
+a great variety of features intended to simplify programming process.
+
+
+## Expansion Packs
+### Preparations
+![progress bar](http://progressed.io/bar/7?title=progress)
+
+This pack includes:
+- [ ] Transpiler into C++
+- [x] Compiler won't assure const-correctness anymore
+- [ ] Renamed `Object` -> `Any` and `Dictionary` -> `Map`
+- [ ] `Mutable` analogs for built-in collections
+- [ ] Functional wrappers for vanilla functions
+- [ ] Lambda-style syntax for one-liner functions
+- [ ] `when`-expression
+- [ ] Construction of iterables with `::`
+- [ ] Checks if code utilizes return value of function
+- [ ] List/set/map generators via `[for i in 0..10 => i^2]`
+- [ ] A variety of built-in functions for `Iterable`
+- [ ] `for`-loop with guards
+- [ ] `args: [String]` is not mandatory for `main`

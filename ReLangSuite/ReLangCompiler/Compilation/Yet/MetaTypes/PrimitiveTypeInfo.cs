@@ -272,7 +272,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public IFunctionDefinition GetMethodDefinition(string name, bool isSelfMutable) {
+        public IFunctionDefinition GetMethodDefinition(string name) {
             switch (TypeOption) {
                 case Option.String:
                     switch (name) {
@@ -282,7 +282,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 BuiltinFunctionDefinition.Option.StringInit,
                                 new List<string> { "count", "value" },
                                 new List<ITypeInfo> { Int, Char },
-                                new List<bool> { false, false },
                                 new List<IExpression> { null, null },
                                 this);
 
@@ -292,7 +291,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 BuiltinFunctionDefinition.Option.StringGet,
                                 new List<string> { "self", "index" },
                                 new List<ITypeInfo> { this, Int },
-                                new List<bool> { false, false },
                                 new List<IExpression> { null, null },
                                 Char);
 
@@ -302,7 +300,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 BuiltinFunctionDefinition.Option.StringGetLength,
                                 new List<string> { "self" },
                                 new List<ITypeInfo> { this },
-                                new List<bool> { false },
                                 new List<IExpression> { null },
                                 Int);
 
@@ -312,10 +309,8 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 BuiltinFunctionDefinition.Option.StringGetSlice,
                                 new List<string> { "self", "start", "end", "step" },
                                 new List<ITypeInfo> { this, Int, new MaybeTypeInfo(Int), Int },
-                                new List<bool> { isSelfMutable, false, false, false },
                                 new List<IExpression> { null, null, null, null },
-                                String,
-                                isSelfMutable);
+                                String);
 
                         case "toLower":
                             return new BuiltinFunctionDefinition(
@@ -323,7 +318,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 BuiltinFunctionDefinition.Option.StringToLower,
                                 new List<string> { "self" },
                                 new List<ITypeInfo> { this },
-                                new List<bool> { false },
                                 new List<IExpression> { null },
                                 String);
 
@@ -333,7 +327,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 BuiltinFunctionDefinition.Option.StringToUpper,
                                 new List<string> { "self" },
                                 new List<ITypeInfo> { this },
-                                new List<bool> { false },
                                 new List<IExpression> { null },
                                 String);
 
@@ -343,7 +336,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 BuiltinFunctionDefinition.Option.StringSplit,
                                 new List<string> { "self" },
                                 new List<ITypeInfo> { this },
-                                new List<bool> { false },
                                 new List<IExpression> { null },  // TODO: add spliting by string
                                 new ArrayListTypeInfo(String));
 
@@ -353,7 +345,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 BuiltinFunctionDefinition.Option.StringContains,
                                 new List<string> { "self", "substring" },
                                 new List<ITypeInfo> { this, this },
-                                new List<bool> { false, false },
                                 new List<IExpression> { null, null },
                                 Bool);
 
@@ -363,7 +354,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 BuiltinFunctionDefinition.Option.StringJoin,
                                 new List<string> { "self", "items" },
                                 new List<ITypeInfo> { this, new IterableTypeInfo(Object) },
-                                new List<bool> { false, false },
                                 new List<IExpression> { null, null },
                                 String);
 
@@ -373,7 +363,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 BuiltinFunctionDefinition.Option.StringReversed,
                                 new List<string> { "self" },
                                 new List<ITypeInfo> { this },
-                                new List<bool> { false },
                                 new List<IExpression> { null },
                                 String);
 
@@ -383,7 +372,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 BuiltinFunctionDefinition.Option.StringFind,
                                 new List<string> { "self", "substring" },
                                 new List<ITypeInfo> { this, this },
-                                new List<bool> { false, false },
                                 new List<IExpression> { null, null },
                                 new MaybeTypeInfo(Int));
 
@@ -393,7 +381,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 BuiltinFunctionDefinition.Option.StringFindLast,
                                 new List<string> { "self", "substring" },
                                 new List<ITypeInfo> { this, this },
-                                new List<bool> { false, false },
                                 new List<IExpression> { null, null },
                                 new MaybeTypeInfo(Int));
 
@@ -403,7 +390,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 BuiltinFunctionDefinition.Option.StringStartsWith,
                                 new List<string> { "self", "prefix" },
                                 new List<ITypeInfo> { this, this },
-                                new List<bool> { false, false },
                                 new List<IExpression> { null, null },
                                 Bool);
 
@@ -413,7 +399,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                                 BuiltinFunctionDefinition.Option.StringEndsWith,
                                 new List<string> { "self", "suffix" },
                                 new List<ITypeInfo> { this, this },
-                                new List<bool> { false, false },
                                 new List<IExpression> { null, null },
                                 Bool);
 

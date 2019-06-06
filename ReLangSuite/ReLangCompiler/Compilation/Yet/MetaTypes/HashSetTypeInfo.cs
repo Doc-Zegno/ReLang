@@ -93,7 +93,7 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public override IFunctionDefinition GetMethodDefinition(string name, bool isSelfMutable) {
+        public override IFunctionDefinition GetMethodDefinition(string name) {
             switch (name) {
                 /*case "init":
                     return new BuiltinFunctionDefinition(
@@ -111,7 +111,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                         BuiltinFunctionDefinition.Option.SetGetLength,
                         new List<string> { "self" },
                         new List<ITypeInfo> { this },
-                        new List<bool> { false },
                         new List<IExpression> { null },
                         PrimitiveTypeInfo.Int);
 
@@ -121,7 +120,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                         BuiltinFunctionDefinition.Option.SetAdd,
                         new List<string> { "self", "value" },
                         new List<ITypeInfo> { this, ItemType },
-                        new List<bool> { true, false },
                         new List<IExpression> { null, null },
                         PrimitiveTypeInfo.Void);
 
@@ -131,7 +129,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                         BuiltinFunctionDefinition.Option.SetRemove,
                         new List<string> { "self", "value" },
                         new List<ITypeInfo> { this, ItemType },
-                        new List<bool> { true, false },
                         new List<IExpression> { null, null },
                         PrimitiveTypeInfo.Bool);
 
@@ -141,7 +138,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                         BuiltinFunctionDefinition.Option.SetUnion,
                         new List<string> { "self", "set" },
                         new List<ITypeInfo> { this, this },
-                        new List<bool> { false, false },
                         new List<IExpression> { null, null },
                         this);
 
@@ -151,7 +147,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                         BuiltinFunctionDefinition.Option.SetIntersection,
                         new List<string> { "self", "set" },
                         new List<ITypeInfo> { this, this },
-                        new List<bool> { false, false },
                         new List<IExpression> { null, null },
                         this);
 
@@ -161,7 +156,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                         BuiltinFunctionDefinition.Option.SetDifference,
                         new List<string> { "self", "set" },
                         new List<ITypeInfo> { this, this },
-                        new List<bool> { false, false },
                         new List<IExpression> { null, null },
                         this);
 
@@ -171,7 +165,6 @@ namespace Handmada.ReLang.Compilation.Yet {
                         BuiltinFunctionDefinition.Option.SetContains,
                         new List<string> { "self", "value" },
                         new List<ITypeInfo> { this, ItemType },
-                        new List<bool> { false, false },
                         new List<IExpression> { null, null },
                         PrimitiveTypeInfo.Bool);
 
@@ -181,12 +174,11 @@ namespace Handmada.ReLang.Compilation.Yet {
                         BuiltinFunctionDefinition.Option.SetCopy,
                         new List<string> { "self" },
                         new List<ITypeInfo> { this },
-                        new List<bool> { false },
                         new List<IExpression> { null },
                         this);
 
                 default:
-                    return base.GetMethodDefinition(name, isSelfMutable);
+                    return base.GetMethodDefinition(name);
             }
         }
     }

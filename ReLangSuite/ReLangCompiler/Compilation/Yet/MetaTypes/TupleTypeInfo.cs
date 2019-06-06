@@ -69,18 +69,16 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public IFunctionDefinition GetMethodDefinition(string name, bool isSelfMutable) {
+        public IFunctionDefinition GetMethodDefinition(string name) {
             switch (name) {
                 case "getFirst" when ItemTypes.Count >= 1:
                     return new BuiltinFunctionDefinition(
                         name,
                         BuiltinFunctionDefinition.Option.TupleGetFirst, 
                         new List<string> { "self" },
-                        new List<ITypeInfo> { this }, 
-                        new List<bool> { false },
+                        new List<ITypeInfo> { this },
                         new List<IExpression> { null },
-                        ItemTypes[0],
-                        isSelfMutable);
+                        ItemTypes[0]);
 
                 case "getSecond" when ItemTypes.Count >= 2:
                     return new BuiltinFunctionDefinition(
@@ -88,10 +86,8 @@ namespace Handmada.ReLang.Compilation.Yet {
                         BuiltinFunctionDefinition.Option.TupleGetSecond,
                         new List<string> { "self" },
                         new List<ITypeInfo> { this },
-                        new List<bool> { false },
                         new List<IExpression> { null },
-                        ItemTypes[1],
-                        isSelfMutable);
+                        ItemTypes[1]);
 
                 case "getThird" when ItemTypes.Count >= 3:
                     return new BuiltinFunctionDefinition(
@@ -99,10 +95,8 @@ namespace Handmada.ReLang.Compilation.Yet {
                         BuiltinFunctionDefinition.Option.TupleGetThird,
                         new List<string> { "self" },
                         new List<ITypeInfo> { this },
-                        new List<bool> { false },
                         new List<IExpression> { null },
-                        ItemTypes[2],
-                        isSelfMutable);
+                        ItemTypes[2]);
 
                 default:
                     return null;
@@ -110,16 +104,14 @@ namespace Handmada.ReLang.Compilation.Yet {
         }
 
 
-        public IFunctionDefinition GetTupleAccessorDefinition(int index, bool isSelfMutable) =>
+        public IFunctionDefinition GetTupleAccessorDefinition(int index) =>
             new BuiltinFunctionDefinition(
                 "get",
                 BuiltinFunctionDefinition.Option.TupleGet,
                 new List<string> { "self", "index" },
                 new List<ITypeInfo> { this, PrimitiveTypeInfo.Int },
-                new List<bool> { false, false },
                 new List<IExpression> { null, null },
-                ItemTypes[index],
-                isSelfMutable);
+                ItemTypes[index]);
 
 
         public override bool Equals(object obj) {
